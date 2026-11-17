@@ -149,6 +149,21 @@
     <Compile Include="QCU-CRAM_Data\QCU-CRAM_Configurations\QCUCRAM_SettingConfiguration.cs" />
     <Compile Include="QCU-CRAM_Migrations\Configuration.cs" />
     <Compile Include="QCU-CRAM_Migrations\20261118090000_QCUCRAM_Baseline.cs" />
+    <Compile Include="QCU-CRAM_Helpers\QCU-CRAM_AppSettings.cs" />
+    <Compile Include="QCU-CRAM_Helpers\QCU-CRAM_Status.cs" />
+    <Compile Include="QCU-CRAM_Helpers\QCU-CRAM_PasswordHash.cs" />
+    <Compile Include="QCU-CRAM_Helpers\QCU-CRAM_Programs.cs" />
+    <Compile Include="QCU-CRAM_Helpers\QCU-CRAM_Clock.cs" />
+    <Compile Include="QCU-CRAM_Helpers\QCU-CRAM_UrlGuard.cs" />
+    <Compile Include="QCU-CRAM_Helpers\QCU-CRAM_ImagePath.cs" />
+    <Compile Include="QCU-CRAM_Data\QCUCRAM_Db.cs" />
+    <Compile Include="QCU-CRAM_Data\QCUCRAM_Results.cs" />
+    <Compile Include="QCU-CRAM_Data\QCUCRAM_StudentRepository.cs" />
+    <Compile Include="QCU-CRAM_Data\QCUCRAM_AdminUserRepository.cs" />
+    <Compile Include="QCU-CRAM_Data\QCUCRAM_ContentRepository.cs" />
+    <Compile Include="QCU-CRAM_Data\QCUCRAM_ReservationRepository.cs" />
+    <Compile Include="QCU-CRAM_Data\QCUCRAM_NotificationRepository.cs" />
+    <Compile Include="QCU-CRAM_Data\QCUCRAM_ReportRepository.cs" />
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
@@ -174,6 +189,8 @@
     <Content Include="favicon.ico" />
     <Content Include="Global.asax" />
     <Content Include="Content\Site.css" />
+    <Content Include="QCU-CRAM_Content\QCU-CRAM_Portfolio.css" />
+    <Content Include="QCU-CRAM_Scripts\QCU-CRAM_Portfolio.js" />
     <Content Include="Scripts\bootstrap.bundle.js" />
     <Content Include="Scripts\bootstrap.bundle.min.js" />
     <Content Include="Scripts\bootstrap.esm.js" />
@@ -231,11 +248,6 @@
     <Content Include="Content\bootstrap-grid.min.css.map" />
     <Content Include="Content\bootstrap-grid.css.map" />
     <None Include="packages.config" />
-    <None Include="QCU-CRAM_Services\.keep" />
-    <None Include="QCU-CRAM_Helpers\.keep" />
-    <None Include="QCU-CRAM_Filters\.keep" />
-    <None Include="QCU-CRAM_ViewModels\.keep" />
-    <None Include="QCU-CRAM_Mappings\.keep" />
     <None Include="QCU-CRAM_Docs\QCU-CRAM_Phase-01_Notes.md" />
     <Content Include="Scripts\bootstrap.min.js.map" />
     <Content Include="Scripts\bootstrap.js.map" />
