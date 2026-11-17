@@ -43,7 +43,7 @@
        Reports in Phase 09. Until then those links would 404, so they stay
        hidden. Flip this to true once the last of them is in place.
        --------------------------------------------------------------------- */
-    var showUnbuiltNav = false;
+    var showUnbuiltNav = true;
 
     var pageTitle = Convert.ToString(ViewBag.Title ?? string.Empty);
 }
@@ -142,7 +142,7 @@
                         @* master: BuildFooterLinks(isStudent, isAdmin) - only pages the visitor can open *@
                         @if (isStudent)
                         {
-                            <a href="@Url.Action("Index", "StudentDashboard")">Dashboard</a>
+                            <a href="@Url.Action("Dashboard", "Student")">Dashboard</a>
                             if (showUnbuiltNav)
                             {
                                 <a href="@Url.Action("Index", "Availability")">Room Availability</a>

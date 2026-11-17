@@ -1,0 +1,227 @@
+@model BSIT3D_GUADES_Project_MVC.QCUCRAM_ViewModels.QCUCRAMStudentDashboardViewModel
+@using System
+@using System.Globalization
+@{
+    /* =====================================================================
+       QCU-CRAM  |  Views/Student/QCU-CRAM_Dashboard.cshtml
+       ---------------------------------------------------------------------
+       Port of Guades_QCUCram_Student/Guades_QCUCram_Dashboard.aspx.
+
+       Same five blocks, same order:
+         restriction banner  (pnlRestricted)
+         welcome strip       (lblWelcome + Quick Reserve + View Availability)
+         upcoming bookings   (litUpcoming)
+         recent bookings     (litRecent, the five newest)
+         availability glance (litGlance)
+         month calendar      (calBookings -> _QCU-CRAM_Calendar)
+       ===================================================================== */
+
+    ViewBag.Title = "Dashboard";
+
+    var bookingDayText = Model.BookingDay.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+}
+
+<div class="qcu-page-head">
+    <h2>Student Dashboard</h2>
+    <p>Your bookings and room availability at a glance</p>
+</div>
+
+@* ---- Restriction banner ---- *@
+@if (Model.IsRestricted)
+{
+    <div class="alert alert-danger">
+        <strong>Your account is restricted.</strong>
+        You cannot file new reservations
+        @if (Model.RestrictionLiftDate.HasValue)
+        {
+            <text>until @Model.RestrictionLiftDate.Value.ToString("MMM d, yyyy h:mm tt").</text>
+        }
+        else
+        {
+            <text>until a library assistant lifts the restriction.</text>
+        }
+        You have <strong>@Model.NoShowCount</strong> no-show
+        @(Model.NoShowCount == 1 ? "strike" : "strikes").
+        Please contact the library if you believe this is a mistake.
+    </div>
+}
+else if (Model.NoShowCount > 0)
+{
+    <div class="alert alert-warning">
+        <strong>Heads up.</strong>
+        You have <strong>@Model.NoShowCount</strong> no-show
+        @(Model.NoShowCount == 1 ? "strike" : "strikes") out of @Model.NoShowThreshold.
+        At @Model.NoShowThreshold your account is restricted for a week.
+        @Model.StrikesLeft more and you are barred from booking.
+    </div>
+}
+
+@* ---- Welcome + quick actions ---- *@
+<div class="qcu-welcome d-flex flex-wrap justify-content-between align-items-center mb-4">
+    <p class="lead mb-2 mb-md-0">
+        Welcome back, <strong>@Model.FirstName</strong>.
+        @if (Model.UnreadCount > 0)
+        {
+            <text>
+                You have
+                <a href="@Url.Action("Notifications", "Student")" class="qcu-welcome-link">
+                    @Model.UnreadCount unread notification@(Model.UnreadCount == 1 ? "" : "s")
+                </a>.
+            </text>
+        }
+    </p>
+    <div>
+        @if (Model.IsRestricted)
+        {
+            <span class="btn btn-cta btn-lg me-2 disabled" aria-disabled="true">Quick Reserve (@Model.BookingDayLabel)</span>
+        }
+        else
+        {
+            <a class="btn btn-cta btn-lg me-2"
+               href="@Url.Action("Reserve", "Student", new { date = bookingDayText })">
+                Quick Reserve (@Model.BookingDayLabel)
+            </a>
+        }
+        <a href="@Url.Action("Index", "Availability")" class="btn btn-outline-light btn-lg">View Availability</a>
+    </div>
+</div>
+
+<div class="row g-4">
+
+    @* ================= Left column: bookings ================= *@
+    <div class="col-lg-7">
+
+        <div class="card mb-4">
+            <div class="card-header"><strong>Upcoming bookings</strong></div>
+            <div class="card-body">
+                @if (Model.Upcoming.Count == 0)
+                {
+                    <p class="text-muted mb-0">
+                        You have no upcoming bookings.
+                        <a href="@Url.Action("Index", "Availability")">Check what is open</a>.
+                    </p>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table table-sm table-bordered align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th scope="col">#</th>
+                                    <th scope="col">Date</th>
+                                    <th scope="col">Time</th>
+                                    <th scope="col">Room</th>
+                                    <th scope="col">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in Model.Upcoming)
+                                {
+                                    <tr>
+                                        <td>@item.ReservationId</td>
+                                        <td class="text-nowrap">
+                                            @item.ReservationDate.ToString("MMM d, yyyy (ddd)", CultureInfo.InvariantCulture)
+                                        </td>
+                                        <td class="text-nowrap">@item.SlotLabel</td>
+                                        <td>@item.RoomName</td>
+                                        <td>@Html.Partial("_QCU-CRAM_StatusBadge", item.Status)</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-header">
+                <strong>Recent bookings</strong> <span class="text-muted">(last 5 submitted)</span>
+            </div>
+            <div class="card-body">
+                @if (Model.Recent.Count == 0)
+                {
+                    <p class="text-muted mb-0">You have not submitted a reservation yet.</p>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table table-sm table-bordered align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th scope="col">#</th>
+                                    <th scope="col">Date</th>
+                                    <th scope="col">Time</th>
+                                    <th scope="col">Room</th>
+                                    <th scope="col">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in Model.Recent)
+                                {
+                                    <tr>
+                                        <td>@item.ReservationId</td>
+                                        <td class="text-nowrap">
+                                            @item.ReservationDate.ToString("MMM d, yyyy (ddd)", CultureInfo.InvariantCulture)
+                                        </td>
+                                        <td class="text-nowrap">@item.SlotLabel</td>
+                                        <td>@item.RoomName</td>
+                                        <td>@Html.Partial("_QCU-CRAM_StatusBadge", item.Status)</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+
+                <p class="mt-3 mb-0">
+                    <a href="@Url.Action("MyReservations", "Student")">View all my reservations</a>
+                    @if (Model.TotalReservations > 0)
+                    {
+                        <span class="text-muted">(@Model.TotalReservations in total)</span>
+                    }
+                </p>
+            </div>
+        </div>
+    </div>
+
+    @* ================= Right column: glance + calendar ================= *@
+    <div class="col-lg-5">
+
+        <div class="card mb-4">
+            <div class="card-header">
+                <strong>Availability on @Model.BookingDayLabel</strong>
+            </div>
+            <div class="card-body">
+                @if (Model.Glance.Count == 0)
+                {
+                    <p class="text-muted mb-0">No active rooms are set up yet.</p>
+                }
+                else
+                {
+                    <ul class="list-unstyled mb-0 qcu-glance">
+                        @foreach (var row in Model.Glance)
+                        {
+                            <li class="d-flex justify-content-between align-items-center py-1">
+                                <span>@row.RoomName</span>
+                                <span class="badge @row.BadgeClass">@row.BadgeText</span>
+                            </li>
+                        }
+                    </ul>
+                    <p class="mt-3 mb-0">
+                        <a href="@Url.Action("Index", "Availability", new { date = bookingDayText })">
+                            Open the availability grid
+                        </a>
+                    </p>
+                }
+            </div>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-header"><strong>My booking calendar</strong></div>
+            <div class="card-body">
+                @Html.Partial("_QCU-CRAM_Calendar", Model.Calendar)
+            </div>
+        </div>
+    </div>
+</div>

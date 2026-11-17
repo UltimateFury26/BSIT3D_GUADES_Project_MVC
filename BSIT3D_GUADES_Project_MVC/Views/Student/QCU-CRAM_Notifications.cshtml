@@ -1,0 +1,135 @@
+@model BSIT3D_GUADES_Project_MVC.QCUCRAM_ViewModels.QCUCRAMNotificationsViewModel
+@using System
+@{
+    /* =====================================================================
+       QCU-CRAM  |  Views/Student/QCU-CRAM_Notifications.cshtml
+       ---------------------------------------------------------------------
+       Port of Guades_QCUCram_Student/Guades_QCUCram_Notifications.aspx.
+
+       Same pieces:
+         the "You have N unread out of M total." summary   (litSummary)
+         the All / Unread filter                           (ddlShow)
+         "Mark all as read"                                (btnMarkAll)
+         the fifteen-row GridView                          (gvNotifications, PageSize = 15)
+         a per-row "Mark as read" and a link to My Reservations
+       Unread rows are shown in bold, like the RowDataBound handler did.
+       ===================================================================== */
+
+    ViewBag.Title = "Notifications";
+
+    var pager = Model.Pager;
+}
+
+<div class="qcu-page-head">
+    <h2>Notifications</h2>
+    <p>Updates about your reservations</p>
+</div>
+
+<p class="qcu-soft">@Model.SummaryLine</p>
+
+<div class="qcu-toolbar row g-2 align-items-end mb-3">
+
+    <div class="col-auto">
+        <label class="form-label" for="qcuShow">Show</label>
+        <form method="get" action="@Url.Action("Notifications", "Student")" class="d-flex gap-2">
+            <select id="qcuShow" name="unread" class="form-select" onchange="this.form.submit()">
+                <option value="false" selected="@(Model.UnreadOnly ? null : "selected")">All notifications</option>
+                <option value="true" selected="@(Model.UnreadOnly ? "selected" : null)">Unread only</option>
+            </select>
+            <noscript><button type="submit" class="btn btn-outline-secondary">Apply</button></noscript>
+        </form>
+    </div>
+
+    <div class="col-auto">
+        @using (Html.BeginForm("MarkAllRead", "Student", FormMethod.Post, new { @class = "d-inline" }))
+        {
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="unread" value="@Model.UnreadOnly.ToString().ToLowerInvariant()" />
+            <button type="submit" class="btn btn-outline-primary"
+                    @(Model.UnreadCount == 0 ? "disabled" : null)>
+                Mark all as read
+            </button>
+        }
+    </div>
+
+    <div class="col-auto ms-md-auto text-muted small">
+        @Model.TotalItems notification@(Model.TotalItems == 1 ? "" : "s")
+        @(Model.UnreadOnly ? "unread" : "in total")
+    </div>
+</div>
+
+<div class="table-responsive">
+    @if (Model.IsEmpty)
+    {
+        <div class="alert alert-info mb-0">
+            @if (Model.UnreadOnly)
+            {
+                <text>You have no unread notifications. <a href="@Url.Action("Notifications", "Student")">Show all</a>.</text>
+            }
+            else
+            {
+                <text>You have no notifications.</text>
+            }
+        </div>
+    }
+    else
+    {
+        <table class="table table-bordered table-striped align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th scope="col" style="width:80px;">&nbsp;</th>
+                    <th scope="col">Message</th>
+                    <th scope="col" style="width:180px;">Received</th>
+                    <th scope="col" style="width:230px;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model.Items)
+                {
+                    <tr class="@(item.IsRead ? string.Empty : "fw-semibold")">
+                        <td>
+                            @if (item.IsRead)
+                            {
+                                <span class="badge text-bg-secondary">Read</span>
+                            }
+                            else
+                            {
+                                <span class="badge text-bg-primary">New</span>
+                            }
+                        </td>
+                        <td>@item.Message</td>
+                        <td class="text-nowrap">@item.WhenText</td>
+                        <td class="text-nowrap">
+                            @if (!item.IsRead)
+                            {
+                                using (Html.BeginForm("MarkRead", "Student", FormMethod.Post, new { @class = "d-inline" }))
+                                {
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@item.NotificationId" />
+                                    <input type="hidden" name="unread" value="@Model.UnreadOnly.ToString().ToLowerInvariant()" />
+                                    <input type="hidden" name="page" value="@(pager == null ? 1 : pager.Page)" />
+                                    <button type="submit" class="btn btn-sm btn-outline-secondary">Mark as read</button>
+                                }
+                            }
+
+                            @if (item.ReservationId.HasValue)
+                            {
+                                <a class="btn btn-sm btn-outline-primary"
+                                   href="@Url.Action("MyReservations", "Student")">
+                                    View my reservations
+                                </a>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>
+
+@if (pager != null && pager.HasPages)
+{
+    <div class="mt-3">
+        @Html.Partial("_QCU-CRAM_Pager", pager)
+    </div>
+}

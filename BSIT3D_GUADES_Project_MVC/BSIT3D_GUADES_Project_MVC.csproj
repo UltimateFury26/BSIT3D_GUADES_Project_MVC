@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="..\packages\EntityFramework.6.5.2\build\EntityFramework.props" Condition="Exists('..\packages\EntityFramework.6.5.2\build\EntityFramework.props')" />
   <Import Project="..\packages\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.2.0.1\build\net46\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.props" Condition="Exists('..\packages\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.2.0.1\build\net46\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.props')" />
@@ -186,6 +186,17 @@
     <Compile Include="QCU-CRAM_Services\QCUCRAM_MaintenanceService.cs" />
     <Compile Include="QCU-CRAM_ViewModels\QCUCRAM_AccountViewModels.cs" />
     <Compile Include="QCU-CRAM_ViewModels\QCU-CRAM_PagerViewModel.cs" />
+    <Compile Include="QCU-CRAM_Services\QCU-CRAM_AvailabilityService.cs" />
+    <Compile Include="QCU-CRAM_Services\QCU-CRAM_StudentService.cs" />
+    <Compile Include="QCU-CRAM_ViewModels\QCU-CRAM_AvailabilityViewModel.cs" />
+    <Compile Include="QCU-CRAM_ViewModels\QCU-CRAM_CalendarCell.cs" />
+    <Compile Include="QCU-CRAM_ViewModels\QCU-CRAM_StudentDashboardViewModel.cs" />
+    <Compile Include="QCU-CRAM_ViewModels\QCU-CRAM_ReserveViewModel.cs" />
+    <Compile Include="QCU-CRAM_ViewModels\QCU-CRAM_MyReservationsViewModel.cs" />
+    <Compile Include="QCU-CRAM_ViewModels\QCU-CRAM_NotificationsViewModel.cs" />
+    <Compile Include="QCU-CRAM_ViewModels\QCU-CRAM_ProfileViewModel.cs" />
+    <Compile Include="Controllers\QCU-CRAM_AvailabilityController.cs" />
+    <Compile Include="Controllers\QCU-CRAM_StudentController.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Content\bootstrap-grid.css" />
@@ -252,6 +263,14 @@
     <Content Include="Views\Shared\_QCU-CRAM_ValidationSummary.cshtml" />
     <Content Include="Views\Shared\_QCU-CRAM_StatusBadge.cshtml" />
     <Content Include="Views\Shared\_QCU-CRAM_Pager.cshtml" />
+    <Content Include="Views\Availability\QCU-CRAM_Index.cshtml" />
+    <Content Include="Views\Student\QCU-CRAM_Dashboard.cshtml" />
+    <Content Include="Views\Student\QCU-CRAM_Reserve.cshtml" />
+    <Content Include="Views\Student\QCU-CRAM_MyReservations.cshtml" />
+    <Content Include="Views\Student\QCU-CRAM_Notifications.cshtml" />
+    <Content Include="Views\Student\QCU-CRAM_Profile.cshtml" />
+    <Content Include="Views\Shared\_QCU-CRAM_Calendar.cshtml" />
+    <Content Include="Scripts\QCU-CRAM_reserve.js" />
     <Content Include="Views\Shared\QCU-CRAM_Error.cshtml" />
   </ItemGroup>
   <ItemGroup>
@@ -263,6 +282,8 @@
     <Folder Include="QCU-CRAM_Security\" />
     <Folder Include="QCU-CRAM_Services\" />
     <Folder Include="QCU-CRAM_ViewModels\" />
+    <Folder Include="Views\Availability\" />
+    <Folder Include="Views\Student\" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Content\bootstrap.rtl.min.css.map" />

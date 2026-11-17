@@ -1,0 +1,163 @@
+@model BSIT3D_GUADES_Project_MVC.QCUCRAM_ViewModels.QCUCRAMMyReservationsViewModel
+@using System
+@using System.Globalization
+@{
+    /* =====================================================================
+       QCU-CRAM  |  Views/Student/QCU-CRAM_MyReservations.cshtml
+       ---------------------------------------------------------------------
+       Port of Guades_QCUCram_Student/Guades_QCUCram_MyReservations.aspx.
+
+       Same pieces:
+         status filter drop-down   (ddlStatus, AutoPostBack)
+         "New reservation" button
+         ten-row GridView          (gvReservations, PageSize = 10)
+         Cancel button             (only while the booking can still be called off)
+         Print link                (reports/print-booking/{id})
+       ===================================================================== */
+
+    ViewBag.Title = "My Reservations";
+
+    var pager = Model.Pager;
+}
+
+<div class="qcu-page-head">
+    <h2>My Reservations</h2>
+    <p>Track, print or cancel your room requests</p>
+</div>
+
+@* ---- "Request #N was submitted" confirmation ---- *@
+@if (Model.CreatedId.HasValue && Model.CreatedId.Value > 0)
+{
+    <div class="alert alert-success">
+        <strong>Request #@Model.CreatedId.Value was submitted.</strong>
+        It is now <em>Pending</em> and will be reviewed by a library assistant.
+        You will get a notification when it is approved or declined.
+    </div>
+}
+
+<div class="qcu-toolbar row g-2 align-items-end mb-3">
+
+    <div class="col-auto">
+        <label class="form-label" for="qcuStatusFilter">Filter by status</label>
+        <form method="get" action="@Url.Action("MyReservations", "Student")" class="d-flex gap-2">
+            <select id="qcuStatusFilter" name="status" class="form-select" onchange="this.form.submit()">
+                <option value="" selected="@(string.IsNullOrWhiteSpace(Model.StatusFilter) ? "selected" : null)">All statuses</option>
+                @foreach (var status in Model.StatusChoices)
+                {
+                    var label = status == "CheckedIn" ? "Checked in" : status;
+                    <option value="@status" selected="@(status == Model.StatusFilter ? "selected" : null)">@label</option>
+                }
+            </select>
+            <noscript><button type="submit" class="btn btn-outline-secondary">Apply</button></noscript>
+        </form>
+    </div>
+
+    <div class="col-auto">
+        <a class="btn btn-primary" href="@Url.Action("Reserve", "Student")">New reservation</a>
+    </div>
+
+    @if (Model.HasFilter)
+    {
+        <div class="col-auto">
+            <a class="btn btn-link" href="@Url.Action("MyReservations", "Student")">Clear filter</a>
+        </div>
+    }
+
+    <div class="col-auto ms-md-auto text-muted small">
+        @Model.TotalItems reservation@(Model.TotalItems == 1 ? "" : "s")
+        @(Model.HasFilter ? "with this status" : "in total")
+    </div>
+</div>
+
+<div class="table-responsive">
+    @if (Model.IsEmpty)
+    {
+        <div class="alert alert-info mb-0">
+            @if (Model.HasFilter)
+            {
+                <text>You have no reservations with the status <strong>@Model.StatusFilter</strong>.</text>
+            }
+            else
+            {
+                <text>You have no reservations to show.</text>
+            }
+        </div>
+    }
+    else
+    {
+        <table class="table table-bordered table-striped align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th scope="col">#</th>
+                    <th scope="col">Date</th>
+                    <th scope="col">Time</th>
+                    <th scope="col">Room</th>
+                    <th scope="col">Members</th>
+                    <th scope="col">Purpose</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var row in Model.Items)
+                {
+                    var item = row.Item;
+                    if (item == null) { continue; }
+
+                    <tr>
+                        <td>@item.ReservationId</td>
+                        <td class="text-nowrap">@row.DateLabel</td>
+                        <td class="text-nowrap">@item.SlotLabel</td>
+                        <td>@item.RoomName</td>
+                        <td class="text-nowrap">@row.MembersLabel</td>
+                        <td>@item.Purpose</td>
+                        <td>@Html.Partial("_QCU-CRAM_StatusBadge", item.Status)</td>
+                        <td class="text-nowrap">
+                            @if (row.CanCancel)
+                            {
+                                using (Html.BeginForm("Cancel", "Student", FormMethod.Post,
+                                                      new { @class = "d-inline" }))
+                                {
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@row.ReservationId" />
+                                    <input type="hidden" name="status" value="@Model.StatusFilter" />
+                                    <input type="hidden" name="page" value="@(pager == null ? 1 : pager.Page)" />
+                                    <button type="submit" class="btn btn-sm btn-outline-danger"
+                                            onclick="return confirm('Cancel this reservation?\n\nThe room and time slot are released. This cannot be undone.');">
+                                        Cancel
+                                    </button>
+                                }
+                            }
+                            else
+                            {
+                                <span class="text-muted small"
+                                      title="Started at @row.SlotStart.ToString("MMM d, yyyy h:mm tt", CultureInfo.InvariantCulture)">
+                                    &mdash;
+                                </span>
+                            }
+
+                            @* Reports/PrintBooking arrives in Phase 08. Url.Action returns null
+                               until then, so the button simply does not render - no dead link. *@
+                            string printUrl = Url.Action("PrintBooking", "Reports", new { id = row.ReservationId });
+                            if (!string.IsNullOrEmpty(printUrl))
+                            {
+                                <a class="btn btn-sm btn-outline-secondary"
+                                   href="@printUrl"
+                                   title="Print reservation #@row.ReservationId">
+                                    Print
+                                </a>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>
+
+@if (pager != null && pager.HasPages)
+{
+    <div class="mt-3">
+        @Html.Partial("_QCU-CRAM_Pager", pager)
+    </div>
+}

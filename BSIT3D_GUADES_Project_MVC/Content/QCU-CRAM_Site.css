@@ -2855,3 +2855,127 @@ main > .qcu-toast {
     background: #f1f2f4;
     color: var(--qcu-muted);
 }
+
+/* =====================================================================
+   Phase 06 - Availability grid and the student module
+   ---------------------------------------------------------------------
+   The grid itself reuses .qcu-grid (the Web Forms table look). These rules
+   add the per-cell state colours the guide specifies, plus a handful of
+   helpers for the new calendar markup and the dashboard glance list.
+   ===================================================================== */
+
+.qcu-availability td.qcu-cell { position: relative; font-size: .8125rem; }
+.qcu-cell--open        { background: #e7f6ec; color: #1a7f37; }
+.qcu-cell--pending     { background: #fff4e5; color: #b26a00; }
+.qcu-cell--taken       { background: #fdeceb; color: #b42318; }
+.qcu-cell--closed      { background: #f1f2f4; color: #6b7280; }
+.qcu-cell--unavailable { background: #fafafa; color: #9ca3af; }
+
+/* A student's own request or booking: keep the state colour but outline it. */
+.qcu-cell--mine {
+    background: #e8f0fb;
+    color: #00509e;
+    box-shadow: inset 0 0 0 2px #00509e;
+}
+
+/* The cell Reserve linked back to. */
+.qcu-cell--highlight {
+    box-shadow: inset 0 0 0 2px var(--qcu-orange);
+}
+
+/* The "Open - Book" link must fill the cell so the whole square is clickable. */
+.qcu-availability td.qcu-cell > a {
+    display: block;
+    margin: -.5rem -.25rem;
+    padding: .5rem .25rem;
+    color: inherit;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+    .qcu-availability td.qcu-cell > a:hover,
+    .qcu-availability td.qcu-cell > a:focus {
+        text-decoration: underline;
+    }
+
+/* The small second line (requester name for an admin, "Your request" for a student). */
+.qcu-availability td.qcu-cell small {
+    display: block;
+    font-size: .6875rem;
+    line-height: 1.2;
+    opacity: .85;
+}
+
+/* ---------- Dashboard calendar (Views/Shared/_QCU-CRAM_Calendar.cshtml) ---------- */
+
+.qcu-cal-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .5rem;
+    margin-bottom: .5rem;
+}
+
+.qcu-cal-title {
+    font-weight: 700;
+    color: var(--qcu-blue);
+}
+
+.qcu-cal td.qcu-cal-day {
+    position: relative;
+    cursor: default;
+    color: #fff;
+}
+
+.qcu-cal td.qcu-cal-blank {
+    background: transparent;
+}
+
+/* Today is outlined in orange, exactly like TodayDayStyle on the Web Forms control. */
+.qcu-cal td.qcu-cal-today {
+    outline: 2px solid var(--qcu-orange);
+    outline-offset: -2px;
+}
+
+.qcu-cal-num {
+    display: block;
+    font-weight: 600;
+}
+
+.qcu-cal-count {
+    position: absolute;
+    top: 1px;
+    right: 3px;
+    font-size: .625rem;
+    font-weight: 700;
+    opacity: .9;
+}
+
+/* ---------- Dashboard availability glance ---------- */
+
+.qcu-glance > li + li {
+    border-top: 1px solid var(--qcu-border, #e6e9ee);
+}
+
+.qcu-welcome-link {
+    color: inherit;
+    font-weight: 700;
+    text-decoration: underline;
+}
+
+/* ---------- Reserve: the member table ---------- */
+
+#qcuMemberBody td {
+    vertical-align: middle;
+}
+
+.qcu-member-num {
+    font-weight: 600;
+    color: var(--qcu-muted);
+    text-align: center;
+}
+
+/* A read-only date field still needs to look like a field. */
+input[type="date"][readonly] {
+    background: var(--qcu-card-soft, #f7f8fa);
+}

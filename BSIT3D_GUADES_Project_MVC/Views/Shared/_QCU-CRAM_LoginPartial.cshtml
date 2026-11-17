@@ -27,7 +27,7 @@
 
     var unread = (ViewBag.QCUCRAM_UnreadCount is int) ? (int)ViewBag.QCUCRAM_UnreadCount : 0;
 
-    var showUnbuiltNav = false;
+    var showUnbuiltNav = true;
 }
 
 @* =====================  LEFT: page links  ===================== *@
@@ -43,7 +43,7 @@
     @* ---- Student / Faculty / Visitor (master: phStudent) ---- *@
     @if (isStudent)
     {
-        <li class="nav-item"><a class="nav-link" href="@Url.Action("Index", "StudentDashboard")">Dashboard</a></li>
+        <li class="nav-item"><a class="nav-link" href="@Url.Action("Dashboard", "Student")">Dashboard</a></li>
 
         if (showUnbuiltNav)
         {
