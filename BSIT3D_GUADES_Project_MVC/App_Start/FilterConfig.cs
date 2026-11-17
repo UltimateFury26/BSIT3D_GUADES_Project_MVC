@@ -1,5 +1,4 @@
-﻿using System.Web;
-using System.Web.Mvc;
+﻿using System.Web.Mvc;
 
 namespace BSIT3D_GUADES_Project_MVC
 {
@@ -7,6 +6,7 @@ namespace BSIT3D_GUADES_Project_MVC
     {
         public static void RegisterGlobalFilters(GlobalFilterCollection filters)
         {
+            // Phase 10 swaps this for QCUCRAMHandleErrorAttribute.
             filters.Add(new HandleErrorAttribute());
         }
     }

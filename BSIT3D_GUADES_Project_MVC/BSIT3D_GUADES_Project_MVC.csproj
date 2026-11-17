@@ -207,6 +207,13 @@
     <Content Include="Content\bootstrap-grid.min.css.map" />
     <Content Include="Content\bootstrap-grid.css.map" />
     <None Include="packages.config" />
+    <None Include="QCU-CRAM_Data\.keep" />
+    <None Include="QCU-CRAM_Services\.keep" />
+    <None Include="QCU-CRAM_Helpers\.keep" />
+    <None Include="QCU-CRAM_Filters\.keep" />
+    <None Include="QCU-CRAM_ViewModels\.keep" />
+    <None Include="QCU-CRAM_Mappings\.keep" />
+    <None Include="QCU-CRAM_Docs\QCU-CRAM_Phase-01_Notes.md" />
     <Content Include="Scripts\bootstrap.min.js.map" />
     <Content Include="Scripts\bootstrap.js.map" />
     <Content Include="Scripts\bootstrap.esm.min.js.map" />

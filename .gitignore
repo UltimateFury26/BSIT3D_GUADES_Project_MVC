@@ -361,3 +361,7 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+# QCU-CRAM
+QCU-CRAM_Docs/QCU-CRAM_local-*.md
+QCU-CRAM_Phase-*.zip
