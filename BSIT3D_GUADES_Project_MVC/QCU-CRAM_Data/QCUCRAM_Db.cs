@@ -157,6 +157,28 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Data
             return (value == null || value == DBNull.Value) ? 0 : Convert.ToInt32(value);
         }
 
+        /// <summary>
+        /// Self-opening overload. Creates and disposes its own connection, so callers that
+        /// are NOT already inside a transaction do not have to construct a SqlConnection
+        /// themselves. If a connection or transaction is already in scope, use the
+        /// overload above instead so the work stays on that same connection.
+        /// </summary>
+        public static object Scalar(string sql, params SqlParameter[] parameters)
+        {
+            using (SqlConnection con = new SqlConnection(QCUCRAM_AppSettings.ConnectionString))
+            {
+                con.Open();
+                return Scalar(con, null, sql, parameters);
+            }
+        }
+
+        /// <summary>Self-opening counterpart of <see cref="ScalarInt(SqlConnection, SqlTransaction, string, SqlParameter[])"/>.</summary>
+        public static int ScalarInt(string sql, params SqlParameter[] parameters)
+        {
+            object value = Scalar(sql, parameters);
+            return (value == null || value == DBNull.Value) ? 0 : Convert.ToInt32(value);
+        }
+
         public static DataTable Table(SqlConnection con, SqlTransaction tx, string sql, params SqlParameter[] parameters)
         {
             using (SqlCommand cmd = new SqlCommand(sql, con, tx))

@@ -719,13 +719,11 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Data
         private static object ScalarAny(SqlConnection con, SqlTransaction tx, string sql,
                                         params SqlParameter[] parameters)
         {
+            // No connection in scope: let QCUCRAM_Db open and dispose one itself rather
+            // than constructing a second SqlConnection here.
             if (con == null)
             {
-                using (SqlConnection own = new SqlConnection(QCUCRAM_AppSettings.ConnectionString))
-                {
-                    own.Open();
-                    return QCUCRAM_Db.Scalar(own, null, sql, parameters);
-                }
+                return QCUCRAM_Db.Scalar(sql, parameters);
             }
             return QCUCRAM_Db.Scalar(con, tx, sql, parameters);
         }

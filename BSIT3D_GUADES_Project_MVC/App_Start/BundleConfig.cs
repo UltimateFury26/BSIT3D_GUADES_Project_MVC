@@ -51,6 +51,9 @@ namespace BSIT3D_GUADES_Project_MVC
                 .Include("~/Scripts/jquery.validate.js")
                 .Include("~/Scripts/jquery.validate.unobtrusive.js"));
 
+            bundles.Add(new ScriptBundle("~/bundles/QCU-CRAM_reserve")
+                .Include("~/Scripts/QCU-CRAM_reserve.js"));
+
             bundles.Add(new ScriptBundle("~/bundles/QCU-CRAM_js")
                 .Include("~/bundles/QCU-CRAM_jquery")
                 .Include("~/bundles/QCU-CRAM_bootstrap")

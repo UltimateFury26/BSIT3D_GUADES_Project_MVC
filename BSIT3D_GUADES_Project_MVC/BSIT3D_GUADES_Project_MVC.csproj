@@ -245,11 +245,12 @@
     <Content Include="Content\bootstrap.rtl.min.css" />
     <Content Include="favicon.ico" />
     <Content Include="Global.asax" />
-    <Content Include="Content\Site.css" />
     <Content Include="Content\QCU-CRAM_Site.css" />
     <Content Include="Content\QCU-CRAM_Print.css" />
     <Content Include="Content\images\QCU-CRAM_qcu-logo.png" />
+    <Content Include="Content\images\QCU-CRAM_favicon-16.png" />
     <Content Include="Content\images\QCU-CRAM_favicon-32.png" />
+    <Content Include="Content\images\QCU-CRAM_favicon-192.png" />
     <Content Include="Content\images\QCU-CRAM_apple-touch-icon.png" />
     <Content Include="Content\images\QCU-CRAM_favicon.ico" />
     <Content Include="Scripts\bootstrap.bundle.js" />
