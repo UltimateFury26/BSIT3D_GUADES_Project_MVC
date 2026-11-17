@@ -194,6 +194,90 @@ namespace BSIT3D_GUADES_Project_MVC.Controllers
             return View(model);
         }
 
+        // ------------------------------------------------------------------
+        //  GET /account/changepassword
+        //  Phase 04 was missing this action even though the navigation dropdown
+        //  already linked to it, so the link 404'd. Both roles share the page.
+        // ------------------------------------------------------------------
+        [HttpGet]
+        [QCUCRAM_RequireLogin]
+        public ActionResult ChangePassword()
+        {
+            return View(new QCUCRAM_ChangePasswordViewModel());
+        }
+
+        // ------------------------------------------------------------------
+        //  POST /account/changepassword
+        // ------------------------------------------------------------------
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [QCUCRAM_RequireLogin]
+        public ActionResult ChangePassword(QCUCRAM_ChangePasswordViewModel model)
+        {
+            if (model == null) { model = new QCUCRAM_ChangePasswordViewModel(); }
+            if (!ModelState.IsValid) { return View(model); }
+
+            // Same policy check the repositories run, but done first so the user gets
+            // the precise reason instead of a generic rejection.
+            string strength = QCUCRAM_PasswordHash.GetStrengthMessage(model.NewPassword);
+            if (strength != null)
+            {
+                ModelState.AddModelError("NewPassword", strength);
+                return View(model);
+            }
+
+            int code;
+            try
+            {
+                if (QCUCRAM_Session.IsAdmin)
+                {
+                    code = new QCUCRAM_AdminUserRepository().ChangePassword(
+                        QCUCRAM_Session.UserId, model.CurrentPassword, model.NewPassword);
+                }
+                else
+                {
+                    code = new QCUCRAM_StudentRepository().ChangePassword(
+                        QCUCRAM_Session.UserId, model.CurrentPassword, model.NewPassword);
+                }
+            }
+            catch (Exception ex)
+            {
+                Trace.TraceError("QCU-CRAM change password failed: " + ex);
+                ModelState.AddModelError(string.Empty,
+                    "Sorry, we could not change your password right now. Please try again.");
+                return View(model);
+            }
+
+            switch (code)
+            {
+                case 0:
+                    Flash("Your password was changed.");
+                    return Redirect(Url.Content(QCUCRAM_Session.HomeFor(QCUCRAM_Session.Role)));
+
+                case 1:
+                    ModelState.AddModelError("CurrentPassword", "Your current password is not correct.");
+                    break;
+
+                case 2:
+                    ModelState.AddModelError(string.Empty,
+                        "Your account could not be found. Please sign in again.");
+                    break;
+
+                case 3:
+                    ModelState.AddModelError("NewPassword",
+                        QCUCRAM_PasswordHash.GetStrengthMessage(model.NewPassword)
+                        ?? "The new password was not accepted.");
+                    break;
+
+                default:
+                    ModelState.AddModelError("NewPassword",
+                        "The new password was not accepted. Use at least 8 characters.");
+                    break;
+            }
+
+            return View(model);
+        }
+
         // ==================================================================
         //  Sign-in helpers
         // ==================================================================

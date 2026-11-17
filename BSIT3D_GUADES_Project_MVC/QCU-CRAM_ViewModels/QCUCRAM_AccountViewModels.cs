@@ -55,6 +55,31 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_ViewModels
         }
     }
 
+    /// <summary>
+    /// Phase 04 - the Change Password form (the Web Forms page was
+    /// Guades_QCUCram_Account/Guades_QCUCram_ChangePassword.aspx). It is used by
+    /// both roles, so it only carries the three password fields.
+    /// </summary>
+    public class QCUCRAM_ChangePasswordViewModel
+    {
+        [Required(ErrorMessage = "Please enter your current password.")]
+        [DataType(DataType.Password)]
+        [Display(Name = "Current Password")]
+        public string CurrentPassword { get; set; }
+
+        [Required(ErrorMessage = "Please choose a new password.")]
+        [StringLength(64, MinimumLength = 8, ErrorMessage = "The new password must be at least 8 characters.")]
+        [DataType(DataType.Password)]
+        [Display(Name = "New Password")]
+        public string NewPassword { get; set; }
+
+        [Required(ErrorMessage = "Please re-type the new password.")]
+        [DataType(DataType.Password)]
+        [Display(Name = "Confirm New Password")]
+        [Compare("NewPassword", ErrorMessage = "The two new passwords do not match.")]
+        public string ConfirmPassword { get; set; }
+    }
+
     /// <summary>Everything the registration form posts.</summary>
     public class QCUCRAM_RegisterViewModel
     {

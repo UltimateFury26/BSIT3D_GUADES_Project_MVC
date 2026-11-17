@@ -126,6 +126,17 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Security
             }
         }
 
+        /// <summary>
+        /// Rewrites the cached display name after a self-edit (Phase 08, Admin Accounts)
+        /// so the header shows the new name on the very next request.
+        /// </summary>
+        public static void RefreshName(string displayName)
+        {
+            HttpContextBase http = Current;
+            if (http == null || http.Session == null) { return; }
+            http.Session[QCUCRAM_Constants.SessionKeys.UserName] = displayName ?? string.Empty;
+        }
+
         /// <summary>True only when a role AND a positive id are present - the original's test.</summary>
         public static bool IsAuthenticated
         {

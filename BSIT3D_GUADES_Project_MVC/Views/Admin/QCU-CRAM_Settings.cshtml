@@ -1,0 +1,80 @@
+@model BSIT3D_GUADES_Project_MVC.QCUCRAM_ViewModels.QCUCRAMSettingsViewModel
+@using System
+@{
+    /* =====================================================================
+       QCU-CRAM  |  Views/Admin/QCU-CRAM_Settings.cshtml
+       ---------------------------------------------------------------------
+       Port of Guades_QCUCram_Admin/Guades_QCUCram_Settings.aspx.
+
+       The Settings table is a plain key/value store, so the page renders one
+       row per setting with the value in a number box and the allowed range
+       spelled out. Every value must be a whole number inside its range - the
+       server re-checks and bounces back with the reason.
+       ===================================================================== */
+
+    ViewBag.Title = "Settings";
+    Layout = "~/Views/Shared/_QCU-CRAM_Layout.cshtml";
+}
+
+<div class="qcu-page-head">
+    <div>
+        <h1 class="qcu-page-title">Settings</h1>
+        <p class="qcu-page-sub">Booking rules and the developer clock offset.</p>
+    </div>
+</div>
+
+@if (!string.IsNullOrWhiteSpace(Model.Error))
+{
+    <div class="qcu-alert qcu-alert--error" role="alert">@Model.Error</div>
+}
+
+@using (Html.BeginForm("Settings", "AdminSetup", FormMethod.Post, new { @class = "qcu-form" }))
+{
+    @Html.AntiForgeryToken()
+
+    <section class="qcu-panel">
+        <header class="qcu-panel__head">
+            <h2>Rule values</h2>
+        </header>
+
+        @if (Model.Rows.Count == 0)
+        {
+            <p class="qcu-empty">No settings have been seeded yet.</p>
+        }
+        else
+        {
+            <table class="qcu-table qcu-table--kv">
+                <thead>
+                    <tr>
+                        <th>Setting</th>
+                        <th>Value</th>
+                        <th>Allowed range</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var row in Model.Rows)
+                    {
+                        <tr>
+                            <td>
+                                <strong>@row.Key</strong>
+                                <div class="qcu-hint">@row.Description</div>
+                            </td>
+                            <td>
+                                <input type="number" class="form-control qcu-input--num"
+                                       name="s_@row.Key" value="@row.Value"
+                                       min="@row.Min" max="@row.Max" step="1"
+                                       aria-label="@row.Key" />
+                            </td>
+                            <td>@row.RangeText</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </section>
+
+    <div class="qcu-form__actions">
+        <button type="submit" class="qcu-btn qcu-btn--primary">Save settings</button>
+        <a class="qcu-btn qcu-btn--ghost" href="@Url.Action("Settings")">Discard changes</a>
+    </div>
+}

@@ -21,6 +21,14 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Security
 
             if (!QCUCRAM_Session.IsAuthenticated) { return; }
 
+            // A guest-only controller may still host one signed-in-only action -
+            // AccountController.ChangePassword is the one that does. When the action
+            // carries [QCUCRAM_RequireLogin] the guest bounce must not run, otherwise
+            // a signed-in user could never open the change-password form.
+            bool needsLogin = filterContext.ActionDescriptor
+                .GetCustomAttributes(typeof(QCUCRAM_RequireLoginAttribute), true).Length > 0;
+            if (needsLogin) { return; }
+
             string code = filterContext.HttpContext.Request.QueryString[QCUCRAM_Constants.QueryKeys.Message];
             if (!string.IsNullOrWhiteSpace(code)) { return; }
 

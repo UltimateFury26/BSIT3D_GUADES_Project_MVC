@@ -3115,3 +3115,45 @@ input[type="date"][readonly] {
 .qcu-timeline__note { display:block; margin-top:2px; font-style:italic; }
 
 /* ================================================= end admin (phase 7) */
+
+/* ======================================================= setup forms (phase 8) */
+.qcu-panel__body { padding:16px 18px; }
+.qcu-panel--danger { border-color:#fecaca; background:#fff7f7; }
+.qcu-panel--danger .qcu-panel__head { border-bottom-color:#fecaca; }
+.qcu-table--kv th { width:220px; background:transparent; text-transform:none;
+                    letter-spacing:0; font-size:.82rem; color:var(--qcu-muted);
+                    font-weight:600; }
+.qcu-table--kv td, .qcu-table--kv th { border-bottom:1px dashed var(--qcu-border); }
+.qcu-table--kv tr:last-child td, .qcu-table--kv tr:last-child th { border-bottom:0; }
+
+.qcu-form__row { display:flex; gap:14px; flex-wrap:wrap; }
+.qcu-form__row > div { flex:1 1 180px; }
+/* a bare label directly inside a row takes its own line, so the field below it
+   still fills the width instead of sitting beside the caption */
+.qcu-form__row > label { flex:1 1 100%; margin-bottom:-8px; }
+.qcu-form__row > input, .qcu-form__row > select, .qcu-form__row > textarea { flex:1 1 100%; }
+.qcu-form__row--split > div { flex:1 1 0; min-width:0; }
+.qcu-form__row--narrow > div { flex:0 0 auto; }
+.qcu-form__actions { display:flex; justify-content:flex-end; gap:10px;
+                     margin-top:22px; padding-top:16px;
+                     border-top:1px solid var(--qcu-border); }
+.qcu-btn-row { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
+.qcu-btn-row--danger { margin-top:20px; padding-top:16px;
+                       border-top:1px dashed var(--qcu-border); }
+.qcu-input--num { width:110px; }
+
+.qcu-filter { display:flex; flex-wrap:wrap; gap:10px; align-items:flex-end; }
+.qcu-filter > label { display:flex; flex-direction:column; gap:4px;
+                      font-size:.78rem; font-weight:600; text-transform:uppercase;
+                      letter-spacing:.04em; color:var(--qcu-muted); }
+
+.qcu-switch { display:flex; align-items:center; gap:10px; margin:16px 0 0;
+              font-size:.9rem; cursor:pointer; }
+.qcu-switch input { width:18px; height:18px; }
+
+.qcu-alert { padding:10px 14px; border-radius:10px; font-size:.88rem; margin:0 0 14px; }
+.qcu-alert--error   { background:#fee2e2; color:#991b1b; border:1px solid #fecaca; }
+.qcu-alert--success { background:#d1fae5; color:#065f46; border:1px solid #a7f3d0; }
+.qcu-alert--info    { background:#e0f2fe; color:#075985; border:1px solid #bae6fd; }
+
+/* ================================================ end setup forms (phase 8) */

@@ -1,0 +1,32 @@
+@using System
+@{
+    /* =====================================================================
+       QCU-CRAM  |  Views/Shared/_QCU-CRAM_LoginLayout.cshtml
+       ---------------------------------------------------------------------
+       Phase 04 was supposed to ship this file and never did, which is why the
+       login and register pages fell back to the main layout and rendered as a
+       generic Bootstrap card instead of the maroon/blue QCU auth card from
+       Guades_QCUCram_Account/Guades_QCUCram_Login.aspx.
+
+       The original Web Forms login page did NOT use a separate master page.
+       It used Guades_QCUCram_Site.Master and simply hid the blue nav bar
+       (Site.Master.cs: NavExtraClass -> "qcu-nav-hidden" for Login/Register
+       when nobody is signed in). That is exactly what _QCU-CRAM_Layout.cshtml
+       already does through its hideNav flag.
+
+       So this file is a thin nested layout: it keeps the real header, footer
+       and dev-clock banner, and only adds the .qcu-auth centring wrapper that
+       the auth card needs. Razor supports nested layouts, so assigning
+       Layout here composes on top of the main layout instead of replacing it.
+       ===================================================================== */
+
+    Layout = "~/Views/Shared/_QCU-CRAM_Layout.cshtml";
+}
+
+<div class="qcu-auth">
+    @RenderBody()
+</div>
+
+@section scripts {
+    @RenderSection("scripts", required: false)
+}

@@ -9,7 +9,7 @@ using BSIT3D_GUADES_Project_MVC.QCUCRAM_Helpers;
 namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Data
 {
     /// <summary>
-    /// The single place that knows how to talk to Guades_QCUCram_DB.
+    /// The single place that knows how to talk to QCU-CRAM_DB.
     ///
     /// QCU-CRAM has no stored procedures (unlike the FTQuiz2 guide), so the mapping rule is:
     ///   * plain reads with no business rule  -> LINQ on Context, or Query&lt;T&gt; for shaped rows

@@ -1,0 +1,78 @@
+@model BSIT3D_GUADES_Project_MVC.QCUCRAM_ViewModels.QCUCRAM_SetupModalViewModel
+@using System
+@{
+    /* =====================================================================
+       QCU-CRAM  |  Views/Admin/_QCU-CRAM_SetupModal.cshtml
+       ---------------------------------------------------------------------
+       One pop-up frame shared by all six maintenance screens.
+
+       It uses the pop-up vocabulary that already exists in
+       Content/QCU-CRAM_Site.css and Scripts/QCU-CRAM_ui.js:
+
+           .qcu-form-overlay  (+ .is-open, added by the server)
+             .qcu-form-modal
+               .qcu-form-head   > .qcu-form-title + .qcu-form-close
+               .qcu-form-body
+               .qcu-form-foot
+
+       QCU-CRAM_ui.js looks for `.qcu-form-overlay.is-open`, locks the page
+       scroll, focuses the first field, traps Tab, closes on Esc, and closes
+       when anything carrying `data-qcu-close` is clicked. Because the open
+       state is decided on the server, a validation error simply re-renders
+       the page with the pop-up already open and the message already inside -
+       no JavaScript is required for the pop-up to work at all.
+
+       Usage from a view:
+
+           @Html.Partial("_QCU-CRAM_SetupModal", new QCUCRAM_SetupModalViewModel
+           {
+               Open       = Model.ModalOpen,
+               Title      = "Room",
+               Action     = Url.Action("SaveRoom"),
+               Error      = Model.ModalError,
+               SubmitText = "Save room",
+               Body       = @<text>
+                                ... the fields, using the page's own Model ...
+                            </text>
+           })
+
+       The @<text> block is compiled inside the calling view's class, so the
+       lambda still sees the caller's strongly typed Model - no casting.
+       ===================================================================== */
+
+    if (Model == null || !Model.Open) { return; }
+
+    string submit = string.IsNullOrWhiteSpace(Model.SubmitText) ? "Save" : Model.SubmitText;
+    string cancel = string.IsNullOrWhiteSpace(Model.CancelUrl) ? "javascript:void(0);" : Model.CancelUrl;
+}
+
+<div class="qcu-form-overlay is-open">
+    <form method="post" action="@Model.Action" class="qcu-form-modal" role="dialog"
+          aria-modal="true" aria-labelledby="qcuSetupModalTitle" novalidate="novalidate">
+        @Html.AntiForgeryToken()
+
+        <div class="qcu-form-head">
+            <h2 class="qcu-form-title" id="qcuSetupModalTitle">@Model.Title</h2>
+            <a class="qcu-form-close" href="@cancel" data-qcu-close aria-label="Close">&times;</a>
+        </div>
+
+        <div class="qcu-form-body">
+
+            @if (!string.IsNullOrWhiteSpace(Model.Error))
+            {
+                <div class="qcu-alert qcu-alert--error" role="alert">@Model.Error</div>
+            }
+
+            @if (Model.Body != null)
+            {
+                @Model.Body(Model)
+            }
+
+        </div>
+
+        <div class="qcu-form-foot">
+            <a class="qcu-btn qcu-btn--ghost" href="@cancel" data-qcu-close>Cancel</a>
+            <button type="submit" class="qcu-btn qcu-btn--primary">@submit</button>
+        </div>
+    </form>
+</div>

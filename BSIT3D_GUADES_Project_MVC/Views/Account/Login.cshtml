@@ -1,94 +1,136 @@
 @model BSIT3D_GUADES_Project_MVC.QCUCRAM_ViewModels.QCUCRAM_LoginViewModel
+@using System
 @{
-    ViewBag.Title = "Log In";
-    Layout = "~/Views/Shared/_QCU-CRAM_Layout.cshtml";
+    /* =====================================================================
+       QCU-CRAM  |  Views/Account/Login.cshtml
+       ---------------------------------------------------------------------
+       Port of Guades_QCUCram_Account/Guades_QCUCram_Login.aspx.
+
+       The Web Forms page was a .qcu-auth card with:
+         * the QCU seal in a blue/orange header band,
+         * "Quezon City University" / "Login" / "Sign in to reserve a
+           collaboration room",
+         * a two-option role picker ("Student / Faculty / Visitor" vs
+           "Library Assistant") rendered as side-by-side pills,
+         * a first field that switches between "Student Number / ID" and
+           "Username" (with the 23-0001 dash auto-format for students),
+         * a full-width Login button and a "Create an account" link.
+
+       Everything below keeps that markup and that behaviour. The only
+       change is that the ASP.NET validators became unobtrusive jQuery
+       validation attributes on the view model.
+       ===================================================================== */
+
+    ViewBag.Title = "Login";
+    Layout = "~/Views/Shared/_QCU-CRAM_LoginLayout.cshtml";
+
     string noticeText = ViewBag.QCUCRAM_NoticeText as string;
     string noticeKind = ViewBag.QCUCRAM_NoticeKind as string;
+    string noticeCss = noticeKind == "error" ? "alert-danger"
+                     : noticeKind == "success" ? "alert-success"
+                     : "alert-info";
 }
 
-<div class="row justify-content-center">
-    <div class="col-12 col-md-8 col-lg-5">
-        <div class="card shadow-sm mt-4">
-            <div class="card-body p-4">
-                <h1 class="h4 mb-1">QCU-CRAM</h1>
-                <p class="text-muted small mb-4">Collaboration Room Access &amp; Monitoring</p>
+<div class="qcu-auth-card">
+    <div class="qcu-auth-head">
+        <img src="@Url.Content("~/Content/images/QCU-CRAM_qcu-logo.png")" alt="QCU Seal" />
+        <div class="qcu-auth-univ">Quezon City University</div>
+        <h2>Login</h2>
+        <p>Sign in to reserve a collaboration room</p>
+    </div>
 
-                @if (!string.IsNullOrEmpty(noticeText))
-                {
-                    <div class="alert @(noticeKind == "error" ? "alert-danger" : "alert-success") py-2" role="alert">
-                        @noticeText
-                    </div>
-                }
+    <div class="qcu-auth-body">
 
-                @using (Html.BeginForm("Login", "Account", FormMethod.Post, new { @class = "needs-validation", novalidate = "novalidate" }))
-                {
-                    @Html.AntiForgeryToken()
-                    @Html.HiddenFor(m => m.ReturnUrl)
+        @if (!string.IsNullOrWhiteSpace(noticeText))
+        {
+            <div class="alert @noticeCss py-2 small" role="alert">@noticeText</div>
+        }
 
-                    @Html.ValidationSummary(true, "", new { @class = "alert alert-danger py-2" })
+        @using (Html.BeginForm("Login", "Account", FormMethod.Post, new { @class = "qcu-auth-form", novalidate = "novalidate" }))
+        {
+            @Html.AntiForgeryToken()
+            @Html.HiddenFor(m => m.ReturnUrl)
 
-                    <div class="mb-3">
-                        <label class="form-label d-block">Account type</label>
-                        <div class="form-check form-check-inline">
-                            @Html.RadioButtonFor(m => m.Role, "Student", new { @class = "form-check-input", id = "roleStudent" })
-                            <label class="form-check-label" for="roleStudent">Student / Faculty / Visitor</label>
-                        </div>
-                        <div class="form-check form-check-inline">
-                            @Html.RadioButtonFor(m => m.Role, "Admin", new { @class = "form-check-input", id = "roleAdmin" })
-                            <label class="form-check-label" for="roleAdmin">Library Assistant</label>
-                        </div>
-                    </div>
+            @Html.ValidationSummary(true, string.Empty, new { @class = "alert alert-danger py-2 small" })
 
-                    <div class="mb-3">
-                        @Html.LabelFor(m => m.Identifier, Model.IdentifierLabel, new { @class = "form-label" })
-                        @Html.TextBoxFor(m => m.Identifier, new
-                        {
-                            @class = "form-control",
-                            placeholder = Model.IdentifierPlaceholder,
-                            autocomplete = "username",
-                            autofocus = "autofocus"
-                        })
-                        @Html.ValidationMessageFor(m => m.Identifier, "", new { @class = "text-danger small" })
-                    </div>
+            <div class="mb-3">
+                <span class="form-label d-block">Sign in as</span>
+                <div class="form-check">
+                    @Html.RadioButtonFor(m => m.Role, "Student", new { id = "roleStudent" })
+                    <label for="roleStudent">Student / Faculty / Visitor</label>
 
-                    <div class="mb-3">
-                        @Html.LabelFor(m => m.Password, new { @class = "form-label" })
-                        @Html.PasswordFor(m => m.Password, new { @class = "form-control", autocomplete = "current-password" })
-                        @Html.ValidationMessageFor(m => m.Password, "", new { @class = "text-danger small" })
-                    </div>
-
-                    <button type="submit" class="btn btn-primary w-100">Log In</button>
-                }
-
-                <hr class="my-4" />
-                <p class="small mb-0 text-center">
-                    No account yet? @Html.ActionLink("Register here", "Register", "Account")
-                </p>
+                    @Html.RadioButtonFor(m => m.Role, "Admin", new { id = "roleAdmin" })
+                    <label for="roleAdmin">Library Assistant</label>
+                </div>
             </div>
-        </div>
+
+            <div class="mb-3">
+                <label id="lblLoginId" for="Identifier" class="form-label">@Model.IdentifierLabel</label>
+                @Html.TextBoxFor(m => m.Identifier, new
+                {
+                    @class = "form-control",
+                    maxlength = "50",
+                    autocomplete = "username",
+                    placeholder = Model.IdentifierPlaceholder,
+                    autofocus = "autofocus"
+                })
+                @Html.ValidationMessageFor(m => m.Identifier, string.Empty, new { @class = "text-danger" })
+            </div>
+
+            <div class="mb-3">
+                @Html.LabelFor(m => m.Password, new { @class = "form-label" })
+                @Html.PasswordFor(m => m.Password, new
+                {
+                    @class = "form-control",
+                    maxlength = "100",
+                    autocomplete = "current-password"
+                })
+                @Html.ValidationMessageFor(m => m.Password, string.Empty, new { @class = "text-danger" })
+            </div>
+
+            <button type="submit" class="btn btn-primary"
+                    onclick="if (typeof($(this.form).valid) === 'function' &amp;&amp; !$(this.form).valid()) { return false; } this.disabled = true; this.innerHTML = 'Please wait...';">
+                Login
+            </button>
+
+            <a href="@Url.Action("Register", "Account")" class="btn btn-link">Create an account</a>
+        }
+
     </div>
 </div>
 
 @section scripts {
     <script>
-        // Keep the first-field label in step with the radio button, exactly like
-        // ApplyRoleLabels() did on the Web Forms page.
+        // Role picker changes the first field: "Student Number / ID" (dash
+        // auto-format) vs "Username" (plain text). Same behaviour as the
+        // ApplyRoleLabels() helper on the Web Forms page.
         (function () {
-            var id = document.getElementById('Identifier');
-            if (!id) { return; }
             var student = document.getElementById('roleStudent');
             var admin = document.getElementById('roleAdmin');
+            var id = document.getElementById('Identifier');
+            var label = document.getElementById('lblLoginId');
+            if (!id || !label) { return; }
 
-            function refresh() {
-                var isAdmin = admin && admin.checked;
-                var label = document.querySelector('label[for="Identifier"]');
-                if (label) { label.textContent = isAdmin ? 'Username' : 'Student Number / ID'; }
-                id.setAttribute('placeholder', isAdmin ? 'username' : '23-0001');
+            function isAdmin() {
+                return !!(admin && admin.checked);
             }
 
-            if (student) { student.addEventListener('change', refresh); }
-            if (admin) { admin.addEventListener('change', refresh); }
-            refresh();
+            function apply(clear) {
+                var a = isAdmin();
+                label.textContent = a ? 'Username' : 'Student Number / ID';
+                id.placeholder = a ? 'username' : '23-0001';
+                id.setAttribute('autocomplete', 'username');
+                if (clear) { id.value = ''; }   // a half-typed "23-" must not carry over
+            }
+
+            if (student) { student.addEventListener('change', function () { apply(true); }); }
+            if (admin) { admin.addEventListener('change', function () { apply(true); }); }
+
+            if (window.Qcu && Qcu.attachDash) {
+                Qcu.attachDash(id, { enabled: function () { return !isAdmin(); } });
+            }
+
+            apply(false);
         })();
     </script>
 }

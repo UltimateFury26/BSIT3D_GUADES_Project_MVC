@@ -1,114 +1,134 @@
 @model BSIT3D_GUADES_Project_MVC.QCUCRAM_ViewModels.QCUCRAM_RegisterViewModel
+@using System
 @{
+    /* =====================================================================
+       QCU-CRAM  |  Views/Account/Register.cshtml
+       ---------------------------------------------------------------------
+       Port of Guades_QCUCram_Account/Guades_QCUCram_Register.aspx.
+
+       Same .qcu-auth-card.wide shell as the original, same field order:
+         Requester Type -> ID / Student Number (+ format hint) ->
+         Last / First / M.I. -> Email -> Program -> Password -> Confirm.
+
+       The ID box keeps the original behaviour through data attributes that
+       QCU-CRAM_ui.js already understands:
+         data-qcu-idtype   = id of the requester-type control
+         data-qcu-idstrict = 1  -> Student: digits only, 23-0001 auto-dash
+       so switching the requester type relabels the field, changes the
+       placeholder and turns the dash formatter on and off.
+       ===================================================================== */
+
     ViewBag.Title = "Register";
-    Layout = "~/Views/Shared/_QCU-CRAM_Layout.cshtml";
+    Layout = "~/Views/Shared/_QCU-CRAM_LoginLayout.cshtml";
 }
 
-<div class="row justify-content-center">
-    <div class="col-12 col-lg-8">
-        <div class="card shadow-sm mt-4">
-            <div class="card-body p-4">
-                <h1 class="h4 mb-1">Create an account</h1>
-                <p class="text-muted small mb-4">Students, faculty and visitors all register here.</p>
+<div class="qcu-auth-card wide">
+    <div class="qcu-auth-head">
+        <img src="@Url.Content("~/Content/images/QCU-CRAM_qcu-logo.png")" alt="QCU Seal" />
+        <div class="qcu-auth-univ">Quezon City University</div>
+        <h2>Register</h2>
+        <p>Students, faculty, and visitors can create an account</p>
+    </div>
 
-                @using (Html.BeginForm("Register", "Account", FormMethod.Post, new { @class = "row g-3", novalidate = "novalidate" }))
-                {
-                    @Html.AntiForgeryToken()
+    <div class="qcu-auth-body">
 
-                    <div class="col-12">
-                        @Html.ValidationSummary(true, "", new { @class = "alert alert-danger py-2" })
-                    </div>
+        @using (Html.BeginForm("Register", "Account", FormMethod.Post, new { @class = "qcu-auth-form", novalidate = "novalidate" }))
+        {
+            @Html.AntiForgeryToken()
 
-                    <div class="col-12">
-                        @Html.LabelFor(m => m.RequesterType, new { @class = "form-label" })
-                        @Html.DropDownListFor(m => m.RequesterType,
-                            new SelectList(Model.RequesterTypeChoices, Model.RequesterType),
-                            new { @class = "form-select", id = "requesterType" })
-                        @Html.ValidationMessageFor(m => m.RequesterType, "", new { @class = "text-danger small" })
-                    </div>
+            @Html.ValidationSummary(true, string.Empty, new { @class = "alert alert-danger py-2 small" })
 
-                    <div class="col-12">
-                        @Html.LabelFor(m => m.StudentNumber, new { @class = "form-label" })
-                        @Html.TextBoxFor(m => m.StudentNumber, new
-                        {
-                            @class = "form-control",
-                            placeholder = "23-0001",
-                            autocomplete = "off"
-                        })
-                        @Html.ValidationMessageFor(m => m.StudentNumber, "", new { @class = "text-danger small" })
-                    </div>
-
-                    <div class="col-12 col-md-5">
-                        @Html.LabelFor(m => m.LastName, new { @class = "form-label" })
-                        @Html.TextBoxFor(m => m.LastName, new { @class = "form-control", autocomplete = "family-name" })
-                        @Html.ValidationMessageFor(m => m.LastName, "", new { @class = "text-danger small" })
-                    </div>
-
-                    <div class="col-12 col-md-5">
-                        @Html.LabelFor(m => m.FirstName, new { @class = "form-label" })
-                        @Html.TextBoxFor(m => m.FirstName, new { @class = "form-control", autocomplete = "given-name" })
-                        @Html.ValidationMessageFor(m => m.FirstName, "", new { @class = "text-danger small" })
-                    </div>
-
-                    <div class="col-12 col-md-2">
-                        @Html.LabelFor(m => m.MI, new { @class = "form-label" })
-                        @Html.TextBoxFor(m => m.MI, new { @class = "form-control", maxlength = "2", autocomplete = "off" })
-                        @Html.ValidationMessageFor(m => m.MI, "", new { @class = "text-danger small" })
-                    </div>
-
-                    <div class="col-12">
-                        @Html.LabelFor(m => m.Email, new { @class = "form-label" })
-                        @Html.TextBoxFor(m => m.Email, new { @class = "form-control", type = "email", autocomplete = "email" })
-                        @Html.ValidationMessageFor(m => m.Email, "", new { @class = "text-danger small" })
-                    </div>
-
-                    <div class="col-12">
-                        @Html.LabelFor(m => m.Program, new { @class = "form-label" })
-                        @Html.DropDownListFor(m => m.Program,
-                            new SelectList(Model.ProgramChoices, Model.Program),
-                            "-- select your program --",
-                            new { @class = "form-select" })
-                        @Html.ValidationMessageFor(m => m.Program, "", new { @class = "text-danger small" })
-                    </div>
-
-                    <div class="col-12 col-md-6">
-                        @Html.LabelFor(m => m.Password, new { @class = "form-label" })
-                        @Html.PasswordFor(m => m.Password, new { @class = "form-control", autocomplete = "new-password" })
-                        @Html.ValidationMessageFor(m => m.Password, "", new { @class = "text-danger small" })
-                    </div>
-
-                    <div class="col-12 col-md-6">
-                        @Html.LabelFor(m => m.ConfirmPassword, new { @class = "form-label" })
-                        @Html.PasswordFor(m => m.ConfirmPassword, new { @class = "form-control", autocomplete = "new-password" })
-                        @Html.ValidationMessageFor(m => m.ConfirmPassword, "", new { @class = "text-danger small" })
-                    </div>
-
-                    <div class="col-12 d-flex gap-2">
-                        <button type="submit" class="btn btn-primary">Register</button>
-                        @Html.ActionLink("Back to log in", "Login", "Account", null, new { @class = "btn btn-outline-secondary" })
-                    </div>
-                }
+            <div class="mb-3">
+                @Html.LabelFor(m => m.RequesterType, new { @class = "form-label" })
+                @Html.DropDownListFor(m => m.RequesterType,
+                    new SelectList(Model.RequesterTypeChoices, Model.RequesterType),
+                    new { @class = "form-select", id = "RequesterType" })
+                @Html.ValidationMessageFor(m => m.RequesterType, string.Empty, new { @class = "text-danger" })
             </div>
-        </div>
+
+            <div class="mb-3">
+                <label id="lblRegNumber" for="StudentNumber" class="form-label">ID / Student Number</label>
+                @Html.TextBoxFor(m => m.StudentNumber, new
+                {
+                    @class = "form-control",
+                    maxlength = "20",
+                    autocomplete = "off",
+                    data_qcu_idtype = "RequesterType",
+                    data_qcu_idstrict = "1",
+                    data_qcu_idlabel = "lblRegNumber",
+                    data_qcu_idhint = "hintRegNumber"
+                })
+                @Html.ValidationMessageFor(m => m.StudentNumber, string.Empty, new { @class = "text-danger" })
+                <div class="form-text" id="hintRegNumber"></div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-5 mb-3">
+                    @Html.LabelFor(m => m.LastName, new { @class = "form-label" })
+                    @Html.TextBoxFor(m => m.LastName, new { @class = "form-control", maxlength = "60", autocomplete = "family-name" })
+                    @Html.ValidationMessageFor(m => m.LastName, string.Empty, new { @class = "text-danger" })
+                </div>
+                <div class="col-md-4 mb-3">
+                    @Html.LabelFor(m => m.FirstName, new { @class = "form-label" })
+                    @Html.TextBoxFor(m => m.FirstName, new { @class = "form-control", maxlength = "60", autocomplete = "given-name" })
+                    @Html.ValidationMessageFor(m => m.FirstName, string.Empty, new { @class = "text-danger" })
+                </div>
+                <div class="col-md-3 mb-3">
+                    @Html.LabelFor(m => m.MI, new { @class = "form-label" })
+                    @Html.TextBoxFor(m => m.MI, new
+                    {
+                        @class = "form-control",
+                        maxlength = "2",
+                        placeholder = "optional",
+                        autocomplete = "off",
+                        data_qcu_mi = "1"
+                    })
+                    @Html.ValidationMessageFor(m => m.MI, string.Empty, new { @class = "text-danger" })
+                </div>
+            </div>
+
+            <div class="mb-3">
+                @Html.LabelFor(m => m.Email, new { @class = "form-label" })
+                @Html.TextBoxFor(m => m.Email, new { @class = "form-control", type = "email", maxlength = "120", autocomplete = "email" })
+                @Html.ValidationMessageFor(m => m.Email, string.Empty, new { @class = "text-danger" })
+            </div>
+
+            <div class="mb-3">
+                @Html.LabelFor(m => m.Program, new { @class = "form-label" })
+                @Html.DropDownListFor(m => m.Program,
+                    new SelectList(Model.ProgramChoices, Model.Program),
+                    "-- select your program --",
+                    new { @class = "form-select" })
+                @Html.ValidationMessageFor(m => m.Program, string.Empty, new { @class = "text-danger" })
+            </div>
+
+            <div class="mb-3">
+                @Html.LabelFor(m => m.Password, new { @class = "form-label" })
+                @Html.PasswordFor(m => m.Password, new
+                {
+                    @class = "form-control",
+                    maxlength = "100",
+                    autocomplete = "new-password"
+                })
+                @Html.ValidationMessageFor(m => m.Password, string.Empty, new { @class = "text-danger" })
+                <div data-qcu-strength data-input="Password"
+                     data-context="StudentNumber,LastName,FirstName,Email"></div>
+            </div>
+
+            <div class="mb-3">
+                @Html.LabelFor(m => m.ConfirmPassword, new { @class = "form-label" })
+                @Html.PasswordFor(m => m.ConfirmPassword, new
+                {
+                    @class = "form-control",
+                    maxlength = "100",
+                    autocomplete = "new-password"
+                })
+                @Html.ValidationMessageFor(m => m.ConfirmPassword, string.Empty, new { @class = "text-danger" })
+            </div>
+
+            <button type="submit" class="btn btn-primary">Register</button>
+            <a href="@Url.Action("Login", "Account")" class="btn btn-link">Back to log in</a>
+        }
+
     </div>
 </div>
-
-@section scripts {
-    <script>
-        // A student number is only required for students; faculty and visitors may
-        // use an employee number or any ID. The server re-checks this anyway.
-        (function () {
-            var type = document.getElementById('requesterType');
-            var number = document.getElementById('StudentNumber');
-            if (!type || !number) { return; }
-
-            function refresh() {
-                var isStudent = type.value === 'Student';
-                number.setAttribute('placeholder', isStudent ? '23-0001' : 'employee number / ID');
-            }
-
-            type.addEventListener('change', refresh);
-            refresh();
-        })();
-    </script>
-}
