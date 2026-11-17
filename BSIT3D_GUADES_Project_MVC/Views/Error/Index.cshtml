@@ -1,0 +1,30 @@
+@{
+    ViewBag.Title = "Something went wrong";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    string reference = ViewBag.QCUCRAM_ErrorReference as string;
+}
+
+<div class="row justify-content-center">
+    <div class="col-12 col-lg-7">
+        <div class="card shadow-sm mt-4">
+            <div class="card-body p-4">
+                <h1 class="h4 mb-3">Something went wrong</h1>
+                <p class="mb-3">
+                    The page could not be completed. The problem has been written to the
+                    application log so it can be looked at.
+                </p>
+                @if (!string.IsNullOrEmpty(reference))
+                {
+                    <p class="mb-3">
+                        Reference: <code>@reference</code>
+                    </p>
+                }
+                <p class="mb-4">
+                    Please try again. If it keeps happening, contact
+                    <a href="mailto:cram@qcu.edu.ph">cram@qcu.edu.ph</a> and quote the reference above.
+                </p>
+                @Html.ActionLink("Back to the home page", "Index", "Home", null, new { @class = "btn btn-primary" })
+            </div>
+        </div>
+    </div>
+</div>

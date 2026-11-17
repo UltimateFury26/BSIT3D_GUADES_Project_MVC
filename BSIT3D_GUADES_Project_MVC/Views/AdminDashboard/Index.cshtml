@@ -1,0 +1,38 @@
+@{
+    ViewBag.Title = "Admin Dashboard";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="d-flex justify-content-between align-items-center mt-4 mb-3">
+    <div>
+        <h1 class="h4 mb-0">Admin Dashboard</h1>
+        <p class="text-muted small mb-0">Signed in as @ViewBag.QCUCRAM_CurrentUserName</p>
+    </div>
+    <a class="btn btn-outline-secondary btn-sm" href="@Url.Action("Logout", "Account")">Log out</a>
+</div>
+
+<div class="alert alert-info">
+    Phase 04 is in place: the admin gate, the session keys and the maintenance sweep are live.
+    The dashboard cards, the pending queue and the approve / decline actions arrive in Phase 05.
+</div>
+
+<div class="row g-3">
+    <div class="col-12 col-md-4">
+        <div class="card h-100"><div class="card-body">
+            <h2 class="h6 text-muted">Pending today</h2>
+            <p class="display-6 mb-0">&mdash;</p>
+        </div></div>
+    </div>
+    <div class="col-12 col-md-4">
+        <div class="card h-100"><div class="card-body">
+            <h2 class="h6 text-muted">Checked in today</h2>
+            <p class="display-6 mb-0">&mdash;</p>
+        </div></div>
+    </div>
+    <div class="col-12 col-md-4">
+        <div class="card h-100"><div class="card-body">
+            <h2 class="h6 text-muted">Restricted students</h2>
+            <p class="display-6 mb-0">&mdash;</p>
+        </div></div>
+    </div>
+</div>

@@ -1,4 +1,4 @@
-﻿using System.Web.Mvc;
+using System.Web.Mvc;
 using System.Web.Routing;
 
 namespace BSIT3D_GUADES_Project_MVC
@@ -14,9 +14,53 @@ namespace BSIT3D_GUADES_Project_MVC
 
             routes.LowercaseUrls = true;
 
-            // Friendly, lower-case URLs that mirror the QCU-CRAM information
-            // architecture. These are conventional routes so that a typo in an
-            // attribute route never leaves a page unreachable.
+            // ------------------------------------------------------------------
+            //  Phase 04: the auth entry points, as short lower-case URLs.
+            //  These are the MVC equivalents of
+            //    ~/Guades_QCUCram_Account/Guades_QCUCram_Login.aspx
+            //    ~/Guades_QCUCram_Account/Guades_QCUCram_Logout.aspx
+            //    ~/Guades_QCUCram_Account/Guades_QCUCram_Register.aspx
+            // ------------------------------------------------------------------
+            routes.MapRoute(
+                name: "QCU-CRAM_Login",
+                url: "login",
+                defaults: new { controller = "Account", action = "Login" });
+
+            routes.MapRoute(
+                name: "QCU-CRAM_Logout",
+                url: "logout",
+                defaults: new { controller = "Account", action = "Logout" });
+
+            routes.MapRoute(
+                name: "QCU-CRAM_Register",
+                url: "register",
+                defaults: new { controller = "Account", action = "Register" });
+
+            routes.MapRoute(
+                name: "QCU-CRAM_Error",
+                url: "error",
+                defaults: new { controller = "Error", action = "Index" });
+
+            // ------------------------------------------------------------------
+            //  Phase 04: the two signed-in shells. /admin/... and /student/...
+            //  keep the Web Forms folder split (Guades_QCUCram_Admin,
+            //  Guades_QCUCram_Student) so a role mistake is visible in the URL.
+            // ------------------------------------------------------------------
+            routes.MapRoute(
+                name: "QCU-CRAM_Admin",
+                url: "admin/{controller}/{action}/{id}",
+                defaults: new { controller = "AdminDashboard", action = "Index", id = UrlParameter.Optional },
+                namespaces: new[] { "BSIT3D_GUADES_Project_MVC.Controllers.Admin" });
+
+            routes.MapRoute(
+                name: "QCU-CRAM_Student",
+                url: "student/{controller}/{action}/{id}",
+                defaults: new { controller = "StudentDashboard", action = "Index", id = UrlParameter.Optional },
+                namespaces: new[] { "BSIT3D_GUADES_Project_MVC.Controllers.Student" });
+
+            // ------------------------------------------------------------------
+            //  Shared pages that both roles can open.
+            // ------------------------------------------------------------------
             routes.MapRoute(
                 name: "QCU-CRAM_Reports_PrintBooking",
                 url: "reports/print-booking/{id}",

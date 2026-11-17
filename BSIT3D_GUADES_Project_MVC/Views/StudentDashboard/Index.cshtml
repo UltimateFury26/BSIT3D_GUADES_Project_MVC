@@ -1,0 +1,40 @@
+@{
+    ViewBag.Title = "Student Dashboard";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    int unread = ViewBag.QCUCRAM_UnreadCount is int ? (int)ViewBag.QCUCRAM_UnreadCount : 0;
+}
+
+<div class="d-flex justify-content-between align-items-center mt-4 mb-3">
+    <div>
+        <h1 class="h4 mb-0">Welcome, @ViewBag.QCUCRAM_CurrentUserName</h1>
+        <p class="text-muted small mb-0">QCU-CRAM &mdash; Collaboration Room Access &amp; Monitoring</p>
+    </div>
+    <a class="btn btn-outline-secondary btn-sm" href="@Url.Action("Logout", "Account")">Log out</a>
+</div>
+
+@if (unread > 0)
+{
+    <div class="alert alert-warning py-2">
+        You have @unread unread notification@(unread == 1 ? "" : "s").
+    </div>
+}
+
+<div class="alert alert-info">
+    Phase 04 is in place: the student gate, the session keys and the maintenance sweep are live.
+    The booking list, the notification inbox and the Reserve form arrive in Phase 05.
+</div>
+
+<div class="row g-3">
+    <div class="col-12 col-md-6">
+        <div class="card h-100"><div class="card-body">
+            <h2 class="h6 text-muted">Upcoming bookings</h2>
+            <p class="display-6 mb-0">&mdash;</p>
+        </div></div>
+    </div>
+    <div class="col-12 col-md-6">
+        <div class="card h-100"><div class="card-body">
+            <h2 class="h6 text-muted">Unread notifications</h2>
+            <p class="display-6 mb-0">@unread</p>
+        </div></div>
+    </div>
+</div>
