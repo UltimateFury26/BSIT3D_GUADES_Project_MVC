@@ -1,0 +1,178 @@
+@model BSIT3D_GUADES_Project_MVC.QCUCRAM_ViewModels.QCUCRAMPrintBookingViewModel
+@using System
+@using System.Globalization
+@{
+    /* =====================================================================
+       QCU-CRAM  |  Views/Reports/QCU-CRAM_PrintBooking.cshtml
+       ---------------------------------------------------------------------
+       Port of Guades_QCUCram_Admin/Guades_QCUCram_PrintBooking.aspx.
+
+       The Web Forms page built this whole sheet in BuildReport() with a
+       StringBuilder and wrote it to the response. Here it is real markup, so
+       it inherits the site's typography and prints through QCU-CRAM_Print.css.
+
+       A student may only open their own booking: the service returns the same
+       "could not be found" message for a missing id and for somebody else's,
+       so the sheet cannot be used to discover reservation numbers.
+       ===================================================================== */
+
+    ViewBag.Title = "Booking Report";
+
+    CultureInfo inv = CultureInfo.InvariantCulture;
+    string dash = "\u2014";
+}
+
+@section head {
+    <link rel="stylesheet" href="@Url.Content("~/Content/QCU-CRAM_Print.css")" media="print" />
+}
+
+<div class="qcu-toolbar qcu-no-print">
+    <button type="button" class="qcu-btn qcu-btn--primary" onclick="window.print();">Print</button>
+    <a class="qcu-btn qcu-btn--ghost" href="@Model.BackUrl">Back</a>
+</div>
+
+@if (!Model.Found)
+{
+    <div class="qcu-alert qcu-alert--error">@Model.ErrorMessage</div>
+}
+else
+{
+    <article class="qcu-report">
+        <header class="qcu-report__head">
+            <img class="qcu-report__seal"
+                 src="@Url.Content("~/Content/images/QCU-CRAM_qcu-logo.png")"
+                 alt="Quezon City University" />
+            <div>
+                <h1>Quezon City University</h1>
+                <p class="qcu-report__sub">QCU Library &mdash; Collaboration Room Reservation</p>
+            </div>
+        </header>
+
+        <p class="qcu-report__sub">
+            <strong>Reservation #@Model.ReservationId</strong> |
+            Status: @Html.Partial("_QCU-CRAM_StatusBadge", Model.Status)
+        </p>
+
+        <h2 class="qcu-report__section">Requester</h2>
+        <table class="qcu-kv">
+            <tr>
+                <th>Name</th>
+                <td>@Model.RequesterName</td>
+            </tr>
+            <tr>
+                <th>ID</th>
+                <td>@Model.StudentNumber</td>
+            </tr>
+            <tr>
+                <th>Requester type</th>
+                <td>@Model.RequesterType</td>
+            </tr>
+            <tr>
+                <th>Program</th>
+                <td>@Model.Program</td>
+            </tr>
+            <tr>
+                <th>Email</th>
+                <td>@Model.Email</td>
+            </tr>
+        </table>
+
+        <h2 class="qcu-report__section">Reservation Details</h2>
+        <table class="qcu-kv">
+            <tr>
+                <th>Room</th>
+                <td>@Model.RoomName</td>
+            </tr>
+            <tr>
+                <th>Date</th>
+                <td>@Model.ReservationDate.ToString("dddd, MMMM d, yyyy", inv)</td>
+            </tr>
+            <tr>
+                <th>Time</th>
+                <td>@Model.TimeText</td>
+            </tr>
+            <tr>
+                <th>Number of members</th>
+                <td>@Model.NumberOfMembers.ToString("N0", inv)</td>
+            </tr>
+            <tr>
+                <th>Purpose</th>
+                <td>@Model.Purpose</td>
+            </tr>
+            <tr>
+                <th>Requested on</th>
+                <td>@Model.CreatedAt.ToString("MMM d, yyyy h:mm tt", inv)</td>
+            </tr>
+            <tr>
+                <th>Checked in at</th>
+                <td>@(Model.CheckedInAt.HasValue
+                      ? Model.CheckedInAt.Value.ToString("MMM d, yyyy h:mm tt", inv)
+                      : dash)</td>
+            </tr>
+        </table>
+
+        <h2 class="qcu-report__section">Group Members</h2>
+        @if (Model.Members == null || Model.Members.Count == 0)
+        {
+            <p class="qcu-muted">No member names on file.</p>
+        }
+        else
+        {
+            <table class="qcu-kv">
+                <tbody>
+                    @for (int i = 0; i < Model.Members.Count; i++)
+                    {
+                        <tr>
+                            <th>@(i + 1)</th>
+                            <td>@Model.Members[i].FullName</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+
+        <h2 class="qcu-report__section">Status History</h2>
+        @if (Model.History == null || Model.History.Count == 0)
+        {
+            <p class="qcu-muted">No status changes recorded.</p>
+        }
+        else
+        {
+            <table class="qcu-table">
+                <thead>
+                    <tr>
+                        <th>When</th>
+                        <th>Change</th>
+                        <th>By</th>
+                        <th>Notes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var h in Model.History)
+                    {
+                        <tr>
+                            <td class="qcu-nowrap">@h.ChangedAt.ToString("MMM d, yyyy h:mm tt", inv)</td>
+                            <td>
+                                @(string.IsNullOrEmpty(h.OldStatus) ? "New" : h.OldStatus)
+                                &rarr; @h.NewStatus
+                            </td>
+                            <td>@h.ChangedByText</td>
+                            <td>@h.Notes</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+
+        <div class="qcu-print-signature">
+            <div>Library Assistant</div>
+            <div>Group Representative</div>
+        </div>
+
+        <p class="qcu-qcid">QCID verified &#9744;</p>
+
+        <p class="qcu-muted qcu-small">
+            Printed @Model.PrintedAt.ToString("MMM d, yyyy h:mm tt", inv)
+        </p>
+    </article>
+}

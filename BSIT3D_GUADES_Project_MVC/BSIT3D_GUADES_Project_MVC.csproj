@@ -213,6 +213,11 @@
     <Compile Include="Controllers\QCU-CRAM_AdminSetupController.cs" />
     <Compile Include="Controllers\QCU-CRAM_AdminController.cs" />
     <Compile Include="Controllers\QCU-CRAM_AdminRecordsController.cs" />
+    <!-- Phase 09 - reports -->
+    <Compile Include="QCU-CRAM_ViewModels\QCU-CRAM_ReportsViewModels.cs" />
+    <Compile Include="QCU-CRAM_Services\QCU-CRAM_AnalyticsService.cs" />
+    <Compile Include="QCU-CRAM_Services\QCU-CRAM_ReportService.cs" />
+    <Compile Include="Controllers\QCU-CRAM_ReportsController.cs" />
     <Compile Include="Controllers\AdminRestrictionsController.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -287,6 +292,11 @@
     <Content Include="Views\Shared\_QCU-CRAM_Calendar.cshtml" />
     <Content Include="Scripts\QCU-CRAM_reserve.js" />
     <Content Include="Views\Shared\QCU-CRAM_Error.cshtml" />
+    <!-- Phase 09 - reports views -->
+    <Content Include="Views\Reports\QCU-CRAM_Analytics.cshtml" />
+    <Content Include="Views\Reports\_QCU-CRAM_BarTable.cshtml" />
+    <Content Include="Views\Reports\QCU-CRAM_DailySchedule.cshtml" />
+    <Content Include="Views\Reports\QCU-CRAM_PrintBooking.cshtml" />
     <!-- Phase 07 - admin core views -->
     <Content Include="Views\Admin\QCU-CRAM_Dashboard.cshtml" />
     <Content Include="Views\Admin\QCU-CRAM_Queue.cshtml" />
@@ -318,6 +328,7 @@
     <Folder Include="Views\Availability\" />
     <Folder Include="Views\Student\" />
     <Folder Include="Views\Admin\" />
+    <Folder Include="Views\Reports\" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Content\bootstrap.rtl.min.css.map" />

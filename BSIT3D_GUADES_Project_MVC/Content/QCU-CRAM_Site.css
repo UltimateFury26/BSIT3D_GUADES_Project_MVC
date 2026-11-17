@@ -3157,3 +3157,156 @@ input[type="date"][readonly] {
 .qcu-alert--info    { background:#e0f2fe; color:#075985; border:1px solid #bae6fd; }
 
 /* ================================================ end setup forms (phase 8) */
+
+/* ============================================================ reports (phase 9) */
+
+/* Hidden on screen, shown on paper. The print stylesheet flips this back on. */
+.qcu-print-only { display: none; }
+
+/* "Showing reservations dated Oct 1, 2026 to Oct 31, 2026" */
+.qcu-range { margin: 0 0 14px; font-size: .9rem; color: var(--qcu-muted); }
+.qcu-range strong { color: var(--qcu-ink); }
+
+.qcu-small { font-size: .78rem; }
+.qcu-nowrap { white-space: nowrap; }
+
+/* Numbers line up when they are right-aligned in a tabular figure. */
+.qcu-num {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+/* The "12 / 54 slots (22.2%)" note next to the utilization bar. */
+.qcu-note { font-size: .78rem; color: var(--qcu-muted); }
+
+.qcu-table--bars td { vertical-align: middle; }
+
+/* ---- horizontal bar ---- */
+.qcu-bar-col { width: 38%; min-width: 120px; }
+
+.qcu-bar {
+    position: relative;
+    height: 10px;
+    border-radius: 999px;
+    background: var(--qcu-surface-2);
+    overflow: hidden;
+}
+
+.qcu-bar__fill {
+    display: block;
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #7a1f2b, #b03a4a);
+    transition: width .25s ease;
+}
+
+/* ---- chart grid: two columns, collapsing to one on a narrow window ---- */
+.qcu-report-grid {
+    display: grid;
+    gap: 16px;
+    margin-bottom: 16px;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+}
+
+.qcu-report-grid--wide { grid-template-columns: 1fr; }
+
+.qcu-day-title { margin: 4px 0 8px; font-size: 1.15rem; }
+
+/* ---- the printable booking sheet ---- */
+.qcu-report {
+    max-width: 820px;
+    margin: 0 auto;
+    padding: 28px 32px;
+    background: #fff;
+    border: 1px solid var(--qcu-border);
+    border-radius: 14px;
+}
+
+.qcu-report__head {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding-bottom: 12px;
+    margin-bottom: 20px;
+    border-bottom: 2px solid #7a1f2b;
+}
+
+.qcu-report__head h1 { margin: 0; font-size: 1.25rem; }
+.qcu-report__head p { margin: 2px 0 0; }
+
+.qcu-report__seal { height: 64px; width: auto; }
+
+.qcu-report__sub { margin: 0 0 6px; font-size: .88rem; color: var(--qcu-muted); }
+
+.qcu-report__section {
+    margin: 22px 0 8px;
+    font-size: .78rem;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: var(--qcu-muted);
+}
+
+/* ---- key/value table on the printable sheet ---- */
+.qcu-kv { width: 100%; border-collapse: collapse; font-size: .9rem; }
+
+.qcu-kv th,
+.qcu-kv td {
+    padding: 7px 10px;
+    text-align: left;
+    vertical-align: top;
+    border-bottom: 1px solid var(--qcu-border);
+}
+
+.qcu-kv th {
+    width: 34%;
+    font-weight: 600;
+    color: var(--qcu-muted);
+    background: var(--qcu-surface-2);
+}
+
+.qcu-qcid { margin: 18px 0 0; font-size: .85rem; }
+
+/* ---- horizontal scroll for a wide table on a narrow screen ---- */
+.qcu-table-wrap { overflow-x: auto; }
+
+/* ---- the highlighted preset button on the Analytics toolbar ---- */
+.qcu-btn.is-active {
+    border-color: #7a1f2b;
+    color: #7a1f2b;
+    font-weight: 600;
+    box-shadow: inset 0 0 0 1px #7a1f2b;
+}
+
+/* Smaller value text for the "Most booked room" / "Peak time slot" cards. */
+.qcu-stat__value--sm { font-size: 1.05rem; font-weight: 600; line-height: 1.3; }
+
+@media print {
+    .qcu-print-only { display: block !important; }
+
+    .qcu-report {
+        border: 0;
+        padding: 0;
+        max-width: none;
+        border-radius: 0;
+    }
+
+    .qcu-report-grid { display: block; }
+
+    .qcu-panel { break-inside: avoid; page-break-inside: avoid; }
+
+    /* Keep the bars and the header shading visible on paper. */
+    .qcu-bar { background: #e5e7eb !important; }
+
+    .qcu-bar__fill {
+        background: #7a1f2b !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    .qcu-table th {
+        background: #f0f0f0 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+}

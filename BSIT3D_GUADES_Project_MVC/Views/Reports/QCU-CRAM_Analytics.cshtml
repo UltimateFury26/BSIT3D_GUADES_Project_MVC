@@ -1,0 +1,204 @@
+@model BSIT3D_GUADES_Project_MVC.QCUCRAM_ViewModels.QCUCRAMAnalyticsViewModel
+@using System
+@using System.Globalization
+@{
+    /* =====================================================================
+       QCU-CRAM  |  Views/Reports/QCU-CRAM_Analytics.cshtml
+       ---------------------------------------------------------------------
+       Port of Guades_QCUCram_Analytics.aspx.
+
+       Same pieces:
+         date-range form with three presets   (Last 30 days / This month / All time)
+         seven summary cards
+         seven bar charts
+         two plain tables (no-shows per student, top repeat bookers)
+
+       The Web Forms page wrote each bar width into the markup from a
+       Dictionary<string, BarInfo>; here the service has already done the
+       arithmetic, so this file only loops.
+       ===================================================================== */
+
+    ViewBag.Title = "Analytics";
+
+    CultureInfo inv = CultureInfo.InvariantCulture;
+}
+
+<div class="qcu-page-head">
+    <div>
+        <h1 class="qcu-page-title">Analytics</h1>
+        <p class="qcu-page-sub">Booking trends, room utilization and no-show statistics</p>
+    </div>
+</div>
+
+<form method="get" action="@Url.Action("Analytics", "Reports")" class="qcu-toolbar">
+    <label>
+        From
+        <input type="date" name="from" class="qcu-input"
+               value="@Model.From.ToString("yyyy-MM-dd", inv)" />
+    </label>
+    <label>
+        To
+        <input type="date" name="to" class="qcu-input"
+               value="@Model.To.ToString("yyyy-MM-dd", inv)" />
+    </label>
+    <button type="submit" class="qcu-btn qcu-btn--primary">Apply</button>
+
+    <span class="qcu-btn-row">
+        <a class="qcu-btn qcu-btn--ghost @(Model.Preset == "last30" ? "is-active" : "")"
+           href="@Url.Action("Analytics", "Reports", new { range = "last30" })">Last 30 days</a>
+        <a class="qcu-btn qcu-btn--ghost @(Model.Preset == "month" ? "is-active" : "")"
+           href="@Url.Action("Analytics", "Reports", new { range = "month" })">This month</a>
+        <a class="qcu-btn qcu-btn--ghost @(Model.Preset == "all" ? "is-active" : "")"
+           href="@Url.Action("Analytics", "Reports", new { range = "all" })">All time</a>
+    </span>
+</form>
+
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="qcu-alert qcu-alert--error">@Model.ErrorMessage</div>
+}
+
+@if (Model.HasResults)
+{
+    <p class="qcu-range">
+        Showing reservations dated <strong>@Model.RangeText</strong>
+    </p>
+
+    <div class="qcu-card-grid">
+        <div class="qcu-stat">
+            <span class="qcu-stat__label">Total bookings</span>
+            <span class="qcu-stat__value">@Model.TotalBookings.ToString("N0", inv)</span>
+            <span class="qcu-stat__hint">Reservations dated in the range</span>
+        </div>
+
+        <div class="qcu-stat is-warn">
+            <span class="qcu-stat__label">No-show rate</span>
+            <span class="qcu-stat__value">
+                @(Model.NoShowPct.HasValue
+                      ? Model.NoShowPct.Value.ToString("0.0", inv) + "%"
+                      : "\u2014")
+            </span>
+            <span class="qcu-stat__hint">
+                @Model.Forfeited forfeited of @Model.ApprovedOrLater approved or later
+            </span>
+        </div>
+
+        <div class="qcu-stat is-bad">
+            <span class="qcu-stat__label">Currently restricted</span>
+            <span class="qcu-stat__value">@Model.CurrentlyRestricted.ToString("N0", inv)</span>
+            <span class="qcu-stat__hint">Right now (not affected by the date range)</span>
+        </div>
+
+        <div class="qcu-stat">
+            <span class="qcu-stat__label">Average group size</span>
+            <span class="qcu-stat__value">
+                @(Model.AverageGroupSize.HasValue
+                      ? Model.AverageGroupSize.Value.ToString("0.0", inv)
+                      : "\u2014")
+            </span>
+            <span class="qcu-stat__hint">Members per booking</span>
+        </div>
+
+        <div class="qcu-stat">
+            <span class="qcu-stat__label">Most booked room</span>
+            <span class="qcu-stat__value qcu-stat__value--sm">@Model.MostRoom</span>
+            <span class="qcu-stat__hint">Highest utilization</span>
+        </div>
+
+        <div class="qcu-stat">
+            <span class="qcu-stat__label">Least booked room</span>
+            <span class="qcu-stat__value qcu-stat__value--sm">@Model.LeastRoom</span>
+            <span class="qcu-stat__hint">Lowest utilization (with bookings)</span>
+        </div>
+
+        <div class="qcu-stat is-warn">
+            <span class="qcu-stat__label">Peak time slot</span>
+            <span class="qcu-stat__value qcu-stat__value--sm">@Model.PeakSlot</span>
+            <span class="qcu-stat__hint">Busiest hour in the range</span>
+        </div>
+    </div>
+
+    <div class="qcu-report-grid">
+        @Html.Partial("_QCU-CRAM_BarTable", Model.StatusBreakdown)
+        @Html.Partial("_QCU-CRAM_BarTable", Model.BookingsPerMonth)
+        @Html.Partial("_QCU-CRAM_BarTable", Model.BookingsPerWeekday)
+        @Html.Partial("_QCU-CRAM_BarTable", Model.PeakTimeSlots)
+    </div>
+
+    <div class="qcu-report-grid qcu-report-grid--wide">
+        @Html.Partial("_QCU-CRAM_BarTable", Model.RoomUtilization)
+    </div>
+
+    <div class="qcu-report-grid">
+        @Html.Partial("_QCU-CRAM_BarTable", Model.BookingsPerProgram)
+        @Html.Partial("_QCU-CRAM_BarTable", Model.AdminDecisions)
+    </div>
+
+    <div class="qcu-report-grid">
+        <section class="qcu-panel">
+            <header class="qcu-panel__head">
+                <h2>No-shows per student</h2>
+            </header>
+
+            @if (Model.NoShowsPerStudent == null || Model.NoShowsPerStudent.Count == 0)
+            {
+                <p class="qcu-empty">No forfeited bookings in this range.</p>
+            }
+            else
+            {
+                <table class="qcu-table">
+                    <thead>
+                        <tr>
+                            <th>Student number</th>
+                            <th>Student</th>
+                            <th class="qcu-num">Forfeitures</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var row in Model.NoShowsPerStudent)
+                        {
+                            <tr>
+                                <td class="qcu-nowrap">@row.StudentNumber</td>
+                                <td>@row.Student</td>
+                                <td class="qcu-num">@row.Forfeitures.ToString("N0", inv)</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </section>
+
+        <section class="qcu-panel">
+            <header class="qcu-panel__head">
+                <h2>Top repeat bookers</h2>
+            </header>
+
+            @if (Model.TopRepeatBookers == null || Model.TopRepeatBookers.Count == 0)
+            {
+                <p class="qcu-empty">No bookings in this range.</p>
+            }
+            else
+            {
+                <table class="qcu-table">
+                    <thead>
+                        <tr>
+                            <th>Student number</th>
+                            <th>Student</th>
+                            <th class="qcu-num">Bookings</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var row in Model.TopRepeatBookers)
+                        {
+                            <tr>
+                                <td class="qcu-nowrap">@row.StudentNumber</td>
+                                <td>@row.FullName</td>
+                                <td class="qcu-num">@row.Total.ToString("N0", inv)</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </section>
+    </div>
+}

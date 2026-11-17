@@ -1,0 +1,69 @@
+@model BSIT3D_GUADES_Project_MVC.QCUCRAM_ViewModels.QCUCRAMBarTable
+@using System
+@using System.Globalization
+@{
+    /* =====================================================================
+       QCU-CRAM  |  Views/Reports/_QCU-CRAM_BarTable.cshtml
+       ---------------------------------------------------------------------
+       One horizontal bar chart. The Analytics page shows seven of these, so
+       the Web Forms page's seven near-identical GridViews collapse into this
+       single partial.
+
+       Usage:
+           @Html.Partial("_QCU-CRAM_BarTable", Model.StatusBreakdown)
+
+       The width is already a 0-100 double from the service. ToString with
+       InvariantCulture is mandatory: on a machine whose culture uses a comma
+       decimal separator, style="width:42,9%" is silently ignored by the
+       browser and every bar renders empty.
+       ===================================================================== */
+
+    CultureInfo inv = CultureInfo.InvariantCulture;
+}
+
+<section class="qcu-panel">
+    <header class="qcu-panel__head">
+        <h2>@Model.Title</h2>
+    </header>
+
+    @if (Model.Rows == null || Model.Rows.Count == 0)
+    {
+        <p class="qcu-empty">@Model.EmptyText</p>
+    }
+    else
+    {
+        <table class="qcu-table qcu-table--bars">
+            <thead>
+                <tr>
+                    <th>@Model.LabelHeader</th>
+                    <th class="qcu-num">@Model.ValueHeader</th>
+                    @if (Model.ShowNote)
+                    {
+                        <th class="qcu-num">Slots</th>
+                    }
+                    <th class="qcu-bar-col">@Model.BarHeader</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var row in Model.Rows)
+                {
+                    <tr>
+                        <td>@row.Label</td>
+                        <td class="qcu-num">@row.Total.ToString("N0", inv)</td>
+                        @if (Model.ShowNote)
+                        {
+                            <td class="qcu-num qcu-note">@row.Note</td>
+                        }
+                        <td>
+                            <div class="qcu-bar" role="img"
+                                 aria-label="@row.Pct.ToString("0.#", inv) percent">
+                                <span class="qcu-bar__fill"
+                                      style="width:@row.Pct.ToString("0.#", inv)%"></span>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</section>
