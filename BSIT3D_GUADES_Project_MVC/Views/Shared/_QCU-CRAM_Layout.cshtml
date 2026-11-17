@@ -37,6 +37,12 @@
                          || string.Equals(routeAction, "Register", StringComparison.OrdinalIgnoreCase));
     var hideNav = isAuthPage && !isAuthed;
 
+    /* The login card renders its own notice inside the card (matching the Web Forms
+       lblMessage). Rendering the shared toast as well would show the same message twice,
+       so the toast is suppressed on the Login action only. */
+    var showToast = !(string.Equals(routeController, "Account", StringComparison.OrdinalIgnoreCase)
+                      && string.Equals(routeAction, "Login", StringComparison.OrdinalIgnoreCase));
+
     /* ---------------------------------------------------------------------
        Nav links whose controllers do not exist yet.
        Availability arrives in Phase 06, the Admin pages in Phase 07/08 and
@@ -108,7 +114,7 @@
 
         @* ---- Page content (master: ContentPlaceHolder MainContent) ---- *@
         <div class="container body-content">
-            @Html.Partial("_QCU-CRAM_Toast")
+            @if (showToast) { @Html.Partial("_QCU-CRAM_Toast") }
             @RenderBody()
         </div>
 

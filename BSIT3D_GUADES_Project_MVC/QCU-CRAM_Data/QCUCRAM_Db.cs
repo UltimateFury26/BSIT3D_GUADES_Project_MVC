@@ -193,11 +193,52 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Data
             }
         }
 
-        /// <summary>EF's SqlQuery / ExecuteSqlCommand take object[], and understand SqlParameter inside it.</summary>
+        /// <summary>
+        /// EF's SqlQuery / ExecuteSqlCommand take object[], and understand SqlParameter inside it.
+        ///
+        /// IMPORTANT: every parameter is CLONED here. EF attaches the SqlParameter it is given to
+        /// the command's SqlParameterCollection, and a SqlParameter may only ever belong to one
+        /// collection. Callers routinely build one parameter and pass it to several queries (for
+        /// example the admin dashboard's "today" parameter). Passing the caller's instance straight
+        /// through made the second query throw
+        ///   System.ArgumentException: The SqlParameter is already contained by another
+        ///   SqlParameterCollection.
+        /// Cloning keeps the caller's objects pristine and makes every call independent.
+        /// </summary>
         private static object[] ToObjects(SqlParameter[] parameters)
         {
             if (parameters == null || parameters.Length == 0) { return new object[0]; }
-            return parameters.Cast<object>().ToArray();
+
+            object[] copy = new object[parameters.Length];
+            for (int i = 0; i < parameters.Length; i++)
+            {
+                copy[i] = Clone(parameters[i]);
+            }
+            return copy;
+        }
+
+        /// <summary>Copies a SqlParameter so it can be attached to a fresh command.</summary>
+        private static SqlParameter Clone(SqlParameter source)
+        {
+            if (source == null) { return null; }
+
+            SqlParameter copy = new SqlParameter();
+            copy.ParameterName = source.ParameterName;
+            copy.SqlDbType = source.SqlDbType;
+            copy.Direction = source.Direction;
+            copy.IsNullable = source.IsNullable;
+            copy.Value = source.Value;
+
+            // Size / Precision / Scale only make sense for the fixed-width and decimal types;
+            // copying them unconditionally is harmless but can upset some providers, so guard.
+            if (source.Size > 0) { copy.Size = source.Size; }
+            if (source.Precision > 0) { copy.Precision = source.Precision; }
+            if (source.Scale > 0) { copy.Scale = source.Scale; }
+
+            if (!string.IsNullOrEmpty(source.UdtTypeName)) { copy.UdtTypeName = source.UdtTypeName; }
+            if (!string.IsNullOrEmpty(source.TypeName)) { copy.TypeName = source.TypeName; }
+
+            return copy;
         }
 
         public void Dispose()

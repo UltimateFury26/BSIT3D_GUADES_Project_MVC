@@ -234,21 +234,26 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Data
         public QCUCRAM_DashboardCounts Dashboard()
         {
             DateTime today = QCUCRAM_Clock.Today;
-            SqlParameter d = QCUCRAM_Db.P("@d", SqlDbType.Date, today);
 
             QCUCRAM_DashboardCounts c = new QCUCRAM_DashboardCounts();
 
+            // Each query gets its own parameter instance. A SqlParameter may only belong to one
+            // SqlParameterCollection at a time, so sharing one across three commands throws
+            // "The SqlParameter is already contained by another SqlParameterCollection."
             c.PendingToday = _db.Count(
                 @"SELECT COUNT(*) AS Total FROM Reservations
-                   WHERE ReservationDate = CAST(@d AS DATE) AND Status = 'Pending'", d);
+                   WHERE ReservationDate = CAST(@d AS DATE) AND Status = 'Pending'",
+                QCUCRAM_Db.P("@d", SqlDbType.Date, today));
 
             c.ApprovedToday = _db.Count(
                 @"SELECT COUNT(*) AS Total FROM Reservations
-                   WHERE ReservationDate = CAST(@d AS DATE) AND Status IN ('Approved','Reassigned')", d);
+                   WHERE ReservationDate = CAST(@d AS DATE) AND Status IN ('Approved','Reassigned')",
+                QCUCRAM_Db.P("@d", SqlDbType.Date, today));
 
             c.CheckedInToday = _db.Count(
                 @"SELECT COUNT(*) AS Total FROM Reservations
-                   WHERE ReservationDate = CAST(@d AS DATE) AND Status = 'CheckedIn'", d);
+                   WHERE ReservationDate = CAST(@d AS DATE) AND Status = 'CheckedIn'",
+                QCUCRAM_Db.P("@d", SqlDbType.Date, today));
 
             c.TotalStudents = _db.Count("SELECT COUNT(*) AS Total FROM Students");
             c.RestrictedStudents = _db.Count("SELECT COUNT(*) AS Total FROM Students WHERE IsRestricted = 1");

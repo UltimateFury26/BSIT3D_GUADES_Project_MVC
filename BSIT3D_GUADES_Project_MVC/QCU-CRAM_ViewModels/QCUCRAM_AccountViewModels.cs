@@ -21,11 +21,11 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_ViewModels
         public string Role { get; set; }
 
         /// <summary>Student number / ID for students, username for admins.</summary>
-        [Required(ErrorMessage = "Please enter your ID.")]
+        [Required(ErrorMessage = "Student number / ID is required.")]
         [Display(Name = "Student Number / ID")]
         public string Identifier { get; set; }
 
-        [Required(ErrorMessage = "Please enter your password.")]
+        [Required(ErrorMessage = "Password is required.")]
         [DataType(DataType.Password)]
         public string Password { get; set; }
 

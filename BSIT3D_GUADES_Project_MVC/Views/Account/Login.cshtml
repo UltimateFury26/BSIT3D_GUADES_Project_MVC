@@ -115,11 +115,21 @@
                 return !!(admin && admin.checked);
             }
 
+            // The Web Forms RequiredFieldValidator swapped its own text with the role, so the
+            // unobtrusive rule and any message already on screen are swapped the same way.
+            var idMsg = document.querySelector('[data-valmsg-for="Identifier"]');
+
+            function requiredText(a) {
+                return a ? 'Username is required.' : 'Student number / ID is required.';
+            }
+
             function apply(clear) {
                 var a = isAdmin();
                 label.textContent = a ? 'Username' : 'Student Number / ID';
                 id.placeholder = a ? 'username' : '23-0001';
                 id.setAttribute('autocomplete', 'username');
+                id.setAttribute('data-val-required', requiredText(a));
+                if (idMsg && idMsg.textContent) { idMsg.textContent = requiredText(a); }
                 if (clear) { id.value = ''; }   // a half-typed "23-" must not carry over
             }
 

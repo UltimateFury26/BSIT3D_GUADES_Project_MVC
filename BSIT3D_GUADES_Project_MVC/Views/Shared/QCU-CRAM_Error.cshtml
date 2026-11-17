@@ -1,40 +1,55 @@
+@model BSIT3D_GUADES_Project_MVC.QCUCRAM_ViewModels.QCUCRAMErrorViewModel
+@using BSIT3D_GUADES_Project_MVC.QCUCRAM_Security
 @{
     /* =====================================================================
        QCU-CRAM  |  Views/Shared/QCU-CRAM_Error.cshtml
        ---------------------------------------------------------------------
-       The friendly error page used when an unhandled exception reaches MVC
-       (App_Start/FilterConfig.cs registers HandleErrorAttribute, and
-       Global.asax.cs Application_Error writes App_Data/QCU-CRAM_error.log).
+       The single friendly error page. Rendered by QCUCRAMHandleErrorAttribute
+       for unhandled exceptions and by ErrorController for a direct /error hit.
 
-       Views/Error/Index.cshtml (Phase 04) stays the page the ErrorController
-       returns; this shared copy is the fallback the framework can render on
-       its own, and it is the one the Razor layout styles.
-
-       Never show the exception text here - only the reference id.
+       Never show a stack trace to the user - only the reference code. The
+       detail block appears only when QCU-CRAM_ShowErrorDetail is "true" in
+       Web.config, which is a local-debugging switch.
        ===================================================================== */
 
     Layout = "~/Views/Shared/_QCU-CRAM_Layout.cshtml";
-    ViewBag.Title = "Something went wrong";
+    ViewBag.Title = Model.Title;
 
-    var reference = Convert.ToString(ViewBag.QCUCRAM_ErrorReference ?? string.Empty);
+    bool signedIn = QCUCRAM_Session.IsAuthenticated;
+    string homeUrl = signedIn
+        ? Url.Content(QCUCRAM_Session.HomeFor(QCUCRAM_Session.Role))
+        : Url.Action("Login", "Account");
 }
 
-<div class="qcu-card p-4 text-center">
-    <h1 class="h4 mb-2">Something went wrong</h1>
+@section head {
+    <meta name="robots" content="noindex, nofollow" />
+}
 
-    <p class="text-muted mb-3">
-        The QCU-CRAM system hit an unexpected error. The details have been logged.
-    </p>
+<div class="qcu-panel qcu-error">
+    <div class="qcu-error__code">@Model.StatusCode</div>
+    <h1 class="qcu-error__title">@Model.Title</h1>
+    <p class="qcu-error__message">@Model.Message</p>
 
-    @if (!string.IsNullOrWhiteSpace(reference))
+    @if (!string.IsNullOrWhiteSpace(Model.Reference))
     {
-        <p class="text-muted small mb-3">
-            Reference: <code>@reference</code> &mdash; quote this when you report the problem.
+        <p class="qcu-error__ref">
+            Reference: <code class="qcu-qcid">@Model.Reference</code>
         </p>
     }
 
-    <div class="d-flex gap-2 justify-content-center">
-        <a class="btn btn-primary" href="@Url.Action("Index", "Home")">Back to home</a>
-        <a class="btn btn-outline-secondary" href="@Url.Action("Login", "Account")">Sign in again</a>
+    <div class="qcu-toolbar">
+        <a class="btn btn-primary" href="@homeUrl">
+            @(signedIn ? "Back to dashboard" : "Go to login")
+        </a>
+        <a class="btn btn-outline-secondary" href="@Url.Action("Index", "Home")">Home</a>
+        <button type="button" class="btn btn-outline-secondary" onclick="history.back();">Go back</button>
     </div>
+
+    @if (Model.ShowDetail && !string.IsNullOrWhiteSpace(Model.Detail))
+    {
+        <details class="qcu-error__detail">
+            <summary>Technical detail (development only)</summary>
+            <pre>@Model.Detail</pre>
+        </details>
+    }
 </div>

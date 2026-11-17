@@ -27,24 +27,9 @@
     --qcu-radius: 12px;
 }
 
-body.qcu-app { background: var(--qcu-canvas); color: var(--qcu-ink); }
-
-.qcu-header {
-    background: linear-gradient(135deg, var(--qcu-maroon), var(--qcu-maroon-dark));
-    color: #fff;
-}
-.qcu-header .navbar-brand { color: #fff; font-weight: 600; letter-spacing: .2px; }
-.qcu-header .nav-link { color: rgba(255,255,255,.86); }
-.qcu-header .nav-link:hover,
-.qcu-header .nav-link.active { color: #fff; }
-
-.qcu-footer {
-    background: var(--qcu-maroon-dark);
-    color: rgba(255,255,255,.8);
-    font-size: .875rem;
-}
-.qcu-footer a { color: rgba(255,255,255,.9); text-decoration: none; }
-.qcu-footer a:hover { text-decoration: underline; }
+/* body.qcu-app / .qcu-header / .qcu-footer are intentionally NOT styled here.
+   The ported Site.css rules (further down this file) keep the white header,
+   blue nav bar and blue/orange footer exactly as the Web Forms master page. */
 
 .qcu-card {
     background: var(--qcu-surface);
@@ -56,21 +41,10 @@ body.qcu-app { background: var(--qcu-canvas); color: var(--qcu-ink); }
 .qcu-rules-list { padding-left: 1.25rem; }
 .qcu-rules-list li { margin-bottom: .35rem; }
 
-.qcu-auth-body {
-    min-height: 100vh;
-    display: grid;
-    place-items: center;
-    background: radial-gradient(1200px 600px at 50% -10%, #fdf6f7, var(--qcu-canvas));
-}
-.qcu-auth-card {
-    width: 100%;
-    max-width: 420px;
-    background: var(--qcu-surface);
-    border: 1px solid var(--qcu-border);
-    border-radius: 16px;
-    padding: 2rem;
-    box-shadow: 0 10px 30px rgba(16,24,40,.08);
-}
+/* .qcu-auth-body / .qcu-auth-card are intentionally NOT styled here.
+   The ported Site.css rules (further down this file) centre the card the same
+   way the Web Forms login page does: .body-content:has(.qcu-auth) with
+   margin:40px auto, a 460px card, blue gradient head and orange rule. */
 
 .qcu-badge { display: inline-block; padding: .25rem .6rem; border-radius: 999px; font-size: .75rem; font-weight: 600; }
 .qcu-badge--pending    { background: #fff4e5; color: var(--qcu-warn); }
@@ -2989,7 +2963,7 @@ input[type="date"][readonly] {
    a new palette. */
 :root {
     --qcu-surface-2: #f3f4f6;
-    --qcu-accent: var(--qcu-maroon);
+    --qcu-accent: var(--qcu-blue);
 }
 
 .qcu-page-head { display:flex; justify-content:space-between; align-items:flex-end;
@@ -3310,3 +3284,215 @@ input[type="date"][readonly] {
         print-color-adjust: exact;
     }
 }
+
+/* =====================================================================
+   Phase 10 - error page
+   Views/Shared/QCU-CRAM_Error.cshtml
+   ===================================================================== */
+.qcu-error {
+    max-width: 640px;
+    margin: 40px auto;
+    padding: 40px 32px;
+    text-align: center;
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 6px 24px rgba(0, 40, 90, .12);
+}
+.qcu-error__code {
+    font-size: 72px;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--qcu-blue);
+    opacity: .18;
+    letter-spacing: 2px;
+}
+.qcu-error__title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--qcu-blue-dark);
+    margin: .25rem 0 .5rem;
+}
+.qcu-error__message {
+    color: #52606d;
+    margin-bottom: 1rem;
+}
+.qcu-error__ref {
+    color: #52606d;
+    font-size: .9rem;
+    margin-bottom: 1.5rem;
+}
+.qcu-error .qcu-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+    justify-content: center;
+    margin-bottom: 1rem;
+}
+.qcu-error__detail {
+    margin-top: 1.5rem;
+    text-align: left;
+}
+.qcu-error__detail summary {
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--qcu-blue);
+    margin-bottom: .5rem;
+}
+.qcu-error__detail pre {
+    background: #0f172a;
+    color: #e2e8f0;
+    padding: 16px;
+    border-radius: 8px;
+    font-size: .8rem;
+    line-height: 1.45;
+    overflow: auto;
+    max-height: 420px;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+/* =====================================================================
+   Phase 10 - visual parity with the Web Forms original
+   ---------------------------------------------------------------------
+   The Phase 07/08 admin UI kit introduced a parallel set of class names
+   (.qcu-panel, .qcu-btn, .qcu-table, .qcu-stat, .qcu-modal__*) and pointed
+   --qcu-accent at the maroon placeholder. The original pages are QCU blue
+   with Bootstrap cards, bordered/striped tables and Bootstrap buttons.
+   These overrides make the kit render the original look, so the admin and
+   report screens match Guades_QCUCram_*.aspx without rewriting markup.
+   ===================================================================== */
+:root {
+    --qcu-accent: var(--qcu-blue);
+    --qcu-surface-2: #e8eff7;
+}
+
+/* Bootstrap .card look */
+.qcu-panel {
+    border: 1px solid rgba(0, 0, 0, .125);
+    border-radius: .375rem;
+    background: #fff;
+    margin-bottom: 1rem;
+    overflow: hidden;
+    box-shadow: none;
+}
+.qcu-panel__head {
+    padding: .75rem 1rem;
+    background: #f8f9fa;
+    border-bottom: 1px solid rgba(0, 0, 0, .125);
+}
+.qcu-panel__head h2 { font-size: 1rem; font-weight: 700; }
+.qcu-panel__body { padding: 1rem; }
+.qcu-panel--warn  { border-color: #ffe69c; background: #fff3cd; }
+.qcu-panel--danger { border-color: #f5c2c7; background: #f8d7da; }
+
+/* Bootstrap .card stat tiles - no lift, square-ish corners */
+.qcu-stat {
+    border: 1px solid rgba(0, 0, 0, .125);
+    border-radius: .375rem;
+    padding: 1rem;
+    background: #fff;
+    transition: none;
+}
+.qcu-stat:hover { transform: none; box-shadow: none; }
+.qcu-stat__value { font-size: 1.75rem; color: var(--qcu-blue); }
+.qcu-stat.is-warn .qcu-stat__value { color: #b45309; }
+.qcu-stat.is-bad  .qcu-stat__value { color: #b91c1c; }
+
+/* Bootstrap .table-bordered .table-striped look */
+.qcu-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: .9rem;
+    border: 1px solid #dee2e6;
+    background: #fff;
+}
+.qcu-table th,
+.qcu-table td {
+    padding: .5rem .75rem;
+    border: 1px solid #dee2e6;
+    text-align: left;
+    vertical-align: middle;
+}
+.qcu-table th {
+    font-size: .875rem;
+    text-transform: none;
+    letter-spacing: 0;
+    color: #212529;
+    background: #e8eff7;
+    font-weight: 700;
+}
+.qcu-table tbody tr:nth-of-type(odd) { background: rgba(0, 0, 0, .05); }
+.qcu-table tbody tr:hover { background: rgba(0, 80, 158, .08); }
+.qcu-table tr.is-now { background: #d1e7dd; }
+.qcu-table tr.is-today { background: #cfe2ff; }
+
+/* Bootstrap .btn sizing and colours */
+.qcu-btn {
+    display: inline-block;
+    padding: .375rem .75rem;
+    border-radius: .375rem;
+    border: 1px solid transparent;
+    font: inherit;
+    font-size: 1rem;
+    font-weight: 400;
+    line-height: 1.5;
+    cursor: pointer;
+    text-decoration: none;
+    text-align: center;
+}
+.qcu-btn--primary { background: var(--qcu-blue); border-color: var(--qcu-blue); color: #fff; }
+.qcu-btn--primary:hover { background: var(--qcu-blue-dark); border-color: var(--qcu-blue-dark); color: #fff; }
+.qcu-btn--danger { background: #dc3545; border-color: #dc3545; color: #fff; }
+.qcu-btn--ghost { background: transparent; border-color: #6c757d; color: #6c757d; }
+.qcu-btn--ghost:hover { background: #6c757d; color: #fff; }
+.qcu-btn--sm { padding: .25rem .5rem; font-size: .875rem; border-radius: .2rem; }
+
+/* Bootstrap modal box */
+.qcu-modal__box { border-radius: .3rem; }
+.qcu-modal__head { background: #f8f9fa; }
+.qcu-modal__foot { background: #f8f9fa; }
+
+/* Form controls match Bootstrap .form-control */
+.qcu-input, .qcu-select, .qcu-textarea {
+    border: 1px solid #ced4da;
+    border-radius: .375rem;
+    padding: .375rem .75rem;
+    font-size: 1rem;
+    background: #fff;
+}
+.qcu-label {
+    text-transform: none;
+    letter-spacing: 0;
+    font-size: .875rem;
+    font-weight: 700;
+    color: #212529;
+    margin: .5rem 0 .25rem;
+}
+
+/* Status badges: the original used Bootstrap .badge with solid text-bg-* colours
+   (Queue/Records/CheckIn code-behind). These replace the pastel pills so a
+   status looks the same in both projects. */
+.qcu-badge {
+    display: inline-block;
+    padding: .35em .65em;
+    border-radius: .375rem;
+    font-size: .75em;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: 0;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: baseline;
+    background: #6c757d;
+    color: #fff;
+}
+.qcu-badge.is-pending    { background: #ffc107; color: #000; }
+.qcu-badge.is-approved   { background: #198754; color: #fff; }
+.qcu-badge.is-reassigned { background: #0dcaf0; color: #000; }
+.qcu-badge.is-checkedin  { background: #0d6efd; color: #fff; }
+.qcu-badge.is-completed  { background: #212529; color: #fff; }
+.qcu-badge.is-declined   { background: #dc3545; color: #fff; }
+.qcu-badge.is-cancelled  { background: #6c757d; color: #fff; }
+.qcu-badge.is-forfeited  { background: #dc3545; color: #fff; }
+.qcu-badge.is-warn       { background: #ffc107; color: #000; }
+.qcu-badge.is-bad        { background: #dc3545; color: #fff; }

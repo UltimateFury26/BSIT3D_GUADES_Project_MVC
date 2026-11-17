@@ -1,12 +1,13 @@
 using System;
 using System.Data.Entity;
-using System.IO;
 using System.Security.Principal;
 using System.Web;
 using System.Web.Mvc;
 using System.Web.Optimization;
 using System.Web.Routing;
 using BSIT3D_GUADES_Project_MVC.QCUCRAM_Data;
+using BSIT3D_GUADES_Project_MVC.QCUCRAM_Helpers;
+using BSIT3D_GUADES_Project_MVC.QCUCRAM_Infrastructure;
 using BSIT3D_GUADES_Project_MVC.QCUCRAM_Security;
 using BSIT3D_GUADES_Project_MVC.QCUCRAM_Services;
 
@@ -18,6 +19,9 @@ namespace BSIT3D_GUADES_Project_MVC
         {
             // The database is owned by the SQL scripts. EF must never drop/recreate it.
             Database.SetInitializer<QCUCRAMContext>(null);
+
+            // Do not advertise the MVC version in a response header.
+            MvcHandler.DisableMvcResponseHeader = true;
 
             AreaRegistration.RegisterAllAreas();
             FilterConfig.RegisterGlobalFilters(GlobalFilters.Filters);
@@ -33,23 +37,57 @@ namespace BSIT3D_GUADES_Project_MVC
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Trace.TraceError("EnsureDefaultAdmin failed: " + ex);
+                QCUCRAMErrorLog.Write(ex, "application-start/EnsureDefaultAdmin", null);
             }
 
-            // Background sweep: forfeits, expiries, completions, restriction lifts.
+            // Phase 10: the hosted background sweep timer (expiries, no-shows,
+            // completions, restriction lifts). QCUCRAM_MaintenanceService keeps its
+            // own StartBackgroundTimer for compatibility, but the timer below is the
+            // one wired to the app lifecycle.
             try
             {
-                QCUCRAM_MaintenanceService.StartBackgroundTimer(60);
+                QCUCRAMSweepTimer.Start();
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Trace.TraceError("StartBackgroundTimer failed: " + ex);
+                QCUCRAMErrorLog.Write(ex, "application-start/sweep-timer", null);
             }
         }
 
         protected void Application_End(object sender, EventArgs e)
         {
-            QCUCRAM_MaintenanceService.StopBackgroundTimer();
+            try { QCUCRAMSweepTimer.Stop(); }
+            catch { /* shutting down */ }
+
+            try { QCUCRAM_MaintenanceService.StopBackgroundTimer(); }
+            catch { /* shutting down */ }
+        }
+
+        /// <summary>
+        /// No-cache for authenticated HTML so the browser Back button never shows a stale
+        /// dashboard after a reservation changed. The login page is exempt so the logo and
+        /// CSS still come from the browser cache on a repeat visit.
+        /// </summary>
+        protected void Application_BeginRequest(object sender, EventArgs e)
+        {
+            try
+            {
+                HttpRequest request = Context != null ? Context.Request : null;
+                HttpResponse response = Context != null ? Context.Response : null;
+                if (request == null || response == null) { return; }
+
+                string path = request.AppRelativeCurrentExecutionFilePath ?? string.Empty;
+                if (path.IndexOf("/login", StringComparison.OrdinalIgnoreCase) >= 0) { return; }
+
+                response.Cache.SetCacheability(HttpCacheability.NoCache);
+                response.Cache.SetExpires(DateTime.UtcNow.AddDays(-1));
+                response.Cache.SetNoStore();
+                response.AppendHeader("Pragma", "no-cache");
+            }
+            catch
+            {
+                // Never let a header tweak break the request.
+            }
         }
 
         /// <summary>
@@ -81,29 +119,31 @@ namespace BSIT3D_GUADES_Project_MVC
                 new[] { role });
         }
 
+        protected void Session_Start(object sender, EventArgs e)
+        {
+            // Session keys are created lazily by QCUCRAM_Session.SignIn; nothing to do here.
+        }
+
+        protected void Session_End(object sender, EventArgs e)
+        {
+            // InProc session expiry: nothing to clean up beyond what the runtime drops.
+        }
+
         protected void Application_Error(object sender, EventArgs e)
         {
             Exception ex = Server.GetLastError();
             if (ex == null) { return; }
 
+            string area = "application-error";
             try
             {
-                string folder = Server.MapPath("~/App_Data");
-                if (!Directory.Exists(folder)) { Directory.CreateDirectory(folder); }
-
-                string logPath = Path.Combine(folder, "QCU-CRAM_error.log");
-                string entry = string.Format("{0:u} | {1} | {2}{3}{4}{5}",
-                    DateTime.UtcNow,
-                    Request != null ? Request.RawUrl : "(no request)",
-                    ex.GetType().Name,
-                    Environment.NewLine, ex, Environment.NewLine + "----" + Environment.NewLine);
-
-                File.AppendAllText(logPath, entry);
+                if (Request != null) { area += " " + Request.RawUrl; }
             }
-            catch
-            {
-                // Logging must never throw.
-            }
+            catch { /* request may already be gone */ }
+
+            // QCUCRAMHandleErrorAttribute normally handles MVC exceptions first; this
+            // catches anything that escapes it (routing, static files, module errors).
+            QCUCRAMErrorLog.Write(ex, area, null);
         }
     }
 }
