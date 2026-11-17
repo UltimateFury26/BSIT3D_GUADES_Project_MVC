@@ -44,6 +44,30 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Helpers
                 || status == Forfeited || status == Completed;
         }
 
+        /// <summary>
+        /// Phase 07 - the modifier class the admin tables put next to .qcu-badge.
+        ///
+        /// Kept here rather than in each view so the dashboard, the queue, the check-in
+        /// desk and the records table can never drift apart: add a ninth status and
+        /// this switch is the only place that needs a new line. The values match the
+        /// .qcu-badge.is-* rules appended to QCU-CRAM_Site.css in this phase.
+        /// </summary>
+        public static string CssClass(string status)
+        {
+            switch (status)
+            {
+                case Pending: return "is-pending";
+                case Approved: return "is-approved";
+                case Reassigned: return "is-reassigned";
+                case CheckedIn: return "is-checkedin";
+                case Completed: return "is-completed";
+                case Declined: return "is-declined";
+                case Cancelled: return "is-cancelled";
+                case Forfeited: return "is-forfeited";
+                default: return string.Empty;
+            }
+        }
+
         /// <summary>SQL fragment for "the slot is still held" - fixed constants, never user input.</summary>
         public const string FreeListSql = "('Declined','Cancelled','Forfeited')";
 

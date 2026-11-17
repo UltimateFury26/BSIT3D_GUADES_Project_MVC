@@ -1,0 +1,200 @@
+@model BSIT3D_GUADES_Project_MVC.QCUCRAM_ViewModels.QCUCRAMRecordsViewModel
+@using System
+@using System.Globalization
+@{
+    /* =====================================================================
+       QCU-CRAM  |  Views/Admin/QCU-CRAM_Records.cshtml
+       ---------------------------------------------------------------------
+       Port of Guades_QCUCram_Admin/Guades_QCUCram_Records.aspx.
+
+       Same pieces:
+         filter bar       (ddlStatus, ddlRoom, ddlProgram, txtFrom, txtTo, txtSearch)
+         sortable grid    (gvRecords - eight sort keys, whitelisted server-side)
+         pager            (PageIndex, PageSize = 25)
+         "Export CSV"     (btnExportCsv - same filters, every page, not just this one)
+         row detail       (the DetailsView the original opened in a panel)
+
+       The Web Forms page kept all of this in ViewState. Here it is the query
+       string, so a filtered list can be bookmarked and shared, and opening a
+       row does not throw the filter away.
+       ===================================================================== */
+
+    ViewBag.Title = "Reservation Records";
+    Layout = "~/Views/Shared/_QCU-CRAM_Layout.cshtml";
+
+    CultureInfo inv = CultureInfo.InvariantCulture;
+
+    var f = Model.Filter;
+
+    string fromText = f.From.HasValue ? f.From.Value.ToString("yyyy-MM-dd", inv) : null;
+    string toText = f.To.HasValue ? f.To.Value.ToString("yyyy-MM-dd", inv) : null;
+    string roomText = f.RoomID.HasValue ? f.RoomID.Value.ToString(inv) : null;
+
+    // One place that builds a link back to this screen with every current
+    // filter intact. Sort links flip the direction only for the active column.
+    Func<string, string> sortUrl = key => Url.Action("Index", "AdminRecords", new
+    {
+        status = f.Status,
+        room = roomText,
+        program = f.Program,
+        from = fromText,
+        to = toText,
+        q = f.Search,
+        sort = key,
+        dir = (f.Sort == key && f.Dir == "asc") ? "desc" : "asc",
+        page = 1
+    });
+
+    Func<string, string> arrow = key =>
+        f.Sort != key ? string.Empty : (f.Dir == "asc" ? " \u25B2" : " \u25BC");
+
+    Func<int, string> detailUrl = id => Url.Action("Index", "AdminRecords", new
+    {
+        status = f.Status,
+        room = roomText,
+        program = f.Program,
+        from = fromText,
+        to = toText,
+        q = f.Search,
+        sort = f.Sort,
+        dir = f.Dir,
+        page = f.Page,
+        detail = id
+    });
+}
+
+<div class="qcu-page-head">
+    <div>
+        <h1 class="qcu-page-title">Reservation records</h1>
+        <p class="qcu-page-sub">@Model.TotalRows matching row(s)</p>
+    </div>
+    <div class="qcu-page-actions">
+        <a class="qcu-btn qcu-btn--ghost"
+           href="@Url.Action("ExportCsv", "AdminRecords", new {
+                      status = f.Status, room = roomText, program = f.Program,
+                      from = fromText, to = toText, q = f.Search,
+                      sort = f.Sort, dir = f.Dir })">
+            Export CSV
+        </a>
+    </div>
+</div>
+
+<form method="get" action="@Url.Action("Index", "AdminRecords")" class="qcu-filterbar">
+    <label>
+        Status
+        <select name="status" class="qcu-select">
+            @foreach (var o in Model.StatusOptions)
+            {
+                <option value="@o.Key" selected="@(o.Key == f.Status ? "selected" : null)">@o.Value</option>
+            }
+        </select>
+    </label>
+
+    <label>
+        Room
+        <select name="room" class="qcu-select">
+            @foreach (var o in Model.RoomOptions)
+            {
+                <option value="@o.Key" selected="@(o.Key == roomText ? "selected" : null)">@o.Value</option>
+            }
+        </select>
+    </label>
+
+    <label>
+        Program
+        <select name="program" class="qcu-select">
+            <option value="">All programs</option>
+            @foreach (var p in Model.ProgramOptions)
+            {
+                <option value="@p" selected="@(p == f.Program ? "selected" : null)">@p</option>
+            }
+        </select>
+    </label>
+
+    <label>
+        From
+        <input type="date" name="from" class="qcu-input" value="@fromText" />
+    </label>
+
+    <label>
+        To
+        <input type="date" name="to" class="qcu-input" value="@toText" />
+    </label>
+
+    <label>
+        Search
+        <input type="search" name="q" class="qcu-input" value="@f.Search"
+               placeholder="Name, student number, purpose" />
+    </label>
+
+    <input type="hidden" name="sort" value="@f.Sort" />
+    <input type="hidden" name="dir" value="@f.Dir" />
+
+    <button type="submit" class="qcu-btn qcu-btn--primary">Filter</button>
+    <a class="qcu-btn qcu-btn--ghost" href="@Url.Action("Index", "AdminRecords")">Clear</a>
+</form>
+
+@if (Model.Rows.Count == 0)
+{
+    <p class="qcu-empty">
+        @(f.HasFilters ? "No reservations match these filters." : "There are no reservations yet.")
+    </p>
+}
+else
+{
+    <table class="qcu-table qcu-table--records">
+        <thead>
+            <tr>
+                <th><a href="@sortUrl("ReservationID")">#@arrow("ReservationID")</a></th>
+                <th><a href="@sortUrl("ReservationDate")">Date@arrow("ReservationDate")</a></th>
+                <th><a href="@sortUrl("StartTime")">Time@arrow("StartTime")</a></th>
+                <th><a href="@sortUrl("RoomName")">Room@arrow("RoomName")</a></th>
+                <th><a href="@sortUrl("Requester")">Requester@arrow("Requester")</a></th>
+                <th><a href="@sortUrl("Program")">Program@arrow("Program")</a></th>
+                <th><a href="@sortUrl("NumberOfMembers")">Group@arrow("NumberOfMembers")</a></th>
+                <th><a href="@sortUrl("Status")">Status@arrow("Status")</a></th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var row in Model.Rows)
+            {
+                <tr>
+                    <td>@row.ReservationID</td>
+                    <td>@row.ReservationDate.ToString("MMM d, yyyy", inv)</td>
+                    <td>@row.SlotLabel</td>
+                    <td>@row.RoomName</td>
+                    <td>@row.Requester <span class="qcu-muted">@row.StudentNumber</span></td>
+                    <td>@row.Program</td>
+                    <td>@row.NumberOfMembers</td>
+                    <td><span class="qcu-badge @row.StatusCss">@row.Status</span></td>
+                    <td class="qcu-table__actions">
+                        <a class="qcu-btn qcu-btn--sm" href="@detailUrl(row.ReservationID)">Open</a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    @Html.Partial("_QCU-CRAM_Pager", Model.Pager)
+}
+
+@if (Model.Detail != null)
+{
+    <div class="qcu-modal is-open" role="dialog" aria-modal="true">
+        <div class="qcu-modal__box qcu-modal__box--wide">
+            <header class="qcu-modal__head">
+                <h2>Reservation #@Model.Detail.ReservationID</h2>
+                <a class="qcu-modal__close" href="@Url.Action("Index", "AdminRecords", new {
+                       status = f.Status, room = roomText, program = f.Program,
+                       from = fromText, to = toText, q = f.Search,
+                       sort = f.Sort, dir = f.Dir, page = f.Page })"
+                   aria-label="Close">&times;</a>
+            </header>
+
+            <div class="qcu-modal__body">
+                @Html.Partial("_QCU-CRAM_ReservationDetail", Model.Detail)
+            </div>
+        </div>
+    </div>
+}

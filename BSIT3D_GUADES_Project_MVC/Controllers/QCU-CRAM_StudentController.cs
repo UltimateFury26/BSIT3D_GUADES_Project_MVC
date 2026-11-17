@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Web.Mvc;
 using BSIT3D_GUADES_Project_MVC.QCUCRAM_Data;
@@ -220,7 +220,8 @@ namespace BSIT3D_GUADES_Project_MVC.Controllers.Student
 
         [HttpGet]
         [Route("profile")]
-        public ActionResult Profile()
+        [ActionName("Profile")]
+        public ActionResult ProfilePage()
         {
             QCUCRAMProfileViewModel model = _service.GetProfile(CurrentUserId);
 
@@ -236,7 +237,8 @@ namespace BSIT3D_GUADES_Project_MVC.Controllers.Student
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Route("profile")]
-        public ActionResult Profile(QCUCRAMProfileViewModel model)
+        [ActionName("Profile")]
+        public ActionResult ProfilePage(QCUCRAMProfileViewModel model)
         {
             if (model == null)
             {

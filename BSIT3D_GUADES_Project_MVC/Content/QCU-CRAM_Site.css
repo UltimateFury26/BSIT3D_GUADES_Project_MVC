@@ -2979,3 +2979,139 @@ main > .qcu-toast {
 input[type="date"][readonly] {
     background: var(--qcu-card-soft, #f7f8fa);
 }
+
+/* ============================================================ admin (phase 7) */
+
+/* The Phase 05 token block never needed these two names. Phase 07 does:
+   --qcu-surface-2 is the zebra / panel-head tint, --qcu-accent is the one
+   brand colour used for buttons, pager dots and timeline bullets. Pointing
+   --qcu-accent at the existing maroon keeps the QCU look without inventing
+   a new palette. */
+:root {
+    --qcu-surface-2: #f3f4f6;
+    --qcu-accent: var(--qcu-maroon);
+}
+
+.qcu-page-head { display:flex; justify-content:space-between; align-items:flex-end;
+                 gap:16px; margin:0 0 20px; flex-wrap:wrap; }
+.qcu-page-title { font-size:1.6rem; margin:0 0 4px; }
+.qcu-page-sub { margin:0; color:var(--qcu-muted); font-size:.9rem; }
+.qcu-page-actions { display:flex; gap:8px; }
+
+.qcu-card-grid { display:grid; gap:16px; margin-bottom:24px;
+                 grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); }
+.qcu-stat { display:flex; flex-direction:column; gap:4px; padding:18px 20px;
+            border:1px solid var(--qcu-border); border-radius:14px;
+            background:var(--qcu-surface); text-decoration:none; color:inherit;
+            transition:transform .15s ease, box-shadow .15s ease; }
+.qcu-stat:hover { transform:translateY(-2px); box-shadow:0 10px 24px rgba(0,0,0,.08); }
+.qcu-stat__label { font-size:.78rem; letter-spacing:.04em; text-transform:uppercase;
+                   color:var(--qcu-muted); }
+.qcu-stat__value { font-size:2rem; font-weight:700; line-height:1.1; }
+.qcu-stat__hint { font-size:.82rem; color:var(--qcu-muted); }
+.qcu-stat.is-warn .qcu-stat__value { color:#b45309; }
+.qcu-stat.is-bad  .qcu-stat__value { color:#b91c1c; }
+
+.qcu-panel { border:1px solid var(--qcu-border); border-radius:14px;
+             background:var(--qcu-surface); margin-bottom:20px; overflow:hidden; }
+.qcu-panel--warn { border-color:#fcd34d; background:#fffbeb; }
+.qcu-panel__head { display:flex; justify-content:space-between; align-items:center;
+                   gap:12px; padding:14px 18px; border-bottom:1px solid var(--qcu-border); }
+.qcu-panel__head h2 { margin:0; font-size:1rem; }
+.qcu-subhead { margin:20px 0 8px; font-size:.9rem; text-transform:uppercase;
+               letter-spacing:.04em; color:var(--qcu-muted); }
+
+.qcu-table { width:100%; border-collapse:collapse; font-size:.9rem; }
+.qcu-table th, .qcu-table td { padding:10px 14px; text-align:left;
+                               border-bottom:1px solid var(--qcu-border); }
+.qcu-table th { font-size:.75rem; text-transform:uppercase; letter-spacing:.04em;
+                color:var(--qcu-muted); background:var(--qcu-surface-2); }
+.qcu-table th a { color:inherit; text-decoration:none; }
+.qcu-table tbody tr:hover { background:var(--qcu-surface-2); }
+.qcu-table tr.is-now { background:#ecfdf5; }
+.qcu-table tr.is-today { background:#eff6ff; }
+.qcu-table__actions { white-space:nowrap; text-align:right; }
+.qcu-table--records td { font-size:.85rem; }
+
+.qcu-badge { display:inline-block; padding:2px 9px; border-radius:999px;
+             font-size:.72rem; font-weight:600; letter-spacing:.02em;
+             background:#e5e7eb; color:#374151; }
+.qcu-badge.is-pending    { background:#fef3c7; color:#92400e; }
+.qcu-badge.is-approved   { background:#dbeafe; color:#1e40af; }
+.qcu-badge.is-reassigned { background:#ede9fe; color:#5b21b6; }
+.qcu-badge.is-checkedin  { background:#d1fae5; color:#065f46; }
+.qcu-badge.is-completed  { background:#e0f2fe; color:#075985; }
+.qcu-badge.is-declined   { background:#fee2e2; color:#991b1b; }
+.qcu-badge.is-cancelled  { background:#e5e7eb; color:#4b5563; }
+.qcu-badge.is-forfeited  { background:#fde68a; color:#78350f; }
+.qcu-badge.is-warn       { background:#fef3c7; color:#92400e; }
+.qcu-badge.is-bad        { background:#fee2e2; color:#991b1b; }
+
+.qcu-pill { display:inline-block; margin-left:8px; padding:0 7px; border-radius:999px;
+            background:rgba(255,255,255,.28); font-size:.72rem; }
+
+.qcu-toolbar, .qcu-filterbar { display:flex; flex-wrap:wrap; gap:10px;
+                               align-items:flex-end; margin-bottom:18px; }
+.qcu-filterbar label { display:flex; flex-direction:column; gap:4px;
+                       font-size:.75rem; text-transform:uppercase;
+                       letter-spacing:.04em; color:var(--qcu-muted); }
+.qcu-input, .qcu-select, .qcu-textarea { padding:8px 10px; border:1px solid var(--qcu-border);
+            border-radius:9px; background:var(--qcu-surface); font:inherit; font-size:.9rem; }
+.qcu-textarea { resize:vertical; }
+.qcu-label { display:block; margin:14px 0 4px; font-size:.78rem; font-weight:600;
+             text-transform:uppercase; letter-spacing:.04em; color:var(--qcu-muted); }
+.qcu-hint { font-size:.85rem; color:var(--qcu-muted); }
+.qcu-empty { padding:22px 18px; color:var(--qcu-muted); font-size:.9rem; }
+.qcu-muted { color:var(--qcu-muted); font-size:.85em; }
+.qcu-link { font-size:.85rem; }
+.qcu-inline-form { display:inline-flex; gap:8px; align-items:center; }
+
+.qcu-btn { display:inline-flex; align-items:center; gap:6px; padding:8px 14px;
+           border-radius:9px; border:1px solid transparent; font:inherit;
+           font-size:.88rem; font-weight:600; cursor:pointer; text-decoration:none; }
+.qcu-btn--primary { background:var(--qcu-accent); color:#fff; }
+.qcu-btn--ghost   { background:transparent; border-color:var(--qcu-border);
+                    color:inherit; }
+.qcu-btn--danger  { background:#dc2626; color:#fff; }
+.qcu-btn--sm      { padding:5px 10px; font-size:.8rem; }
+.qcu-btn[disabled] { opacity:.45; cursor:not-allowed; }
+
+/* modal panels - server-rendered, no JavaScript required */
+.qcu-modal { display:none; position:fixed; inset:0; z-index:60;
+             background:rgba(15,23,42,.55); padding:24px; overflow:auto; }
+.qcu-modal.is-open { display:flex; align-items:flex-start; justify-content:center; }
+.qcu-modal__box { width:100%; max-width:560px; background:var(--qcu-surface);
+                  border-radius:16px; box-shadow:0 24px 60px rgba(0,0,0,.28);
+                  margin:auto; }
+.qcu-modal__box--wide { max-width:760px; }
+.qcu-modal__head { display:flex; justify-content:space-between; align-items:center;
+                   padding:16px 20px; border-bottom:1px solid var(--qcu-border); }
+.qcu-modal__head h2 { margin:0; font-size:1.05rem; }
+.qcu-modal__close { font-size:1.5rem; line-height:1; text-decoration:none; color:inherit; }
+.qcu-modal__body { padding:20px; }
+.qcu-modal__foot { display:flex; flex-wrap:wrap; gap:10px; padding:16px 20px;
+                   border-top:1px solid var(--qcu-border); background:var(--qcu-surface-2); }
+.qcu-form { padding:20px; }
+
+.qcu-detail__grid { display:grid; grid-template-columns:140px 1fr; gap:8px 16px;
+                    margin:0 0 8px; font-size:.9rem; }
+.qcu-detail__grid dt { color:var(--qcu-muted); font-size:.78rem; text-transform:uppercase;
+                       letter-spacing:.04em; }
+.qcu-detail__grid dd { margin:0; }
+.qcu-purpose { margin:0; font-size:.9rem; white-space:pre-line; }
+.qcu-member-list { list-style:none; margin:0; padding:0; font-size:.88rem; }
+.qcu-member-list li { display:flex; gap:10px; align-items:baseline;
+                      padding:6px 0; border-bottom:1px dashed var(--qcu-border); }
+.qcu-member-list__name { font-weight:600; }
+.qcu-tag { font-size:.68rem; padding:1px 6px; border-radius:6px;
+           background:#e0e7ff; color:#3730a3; text-transform:uppercase; }
+.qcu-timeline { list-style:none; margin:0; padding:0 0 0 14px;
+                border-left:2px solid var(--qcu-border); font-size:.85rem; }
+.qcu-timeline li { position:relative; padding:0 0 14px 12px; }
+.qcu-timeline li::before { content:""; position:absolute; left:-19px; top:5px;
+                           width:8px; height:8px; border-radius:50%;
+                           background:var(--qcu-accent); }
+.qcu-timeline__when { display:block; color:var(--qcu-muted); font-size:.75rem; }
+.qcu-timeline__note { display:block; margin-top:2px; font-style:italic; }
+
+/* ================================================= end admin (phase 7) */

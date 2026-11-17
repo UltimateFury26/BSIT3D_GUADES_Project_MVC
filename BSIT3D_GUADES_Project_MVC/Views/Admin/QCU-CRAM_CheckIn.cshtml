@@ -1,0 +1,132 @@
+@model BSIT3D_GUADES_Project_MVC.QCUCRAM_ViewModels.QCUCRAMCheckInViewModel
+@using System
+@using System.Globalization
+@{
+    /* =====================================================================
+       QCU-CRAM  |  Views/Admin/QCU-CRAM_CheckIn.cshtml
+       ---------------------------------------------------------------------
+       Port of Guades_QCUCram_Admin/Guades_QCUCram_CheckIn.aspx.
+
+       Same pieces:
+         search box            (txtSearch - name, student number or reservation #)
+         waiting GridView      (gvWaiting - approved/reassigned bookings today)
+         check-in button       (btnCheckIn - only inside the grace window)
+         checked-in GridView   (gvCheckedIn)
+
+       The grace window is [slot start, slot start + GraceMinutes], exactly as
+       the Web Forms page computed it. Outside that window the button is
+       disabled and the reason is spelled out, so the assistant never has to
+       guess why a click did nothing.
+       ===================================================================== */
+
+    ViewBag.Title = "Check-In Desk";
+    Layout = "~/Views/Shared/_QCU-CRAM_Layout.cshtml";
+
+    CultureInfo inv = CultureInfo.InvariantCulture;
+}
+
+<div class="qcu-page-head">
+    <div>
+        <h1 class="qcu-page-title">Check-in desk</h1>
+        <p class="qcu-page-sub">
+            @Model.Now.ToString("dddd, MMMM d, yyyy", inv) &middot;
+            grace period @Model.GraceMinutes minutes
+        </p>
+    </div>
+    <div class="qcu-page-actions">
+        <a class="qcu-btn qcu-btn--ghost" href="@Url.Action("Queue", "Admin")">Approval queue</a>
+    </div>
+</div>
+
+<form method="get" action="@Url.Action("CheckIn", "Admin")" class="qcu-toolbar">
+    <input class="qcu-input" type="search" name="q" value="@Model.Search"
+           placeholder="Search by name, student number, or reservation #" />
+    <button type="submit" class="qcu-btn qcu-btn--primary">Search</button>
+    <a class="qcu-btn qcu-btn--ghost" href="@Url.Action("CheckIn", "Admin")">Clear</a>
+</form>
+
+<section class="qcu-panel">
+    <header class="qcu-panel__head">
+        <h2>Waiting (@Model.Waiting.Count)</h2>
+    </header>
+
+    @if (Model.Waiting.Count == 0)
+    {
+        <p class="qcu-empty">No approved bookings are waiting for check-in today.</p>
+    }
+    else
+    {
+        <table class="qcu-table">
+            <thead>
+                <tr>
+                    <th>#</th><th>Time</th><th>Room</th><th>Requester</th>
+                    <th>Program</th><th>Group</th><th>Window</th><th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var row in Model.Waiting)
+                {
+                    <tr>
+                        <td>@row.ReservationID</td>
+                        <td>@row.SlotLabel</td>
+                        <td>@row.RoomName</td>
+                        <td>@row.Requester <span class="qcu-muted">@row.StudentNumber</span></td>
+                        <td>@row.Program</td>
+                        <td>@row.NumberOfMembers</td>
+                        <td>
+                            @if (row.CanCheckIn)
+                            {
+                                <span class="qcu-badge is-approved">@row.MinutesLeft min left</span>
+                            }
+                            else
+                            {
+                                <span class="qcu-muted">@row.BlockedReason</span>
+                            }
+                        </td>
+                        <td class="qcu-table__actions">
+                            <form method="post" action="@Url.Action("DoCheckIn", "Admin")" class="qcu-inline-form">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@row.ReservationID" />
+                                <input type="hidden" name="q" value="@Model.Search" />
+                                <button type="submit" class="qcu-btn qcu-btn--sm qcu-btn--primary"
+                                        @(row.CanCheckIn ? null : "disabled")>
+                                    Check in
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</section>
+
+<section class="qcu-panel">
+    <header class="qcu-panel__head"><h2>Checked in (@Model.CheckedIn.Count)</h2></header>
+
+    @if (Model.CheckedIn.Count == 0)
+    {
+        <p class="qcu-empty">Nobody has checked in yet today.</p>
+    }
+    else
+    {
+        <table class="qcu-table">
+            <thead>
+                <tr><th>#</th><th>Time</th><th>Room</th><th>Requester</th><th>Group</th><th>Status</th></tr>
+            </thead>
+            <tbody>
+                @foreach (var row in Model.CheckedIn)
+                {
+                    <tr>
+                        <td>@row.ReservationID</td>
+                        <td>@row.SlotLabel</td>
+                        <td>@row.RoomName</td>
+                        <td>@row.Requester</td>
+                        <td>@row.NumberOfMembers</td>
+                        <td><span class="qcu-badge @row.StatusCss">@row.Status</span></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</section>

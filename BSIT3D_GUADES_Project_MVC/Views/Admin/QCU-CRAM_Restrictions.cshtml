@@ -1,0 +1,110 @@
+@model BSIT3D_GUADES_Project_MVC.QCUCRAM_ViewModels.QCUCRAMRestrictionsViewModel
+@using System
+@using System.Globalization
+@{
+    /* =====================================================================
+       QCU-CRAM  |  Views/Admin/QCU-CRAM_Restrictions.cshtml
+       ---------------------------------------------------------------------
+       Port of Guades_QCUCram_Admin/Guades_QCUCram_Restrictions.aspx.
+
+       Same pieces:
+         threshold sentence   (NoShowThreshold setting, default 3)
+         warning GridView     (gvWarning - NoShowCount = threshold - 1, not restricted)
+         restricted GridView  (gvRestricted - IsRestricted = 1, soonest lift first)
+         "Lift" button        (btnLift - resets strikes, clears the lift date,
+                               writes a Notification, all in one transaction)
+
+       The Students table has no YearLevel and no ContactNumber column, so the
+       "Year" and "Contact" columns the Web Forms grid showed are replaced by
+       RequesterType and by the two values that actually matter here: when the
+       restriction lifts, and how long that is from now.
+       ===================================================================== */
+
+    ViewBag.Title = "Restrictions";
+    Layout = "~/Views/Shared/_QCU-CRAM_Layout.cshtml";
+
+    CultureInfo inv = CultureInfo.InvariantCulture;
+}
+
+<div class="qcu-page-head">
+    <div>
+        <h1 class="qcu-page-title">Booking restrictions</h1>
+        <p class="qcu-page-sub">
+            A requester is restricted after @Model.Threshold no-show strike(s),
+            for @Model.RestrictionDays day(s).
+        </p>
+    </div>
+    <div class="qcu-page-actions">
+        <a class="qcu-btn qcu-btn--ghost" href="@Url.Action("Dashboard", "Admin")">Dashboard</a>
+    </div>
+</div>
+
+@if (Model.Warnings.Count > 0)
+{
+    <section class="qcu-panel qcu-panel--warn">
+        <header class="qcu-panel__head"><h2>Close to the limit (@Model.Warnings.Count)</h2></header>
+        <table class="qcu-table">
+            <thead>
+                <tr><th>Requester</th><th>Number</th><th>Program</th><th>Strikes</th><th>Remaining</th></tr>
+            </thead>
+            <tbody>
+                @foreach (var w in Model.Warnings)
+                {
+                    <tr>
+                        <td>@w.FullName</td>
+                        <td>@w.StudentNumber</td>
+                        <td>@w.Program</td>
+                        <td>@w.NoShowCount</td>
+                        <td><span class="qcu-badge is-warn">@w.StrikesRemaining</span></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </section>
+}
+
+<section class="qcu-panel">
+    <header class="qcu-panel__head"><h2>Currently restricted (@Model.Restricted.Count)</h2></header>
+
+    @if (Model.Restricted.Count == 0)
+    {
+        <p class="qcu-empty">No requester is currently restricted.</p>
+    }
+    else
+    {
+        <table class="qcu-table">
+            <thead>
+                <tr>
+                    <th>Requester</th><th>Number</th><th>Program</th><th>Type</th>
+                    <th>Strikes</th><th>Lifts on</th><th>Remaining</th><th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var s in Model.Restricted)
+                {
+                    <tr>
+                        <td>@s.FullName</td>
+                        <td>@s.StudentNumber</td>
+                        <td>@s.Program</td>
+                        <td>@s.RequesterType</td>
+                        <td><span class="qcu-badge is-bad">@s.NoShowCount</span></td>
+                        <td>@s.UntilText</td>
+                        <td class="qcu-muted">@s.RemainingText</td>
+                        <td class="qcu-table__actions">
+                            <form method="post" action="@Url.Action("Lift", "Admin")" class="qcu-inline-form">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@s.StudentID" />
+                                <input type="text" name="note" maxlength="150" class="qcu-input"
+                                       placeholder="Optional note to the requester" />
+                                <button type="submit" class="qcu-btn qcu-btn--sm qcu-btn--primary"
+                                        onclick="return confirm('Lift the restriction for @s.FullName?');">
+                                    Lift
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</section>

@@ -1,0 +1,102 @@
+@model BSIT3D_GUADES_Project_MVC.QCUCRAM_ViewModels.QCUCRAMAdminDashboardViewModel
+@using System
+@using System.Globalization
+@{
+    /* =====================================================================
+       QCU-CRAM  |  Views/Admin/QCU-CRAM_Dashboard.cshtml
+       ---------------------------------------------------------------------
+       Port of Guades_QCUCram_Admin/Guades_QCUCram_Dashboard.aspx.
+
+       Same pieces:
+         four counter cards   (CntPending, CntAwaiting, CntCheckedIn, CntForfeited)
+         "Review queue" link  (with the pending count as a pill)
+         TOP 5 upcoming grid  (today's approved bookings, current slot highlighted)
+
+       Phase 07 difference: the cards come from QCUCRAMAdminService.Dashboard(),
+       which reads QCUCRAM_ReportRepository.Dashboard() - one round trip instead
+       of the four separate SELECT COUNT(*) the Web Forms page ran.
+       ===================================================================== */
+
+    ViewBag.Title = "Admin Dashboard";
+    Layout = "~/Views/Shared/_QCU-CRAM_Layout.cshtml";
+
+    CultureInfo inv = CultureInfo.InvariantCulture;
+}
+
+<div class="qcu-page-head">
+    <div>
+        <h1 class="qcu-page-title">Dashboard</h1>
+        <p class="qcu-page-sub">
+            @Model.Today.ToString("dddd, MMMM d, yyyy", inv) &middot;
+            server time @Model.Now.ToString("h:mm tt", inv)
+        </p>
+    </div>
+    <div class="qcu-page-actions">
+        <a class="qcu-btn qcu-btn--primary" href="@Url.Action("Queue", "Admin")">
+            Review queue
+            @if (Model.PendingCount > 0)
+            {
+                <span class="qcu-pill">@Model.PendingCount</span>
+            }
+        </a>
+    </div>
+</div>
+
+<div class="qcu-card-grid">
+    @foreach (var card in Model.Cards)
+    {
+        <a class="qcu-stat @card.Tone" href="@card.Url">
+            <span class="qcu-stat__label">@card.Label</span>
+            <span class="qcu-stat__value">@card.Value</span>
+            <span class="qcu-stat__hint">@card.Hint</span>
+        </a>
+    }
+</div>
+
+<section class="qcu-panel">
+    <header class="qcu-panel__head">
+        <h2>Today's approved bookings</h2>
+        <a class="qcu-link" href="@Url.Action("CheckIn", "Admin")">Open check-in desk</a>
+    </header>
+
+    @if (Model.Upcoming.Count == 0)
+    {
+        <p class="qcu-empty">No approved bookings for today yet.</p>
+    }
+    else
+    {
+        <table class="qcu-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Time</th>
+                    <th>Room</th>
+                    <th>Requester</th>
+                    <th>Group</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var row in Model.Upcoming)
+                {
+                    <tr class="@(row.IsNow ? "is-now" : string.Empty)">
+                        <td>@row.ReservationID</td>
+                        <td>@row.SlotLabel</td>
+                        <td>@row.RoomName</td>
+                        <td>@row.Requester</td>
+                        <td>@row.NumberOfMembers</td>
+                        <td><span class="qcu-badge @row.StatusCss">@row.Status</span></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</section>
+
+@if (Model.RestrictedCount > 0)
+{
+    <p class="qcu-hint">
+        @Model.RestrictedCount requester(s) are currently restricted.
+        <a class="qcu-link" href="@Url.Action("Restrictions", "Admin")">Review restrictions</a>
+    </p>
+}

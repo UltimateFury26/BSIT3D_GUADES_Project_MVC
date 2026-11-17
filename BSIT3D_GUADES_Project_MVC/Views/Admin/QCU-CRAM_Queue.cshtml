@@ -1,0 +1,235 @@
+@model BSIT3D_GUADES_Project_MVC.QCUCRAM_ViewModels.QCUCRAMQueueViewModel
+@using System
+@using System.Globalization
+@using BSIT3D_GUADES_Project_MVC.QCUCRAM_Helpers
+@{
+    /* =====================================================================
+       QCU-CRAM  |  Views/Admin/QCU-CRAM_Queue.cshtml
+       ---------------------------------------------------------------------
+       Port of Guades_QCUCram_Admin/Guades_QCUCram_Queue.aspx.
+
+       Same pieces:
+         pending GridView          (gvPending, with a Review button per row)
+         upcoming approved grid    (gvUpcoming, with View and Move)
+         review panel              (pnlReview - Approve / Move / Decline)
+         reassign panel            (pnlReassign - room+slot select and a reason)
+
+       The Web Forms page toggled those two panels with a server-side bool that
+       became the CSS class " is-open". The MVC page does the same thing from
+       the query string (?review=N / ?reassign=N), so the panels need no
+       JavaScript and the browser back button closes them properly.
+       ===================================================================== */
+
+    ViewBag.Title = "Approval Queue";
+    Layout = "~/Views/Shared/_QCU-CRAM_Layout.cshtml";
+
+    CultureInfo inv = CultureInfo.InvariantCulture;
+    DateTime now = QCUCRAM_Clock.Now;
+}
+
+<div class="qcu-page-head">
+    <div>
+        <h1 class="qcu-page-title">Approval queue</h1>
+        <p class="qcu-page-sub">@Model.Pending.Count pending &middot; @Model.Upcoming.Count upcoming</p>
+    </div>
+    <div class="qcu-page-actions">
+        <a class="qcu-btn qcu-btn--ghost" href="@Url.Action("Dashboard", "Admin")">Dashboard</a>
+        <a class="qcu-btn qcu-btn--ghost" href="@Url.Action("CheckIn", "Admin")">Check-in desk</a>
+    </div>
+</div>
+
+<section class="qcu-panel">
+    <header class="qcu-panel__head"><h2>Pending requests</h2></header>
+
+    @if (Model.Pending.Count == 0)
+    {
+        <p class="qcu-empty">Nothing to review. The queue is clear.</p>
+    }
+    else
+    {
+        <table class="qcu-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Date</th>
+                    <th>Time</th>
+                    <th>Room</th>
+                    <th>Requester</th>
+                    <th>Program</th>
+                    <th>Group</th>
+                    <th>Filed</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var row in Model.Pending)
+                {
+                    <tr class="@(row.IsToday ? "is-today" : string.Empty)">
+                        <td>@row.ReservationID</td>
+                        <td>@row.ReservationDate.ToString("MMM d, yyyy", inv)</td>
+                        <td>@row.SlotLabel</td>
+                        <td>@row.RoomName</td>
+                        <td>@row.Requester</td>
+                        <td>@row.Program</td>
+                        <td>@row.NumberOfMembers</td>
+                        <td>@row.CreatedAt.ToString("MMM d, h:mm tt", inv)</td>
+                        <td class="qcu-table__actions">
+                            <a class="qcu-btn qcu-btn--sm"
+                               href="@Url.Action("Queue", "Admin", new { review = row.ReservationID })">Review</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</section>
+
+<section class="qcu-panel">
+    <header class="qcu-panel__head"><h2>Upcoming approved</h2></header>
+
+    @if (Model.Upcoming.Count == 0)
+    {
+        <p class="qcu-empty">No approved bookings in the future.</p>
+    }
+    else
+    {
+        <table class="qcu-table">
+            <thead>
+                <tr>
+                    <th>#</th><th>Date</th><th>Time</th><th>Room</th>
+                    <th>Requester</th><th>Group</th><th>Status</th><th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var row in Model.Upcoming)
+                {
+                    <tr>
+                        <td>@row.ReservationID</td>
+                        <td>@row.ReservationDate.ToString("MMM d, yyyy", inv)</td>
+                        <td>@row.SlotLabel</td>
+                        <td>@row.RoomName</td>
+                        <td>@row.Requester</td>
+                        <td>@row.NumberOfMembers</td>
+                        <td><span class="qcu-badge @row.StatusCss">@row.Status</span></td>
+                        <td class="qcu-table__actions">
+                            <a class="qcu-btn qcu-btn--sm"
+                               href="@Url.Action("Queue", "Admin", new { review = row.ReservationID })">View</a>
+                            @if (row.CanReassign)
+                            {
+                                <a class="qcu-btn qcu-btn--sm qcu-btn--ghost"
+                                   href="@Url.Action("Queue", "Admin", new { reassign = row.ReservationID })">Move</a>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</section>
+
+@* ------------------------------------------------------------- review panel *@
+@if (Model.Detail != null)
+{
+    <div class="qcu-modal is-open" role="dialog" aria-modal="true">
+        <div class="qcu-modal__box qcu-modal__box--wide">
+            <header class="qcu-modal__head">
+                <h2>Reservation #@Model.Detail.ReservationID</h2>
+                <a class="qcu-modal__close" href="@Url.Action("Queue", "Admin")" aria-label="Close">&times;</a>
+            </header>
+
+            <div class="qcu-modal__body">
+                @Html.Partial("_QCU-CRAM_ReservationDetail", Model.Detail)
+            </div>
+
+            @if (Model.Detail.Status == QCUCRAM_Status.Pending)
+            {
+                bool started = Model.Detail.SlotStart <= now;
+
+                <footer class="qcu-modal__foot">
+                    <form method="post" action="@Url.Action("Approve", "Admin")" class="qcu-inline-form">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@Model.Detail.ReservationID" />
+                        <button type="submit" class="qcu-btn qcu-btn--primary"
+                                @(started ? "disabled" : null)
+                                title="@(started ? "The slot has already started. Decline it instead." : "Approve this request")">
+                            Approve
+                        </button>
+                    </form>
+
+                    @if (!started)
+                    {
+                        <a class="qcu-btn qcu-btn--ghost"
+                           href="@Url.Action("Queue", "Admin", new { reassign = Model.Detail.ReservationID })">
+                            Move to another room
+                        </a>
+                    }
+
+                    <form method="post" action="@Url.Action("Decline", "Admin")" class="qcu-inline-form">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@Model.Detail.ReservationID" />
+                        <input type="text" name="reason" maxlength="200" required
+                               placeholder="Reason for declining (required)" class="qcu-input" />
+                        <button type="submit" class="qcu-btn qcu-btn--danger">Decline</button>
+                    </form>
+                </footer>
+
+                if (started)
+                {
+                    <p class="qcu-hint">
+                        This request's slot has already started, so it can no longer be approved.
+                        Decline it and ask the requester to book another time.
+                    </p>
+                }
+            }
+        </div>
+    </div>
+}
+
+@* ----------------------------------------------------------- reassign panel *@
+@if (Model.Reassign != null)
+{
+    <div class="qcu-modal is-open" role="dialog" aria-modal="true">
+        <div class="qcu-modal__box">
+            <header class="qcu-modal__head">
+                <h2>Move reservation #@Model.Reassign.ReservationID</h2>
+                <a class="qcu-modal__close" href="@Url.Action("Queue", "Admin")" aria-label="Close">&times;</a>
+            </header>
+
+            <form method="post" action="@Url.Action("DoReassign", "Admin")" class="qcu-form">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@Model.Reassign.ReservationID" />
+
+                <p class="qcu-hint">
+                    Currently @Model.Reassign.CurrentRoomName, @Model.Reassign.CurrentSlotLabel
+                    on @Model.Reassign.ReservationDate.ToString("MMM d, yyyy", inv).
+                    Only rooms that fit the group and slots that are still free are listed.
+                </p>
+
+                @if (Model.Reassign.Targets.Count == 0)
+                {
+                    <p class="qcu-empty">
+                        There is no free room and time left for this group on that date.
+                        Decline the request instead.
+                    </p>
+                }
+                else
+                {
+                    <label class="qcu-label" for="target">New room and time</label>
+                    <select class="qcu-select" id="target" name="target" required>
+                        <option value="">-- Select new room and time --</option>
+                        @foreach (var t in Model.Reassign.Targets)
+                        {
+                            <option value="@t.Value">@t.Label</option>
+                        }
+                    </select>
+
+                    <label class="qcu-label" for="reason">Reason (required, max 200)</label>
+                    <textarea class="qcu-textarea" id="reason" name="reason"
+                              maxlength="200" rows="3" required></textarea>
+
+                    <button type="submit" class="qcu-btn qcu-btn--primary">Move reservation</button>
+                }
+            </form>
+        </div>
+    </div>
+}
