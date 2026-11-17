@@ -1,0 +1,198 @@
+@using System
+@using BSIT3D_GUADES_Project_MVC.QCUCRAM_Helpers
+@using BSIT3D_GUADES_Project_MVC.QCUCRAM_Security
+@{
+    /* =====================================================================
+       QCU-CRAM  |  Views/Shared/_QCU-CRAM_Layout.cshtml
+       ---------------------------------------------------------------------
+       Direct port of Guades_QCUCram_Site.Master (+ Site.Master.cs).
+
+       The Web Forms master read the session in Page_Load and toggled
+       phGuest / phStudent / phAdmin / phUser. Here the same three session
+       values are read through QCUCRAM_Session - the one class allowed to
+       touch Session - and the placeholders become @if blocks.
+
+       The master's OnPreRender dev-clock banner becomes the block below.
+       ===================================================================== */
+
+    var isStudent = QCUCRAM_Session.IsStudent;
+    var isAdmin = QCUCRAM_Session.IsAdmin;
+    var isAuthed = isStudent || isAdmin;
+
+    var userName = QCUCRAM_Session.UserName ?? string.Empty;
+    var roleName = QCUCRAM_Session.Role ?? string.Empty;
+
+    // QCUCRAM_BaseController.OnActionExecuting already ran the COUNT(*) once per request.
+    // Views rendered by a controller that does not derive from it simply get 0.
+    var unread = (ViewBag.QCUCRAM_UnreadCount is int) ? (int)ViewBag.QCUCRAM_UnreadCount : 0;
+
+    // Dev Tools time shift. 0 means "real clock", and then no banner is shown.
+    var devOffset = (ViewBag.QCUCRAM_ClockOffset is int) ? (int)ViewBag.QCUCRAM_ClockOffset : 0;
+
+    // ---- master's NavExtraClass logic: Login / Register show only the logo strip ----
+    var routeController = Convert.ToString(ViewContext.RouteData.Values["controller"] ?? string.Empty);
+    var routeAction = Convert.ToString(ViewContext.RouteData.Values["action"] ?? string.Empty);
+    var isAuthPage = string.Equals(routeController, "Account", StringComparison.OrdinalIgnoreCase)
+                     && (string.Equals(routeAction, "Login", StringComparison.OrdinalIgnoreCase)
+                         || string.Equals(routeAction, "Register", StringComparison.OrdinalIgnoreCase));
+    var hideNav = isAuthPage && !isAuthed;
+
+    /* ---------------------------------------------------------------------
+       Nav links whose controllers do not exist yet.
+       Availability arrives in Phase 06, the Admin pages in Phase 07/08 and
+       Reports in Phase 09. Until then those links would 404, so they stay
+       hidden. Flip this to true once the last of them is in place.
+       --------------------------------------------------------------------- */
+    var showUnbuiltNav = false;
+
+    var pageTitle = Convert.ToString(ViewBag.Title ?? string.Empty);
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@(string.IsNullOrWhiteSpace(pageTitle) ? "QCU-CRAM" : pageTitle + " - QCU-CRAM")</title>
+
+    @* QCU seal as the browser-tab icon (?v=2 busts the browser cache) *@
+    <link rel="shortcut icon" href="@Url.Content("~/Content/images/QCU-CRAM_favicon.ico")?v=2" type="image/x-icon" />
+    <link rel="icon" href="@Url.Content("~/Content/images/QCU-CRAM_favicon-32.png")?v=2" type="image/png" sizes="32x32" />
+    <link rel="apple-touch-icon" href="@Url.Content("~/Content/images/QCU-CRAM_apple-touch-icon.png")?v=2" sizes="180x180" />
+
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet" />
+
+    @Styles.Render("~/Content/QCU-CRAM_css")
+    @RenderSection("head", required: false)
+</head>
+<body class="qcu-app">
+    <div class="qcu-app-shell">
+
+        @* ---- Dev clock banner (master: phDevClock, visible only when the offset is not 0) ---- *@
+        @if (devOffset != 0)
+        {
+            <div class="alert alert-danger text-center rounded-0 mb-0 qcu-devclock" role="status">
+                <strong>Dev clock active:</strong>
+                system time is shifted by @devOffset minute(s). It is now
+                @QCUCRAM_Clock.Now.ToString("MMM d, yyyy h:mm tt").
+                Set it back to 0 in Settings or Dev Tools.
+            </div>
+        }
+
+        @* ---- White logo strip (master: header.qcu-header) ---- *@
+        <header class="qcu-header">
+            <div class="qcu-header-inner">
+                <a href="@Url.Action("Index", "Home")">
+                    <img src="@Url.Content("~/Content/images/QCU-CRAM_qcu-logo.png")" alt="QCU Seal" />
+                </a>
+                <div>
+                    <a href="@Url.Action("Index", "Home")" class="qcu-brand-name">Quezon City University</a>
+                    <div class="qcu-brand-sub">QCU-CRAM &middot; Collaboration Room Access and Monitoring</div>
+                </div>
+            </div>
+        </header>
+
+        @* ---- Blue nav bar (master: nav.qcu-nav) ---- *@
+        <nav class="navbar navbar-expand-lg navbar-dark qcu-nav@(hideNav ? " qcu-nav-hidden" : string.Empty)"
+             @Html.Raw(hideNav ? "style=\"display:none\"" : string.Empty)>
+            <div class="container">
+                <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#mainNav"
+                        title="Toggle navigation" aria-controls="mainNav" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="mainNav">
+                    @Html.Partial("_QCU-CRAM_LoginPartial")
+                </div>
+            </div>
+        </nav>
+
+        @* ---- Page content (master: ContentPlaceHolder MainContent) ---- *@
+        <div class="container body-content">
+            @Html.Partial("_QCU-CRAM_Toast")
+            @RenderBody()
+        </div>
+
+        @* ---- Footer, always at the bottom of the window ---- *@
+        <div class="qcu-site-footer">
+            <footer class="qcu-footer">
+                <div class="qcu-footer-inner">
+                    <div class="qcu-footer-brand">
+                        <img src="@Url.Content("~/Content/images/QCU-CRAM_qcu-logo.png")" alt="QCU Seal" />
+                        <div>
+                            <div class="qcu-footer-title">Quezon City University</div>
+                            <div class="qcu-footer-sys">QCU-CRAM &middot; Collaboration Room Access and Monitoring</div>
+                        </div>
+                    </div>
+
+                    <div class="qcu-footer-col">
+                        <div class="qcu-footer-head">Contact</div>
+                        <div class="qcu-footer-line">
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></svg>
+                            <span>673 Quirino Highway, San Bartolome, Novaliches, Quezon City</span>
+                        </div>
+                        <div class="qcu-footer-line">
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z" /></svg>
+                            <span>(02) 8806-3049</span>
+                        </div>
+                    </div>
+
+                    <div class="qcu-footer-col">
+                        <div class="qcu-footer-head">Quick links</div>
+
+                        @* master: BuildFooterLinks(isStudent, isAdmin) - only pages the visitor can open *@
+                        @if (isStudent)
+                        {
+                            <a href="@Url.Action("Index", "StudentDashboard")">Dashboard</a>
+                            if (showUnbuiltNav)
+                            {
+                                <a href="@Url.Action("Index", "Availability")">Room Availability</a>
+                                <a href="@Url.Action("Reserve", "Student")">Reserve a Room</a>
+                                <a href="@Url.Action("MyReservations", "Student")">My Reservations</a>
+                            }
+                        }
+                        else if (isAdmin)
+                        {
+                            <a href="@Url.Action("Index", "AdminDashboard")">Dashboard</a>
+                            if (showUnbuiltNav)
+                            {
+                                <a href="@Url.Action("Index", "Availability")">Room Availability</a>
+                                <a href="@Url.Action("Queue", "Admin")">Review Queue</a>
+                                <a href="@Url.Action("DailySchedule", "Reports")">Daily Schedule</a>
+                            }
+                        }
+                        else
+                        {
+                            <a href="@Url.Action("Login", "Account")">Login</a>
+                            <a href="@Url.Action("Register", "Account")">Register</a>
+                        }
+                    </div>
+                </div>
+            </footer>
+            <div class="qcu-footer-bar">&copy; @DateTime.Now.Year QCU-CRAM: QCU Collaboration Room Access and Monitoring</div>
+        </div>
+
+    </div>
+
+    @Scripts.Render("~/bundles/QCU-CRAM_js")
+
+    @* master: highlight the current page in the nav (orange, like "Home" on qcu.edu.ph) *@
+    <script>
+        (function () {
+            var path = location.pathname.toLowerCase();
+            document.querySelectorAll('.qcu-nav a.nav-link, .qcu-nav a.dropdown-item').forEach(function (a) {
+                var p = a.getAttribute('href');
+                var also = (a.getAttribute('data-qcu-also') || '').toLowerCase();
+                var hit = p && p !== '#' && path.endsWith(p.split('/').pop().toLowerCase());
+                if (!hit && also && path.indexOf(also) !== -1) { hit = true; }
+                if (hit && !a.classList.contains('qcu-nav-logout')) {
+                    a.classList.add('active');
+                    var dd = a.closest('.dropdown');
+                    if (dd) { dd.querySelector('.dropdown-toggle').classList.add('active'); }
+                }
+            });
+        })();
+    </script>
+
+    @RenderSection("scripts", required: false)
+</body>
+</html>

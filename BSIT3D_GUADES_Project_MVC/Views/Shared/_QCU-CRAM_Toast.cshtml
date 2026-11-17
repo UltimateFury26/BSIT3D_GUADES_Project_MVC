@@ -1,0 +1,50 @@
+@using System
+@{
+    /* =====================================================================
+       QCU-CRAM  |  Views/Shared/_QCU-CRAM_Toast.cshtml
+       ---------------------------------------------------------------------
+       Replaces Guades_QCUCram_SecurePage.ShowMessage / Guades_QCUCram_Toast.
+
+       Two sources, in this order:
+         1. ViewBag.QCUCRAM_NoticeText / QCUCRAM_NoticeKind
+            - set by QCUCRAM_NoticeFilter from ?msg=<code> or from a flash
+              message queued by QCUCRAM_BaseController.Flash / FlashError.
+         2. TempData[QCUCRAM_Success] / TempData[QCUCRAM_Error]
+            - the raw slots, for a controller that is not running the filter.
+
+       TempData is read-once: the message shows on this page and is gone on
+       the next navigation. Do not call TempData.Keep() here.
+       ===================================================================== */
+
+    var message = Convert.ToString(ViewBag.QCUCRAM_NoticeText ?? string.Empty);
+    var kind = Convert.ToString(ViewBag.QCUCRAM_NoticeKind ?? string.Empty);
+
+    if (string.IsNullOrWhiteSpace(message))
+    {
+        var success = TempData[BSIT3D_GUADES_Project_MVC.QCUCRAM_Security.QCUCRAM_Constants.TempDataKeys.Success] as string;
+        var error = TempData[BSIT3D_GUADES_Project_MVC.QCUCRAM_Security.QCUCRAM_Constants.TempDataKeys.Error] as string;
+
+        if (!string.IsNullOrWhiteSpace(success))
+        {
+            message = success;
+            kind = "success";
+        }
+        else if (!string.IsNullOrWhiteSpace(error))
+        {
+            message = error;
+            kind = "error";
+        }
+    }
+
+    var css = kind == "success" ? "alert-success"
+            : kind == "error" ? "alert-danger"
+            : "alert-info";
+}
+
+@if (!string.IsNullOrWhiteSpace(message))
+{
+    <div class="alert @css alert-dismissible fade show qcu-toast" role="alert">
+        @message
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}

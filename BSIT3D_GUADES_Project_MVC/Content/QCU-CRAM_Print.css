@@ -1,0 +1,127 @@
+/* =====================================================================
+   QCU-CRAM print stylesheet  (Phase 05)
+   Used by the Reports / Records pages (Phase 07 and Phase 09) and by the
+   "Print" button in QCU-CRAM_ui.js. Loaded through the
+   ~/Content/QCU-CRAM_print bundle, media="print".
+   ===================================================================== */
+
+@page {
+    size: A4 portrait;
+    margin: 14mm;
+}
+
+body {
+    font-family: "Segoe UI", Arial, sans-serif;
+    font-size: 11pt;
+    color: #000;
+    background: #fff;
+}
+
+/* Nothing interactive belongs on paper. */
+.qcu-no-print,
+.qcu-header,
+.qcu-nav,
+.qcu-footer,
+.qcu-footer-bar,
+.qcu-site-footer,
+.qcu-toast,
+.qcu-devclock,
+.navbar,
+.pagination,
+.btn,
+.qcu-pw-toggle {
+    display: none !important;
+}
+
+/* The content card loses its screen chrome. */
+.body-content,
+.qcu-card {
+    background: #fff !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    max-width: none !important;
+}
+
+/* ---- Report letterhead ---- */
+.qcu-print-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-bottom: 2px solid #00509e;
+    padding-bottom: 8px;
+    margin-bottom: 16px;
+}
+
+    .qcu-print-header img {
+        height: 56px;
+        width: auto;
+    }
+
+.qcu-print-title {
+    font-size: 15pt;
+    font-weight: 700;
+    margin: 0;
+}
+
+.qcu-print-subtitle {
+    font-size: 10pt;
+    margin: 0;
+}
+
+/* ---- Tables ---- */
+table.qcu-print-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+    table.qcu-print-table th,
+    table.qcu-print-table td {
+        border: 1px solid #999;
+        padding: 6px 8px;
+        vertical-align: top;
+    }
+
+    table.qcu-print-table th {
+        background: #f0f0f0;
+        text-align: left;
+    }
+
+    table.qcu-print-table thead {
+        display: table-header-group; /* repeat the header on every printed page */
+    }
+
+    table.qcu-print-table tr {
+        page-break-inside: avoid;
+    }
+
+/* ---- Signatures ---- */
+.qcu-print-signature {
+    margin-top: 40px;
+    display: flex;
+    justify-content: space-between;
+    gap: 40px;
+}
+
+    .qcu-print-signature div {
+        flex: 1;
+        border-top: 1px solid #000;
+        padding-top: 4px;
+        text-align: center;
+        font-size: 9pt;
+    }
+
+/* ---- Utilities ---- */
+.page-break {
+    page-break-after: always;
+}
+
+.qcu-print-only {
+    display: block;
+}
+
+a[href]:after {
+    content: ""; /* do not print the URL after every link */
+}

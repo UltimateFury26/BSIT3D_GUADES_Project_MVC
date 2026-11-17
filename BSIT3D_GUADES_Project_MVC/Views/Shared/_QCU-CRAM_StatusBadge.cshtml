@@ -1,0 +1,36 @@
+@model string
+@using System
+@{
+    /* =====================================================================
+       QCU-CRAM  |  Views/Shared/_QCU-CRAM_StatusBadge.cshtml
+       ---------------------------------------------------------------------
+       Usage:  @Html.Partial("_QCU-CRAM_StatusBadge", row.Status)
+
+       The model is the raw status string from the Reservations table
+       (QCUCRAM_Status.Pending / Approved / Reassigned / Declined /
+       Cancelled / CheckedIn / Completed / Forfeited).
+
+       The class name is the lower-cased status with spaces removed, which
+       matches the .qcu-badge--* rules in Content/QCU-CRAM_Site.css:
+           Pending    -> qcu-badge--pending
+           CheckedIn  -> qcu-badge--checkedin
+       Anything unrecognised falls back to qcu-badge--unknown instead of
+       rendering an unstyled pill.
+       ===================================================================== */
+
+    var status = Convert.ToString(Model ?? string.Empty).Trim();
+
+    var slug = status.ToLowerInvariant().Replace(" ", string.Empty).Replace("-", string.Empty);
+
+    var known = new[] { "pending", "approved", "reassigned", "declined", "cancelled", "checkedin", "completed", "forfeited" };
+    if (Array.IndexOf(known, slug) < 0)
+    {
+        slug = "unknown";
+    }
+
+    var label = status == "CheckedIn" ? "Checked in"
+              : string.IsNullOrEmpty(status) ? "Unknown"
+              : status;
+}
+
+<span class="qcu-badge qcu-badge--@slug">@label</span>

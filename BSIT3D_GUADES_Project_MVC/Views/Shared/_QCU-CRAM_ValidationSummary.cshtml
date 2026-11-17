@@ -1,0 +1,33 @@
+@using System
+@{
+    /* =====================================================================
+       QCU-CRAM  |  Views/Shared/_QCU-CRAM_ValidationSummary.cshtml
+       ---------------------------------------------------------------------
+       Replaces the <asp:ValidationSummary> that sat at the top of the Web
+       Forms forms.
+
+       Usage from a view:
+
+           @Html.Partial("_QCU-CRAM_ValidationSummary")
+
+       It renders nothing when ModelState is valid, so a form does not show
+       an empty red box. Field-level messages still appear next to their own
+       input through @Html.ValidationMessageFor(...).
+
+       Optional heading:
+           ViewBag.QCUCRAM_ValidationTitle = "Please check the form";
+       ===================================================================== */
+
+    var state = ViewData.ModelState;
+    var hasErrors = state != null && !state.IsValid;
+
+    var title = Convert.ToString(ViewBag.QCUCRAM_ValidationTitle ?? "Please fix the following and try again.");
+}
+
+@if (hasErrors)
+{
+    <div class="alert alert-danger qcu-validation-summary" role="alert">
+        <div class="fw-semibold mb-1">@title</div>
+        @Html.ValidationSummary(false, string.Empty, new { @class = "mb-0" })
+    </div>
+}

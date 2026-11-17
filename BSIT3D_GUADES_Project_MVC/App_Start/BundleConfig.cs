@@ -3,32 +3,67 @@ using System.Web.Optimization;
 
 namespace BSIT3D_GUADES_Project_MVC
 {
+    /// <summary>
+    /// Phase 05 - bundles for the Razor layout.
+    ///
+    /// Replaces the Web Forms ~/Content/css and ~/Scripts/*.js references in
+    /// Guades_QCUCram_Site.Master. The layout renders exactly two things:
+    ///
+    ///     @Styles.Render("~/Content/QCU-CRAM_css")     in &lt;head&gt;
+    ///     @Scripts.Render("~/bundles/QCU-CRAM_js")     before &lt;/body&gt;
+    ///
+    /// The print stylesheet is deliberately NOT in the screen bundle; a print
+    /// view renders it with
+    ///
+    ///     @Styles.RenderFormat("&lt;link rel=\"stylesheet\" href=\"{0}\" media=\"print\" /&gt;",
+    ///                          "~/Content/QCU-CRAM_print")
+    ///
+    /// so it never affects the on-screen page.
+    ///
+    /// Do not add the .min.js files explicitly - the bundler minifies in
+    /// Release, and including both copies duplicates every definition.
+    /// </summary>
     public class BundleConfig
     {
         public static void RegisterBundles(BundleCollection bundles)
         {
-            bundles.Add(new ScriptBundle("~/bundles/jquery").Include(
-                        "~/Scripts/jquery-{version}.js"));
+            // The default ignore list drops *.intellisense.js and *-vsdoc.js, which is
+            // what we want, but it also drops nothing else we need. Clear it anyway so
+            // the explicit lists below are honoured exactly.
+            bundles.IgnoreList.Clear();
 
-            bundles.Add(new ScriptBundle("~/bundles/jqueryval").Include(
-                        "~/Scripts/jquery.validate*"));
+            // ------------------------------------------------------------------ CSS
+            bundles.Add(new StyleBundle("~/Content/QCU-CRAM_css")
+                .Include("~/Content/bootstrap.css")
+                .Include("~/Content/QCU-CRAM_Site.css"));
 
-            bundles.Add(new ScriptBundle("~/bundles/modernizr").Include(
-                        "~/Scripts/modernizr-*"));
+            bundles.Add(new StyleBundle("~/Content/QCU-CRAM_print")
+                .Include("~/Content/QCU-CRAM_Print.css"));
 
-            bundles.Add(new Bundle("~/bundles/bootstrap").Include(
-                      "~/Scripts/bootstrap.js"));
+            // ------------------------------------------------------------------- JS
+            bundles.Add(new ScriptBundle("~/bundles/QCU-CRAM_jquery")
+                .Include("~/Scripts/jquery-3.7.0.js"));
 
-            bundles.Add(new StyleBundle("~/Content/css").Include(
-                      "~/Content/bootstrap.css",
-                      "~/Content/site.css"));
+            bundles.Add(new ScriptBundle("~/bundles/QCU-CRAM_bootstrap")
+                .Include("~/Scripts/bootstrap.bundle.js"));
 
-            // ---- QCU-CRAM application assets (Phase 05 fills these files) ----
-            bundles.Add(new StyleBundle("~/QCU-CRAM_Content/css")
-                        .Include("~/QCU-CRAM_Content/QCU-CRAM_Portfolio.css"));
+            bundles.Add(new ScriptBundle("~/bundles/QCU-CRAM_validate")
+                .Include("~/Scripts/jquery.validate.js")
+                .Include("~/Scripts/jquery.validate.unobtrusive.js"));
 
-            bundles.Add(new ScriptBundle("~/QCU-CRAM_Scripts/js")
-                        .Include("~/QCU-CRAM_Scripts/QCU-CRAM_Portfolio.js"));
+            bundles.Add(new ScriptBundle("~/bundles/QCU-CRAM_js")
+                .Include("~/bundles/QCU-CRAM_jquery")
+                .Include("~/bundles/QCU-CRAM_bootstrap")
+                .Include("~/bundles/QCU-CRAM_validate")
+                .Include("~/Scripts/QCU-CRAM_site.js")
+                .Include("~/Scripts/QCU-CRAM_ui.js"));
+
+#if DEBUG
+            // Readable files and real line numbers while developing.
+            BundleTable.EnableOptimizations = false;
+#else
+            BundleTable.EnableOptimizations = true;
+#endif
         }
     }
 }

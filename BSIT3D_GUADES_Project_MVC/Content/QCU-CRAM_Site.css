@@ -1,0 +1,2857 @@
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap');
+/* =====================================================================
+   QCU-CRAM design tokens  (Phase 05)
+   Lifted out of the Web Forms master page so every later view can use
+   var(--qcu-*) instead of hard-coded colours.
+
+   NOTE: Content/QCU-CRAM_Site.css (the ported Site.css) already defines
+   the real QCU palette (--qcu-blue / --qcu-orange) and its own rules for
+   .qcu-header, .qcu-footer, .qcu-auth-body and .qcu-auth-card. Those rules
+   come AFTER this block, so they win - the header and footer keep the
+   blue/orange QCU look. This block only supplies the names that the
+   ported stylesheet does not have yet: .qcu-card, .qcu-badge--*,
+   .qcu-devclock, .qcu-app, .qcu-rules-list.
+   ===================================================================== */
+:root {
+    --qcu-maroon: #7a1f2b;
+    --qcu-maroon-dark: #5c1620;
+    --qcu-gold: #c9a227;
+    --qcu-ink: #1f2328;
+    --qcu-muted: #6b7280;
+    --qcu-surface: #ffffff;
+    --qcu-canvas: #f6f7f9;
+    --qcu-border: #e3e6ea;
+    --qcu-ok: #1a7f37;
+    --qcu-warn: #b26a00;
+    --qcu-danger: #b42318;
+    --qcu-radius: 12px;
+}
+
+body.qcu-app { background: var(--qcu-canvas); color: var(--qcu-ink); }
+
+.qcu-header {
+    background: linear-gradient(135deg, var(--qcu-maroon), var(--qcu-maroon-dark));
+    color: #fff;
+}
+.qcu-header .navbar-brand { color: #fff; font-weight: 600; letter-spacing: .2px; }
+.qcu-header .nav-link { color: rgba(255,255,255,.86); }
+.qcu-header .nav-link:hover,
+.qcu-header .nav-link.active { color: #fff; }
+
+.qcu-footer {
+    background: var(--qcu-maroon-dark);
+    color: rgba(255,255,255,.8);
+    font-size: .875rem;
+}
+.qcu-footer a { color: rgba(255,255,255,.9); text-decoration: none; }
+.qcu-footer a:hover { text-decoration: underline; }
+
+.qcu-card {
+    background: var(--qcu-surface);
+    border: 1px solid var(--qcu-border);
+    border-radius: var(--qcu-radius);
+    box-shadow: 0 1px 2px rgba(16,24,40,.04);
+}
+
+.qcu-rules-list { padding-left: 1.25rem; }
+.qcu-rules-list li { margin-bottom: .35rem; }
+
+.qcu-auth-body {
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    background: radial-gradient(1200px 600px at 50% -10%, #fdf6f7, var(--qcu-canvas));
+}
+.qcu-auth-card {
+    width: 100%;
+    max-width: 420px;
+    background: var(--qcu-surface);
+    border: 1px solid var(--qcu-border);
+    border-radius: 16px;
+    padding: 2rem;
+    box-shadow: 0 10px 30px rgba(16,24,40,.08);
+}
+
+.qcu-badge { display: inline-block; padding: .25rem .6rem; border-radius: 999px; font-size: .75rem; font-weight: 600; }
+.qcu-badge--pending    { background: #fff4e5; color: var(--qcu-warn); }
+.qcu-badge--approved   { background: #e7f6ec; color: var(--qcu-ok); }
+.qcu-badge--reassigned { background: #e8f1ff; color: #1d4ed8; }
+.qcu-badge--declined   { background: #fdeceb; color: var(--qcu-danger); }
+.qcu-badge--cancelled  { background: #f1f2f4; color: var(--qcu-muted); }
+.qcu-badge--checkedin  { background: #e6f7f8; color: #0e7490; }
+.qcu-badge--completed  { background: #eef2f6; color: #334155; }
+.qcu-badge--forfeited  { background: #fdeceb; color: var(--qcu-danger); }
+
+.qcu-devclock {
+    background: #fff8e1;
+    border-bottom: 1px solid #f0e0a8;
+    color: #7a5b00;
+    font-size: .8125rem;
+    padding: .35rem 0;
+}
+
+/* ===== end QCU-CRAM design tokens ===== */
+
+/* =====================================================
+   QCU-CRAM  |  Global theme (matches qcu.edu.ph)
+   Tokens taken from the QCU website screenshots.
+   ===================================================== */
+
+:root {
+    --qcu-blue: #00509e; /* main nav bar */
+    --qcu-blue-dark: #003d7a; /* brand text, hover */
+    --qcu-blue-title: #2b6cb0; /* page titles, links */
+    --qcu-blue-mid: #3d6fa5; /* section bands, footer */
+    --qcu-orange: #f26a0f; /* active nav + call-to-action */
+    --qcu-orange-dark: #d85a06;
+    --qcu-bg: #ebebeb; /* page background */
+    --qcu-card-soft: #f7f9fc;
+    --qcu-text: #1f2933;
+    --bs-primary: #00509e;
+    --bs-primary-rgb: 0, 80, 158;
+    --bs-link-color: #2b6cb0;
+    --bs-link-hover-color: #003d7a;
+    --bs-body-font-family: 'Open Sans', 'Segoe UI', Arial, sans-serif;
+    --bs-body-color: #1f2933;
+}
+
+body {
+    background: var(--qcu-bg);
+    font-family: var(--bs-body-font-family);
+    color: var(--qcu-text);
+}
+
+/* Sticky footer: the <form> fills at least the whole window and stacks header / nav / page / footer.
+   The footer wrapper has margin-top:auto, so on short pages it sits at the bottom of the screen
+   (no empty strip underneath) and on long pages it simply follows the content. */
+html {
+    height: 100%;
+}
+
+body {
+    min-height: 100%;
+}
+
+form {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+    form > .body-content {
+        width: 100%;
+        flex: 0 0 auto;
+    }
+
+/* ---------- Header (white strip with logo + name) ---------- */
+.qcu-header {
+    background: #fff;
+}
+
+    .qcu-header .qcu-header-inner {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 6px 24px;
+    }
+
+    .qcu-header img {
+        height: 68px;
+        width: auto;
+    }
+
+.qcu-brand-name {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--qcu-blue-dark);
+    line-height: 1.1;
+    text-decoration: none;
+}
+
+.qcu-brand-sub {
+    font-size: .8rem;
+    font-weight: 600;
+    color: var(--qcu-blue-title);
+    letter-spacing: .04em;
+}
+
+.qcu-brand-name:hover {
+    color: var(--qcu-blue-dark);
+}
+
+/* ---------- Main blue nav bar ----------
+   Left  = page links.   Right (.qcu-nav-right) = account area, identical on Admin and User:
+   [tools: bell + Profile  /  Maintenance]  |  Logged in as <name> <role>  |  logout icon        */
+.qcu-nav {
+    background: var(--qcu-blue);
+    padding: 0;
+    min-height: 56px;
+    box-shadow: 0 2px 6px rgba(0, 40, 90, .18);
+    position: relative;
+    z-index: 1030;
+}
+
+    .qcu-nav .container {
+        max-width: 100%;
+        padding: 0 24px;
+    }
+
+    .qcu-nav .navbar-nav {
+        align-items: stretch;
+    }
+
+    .qcu-nav .nav-link {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: #fff !important;
+        font-size: .9rem;
+        font-weight: 400; /* regular weight, like qcu.edu.ph */
+        line-height: 1.2;
+        padding: 1.1rem .95rem;
+        white-space: nowrap;
+        transition: background-color .15s ease;
+    }
+
+        .qcu-nav .nav-link:hover,
+        .qcu-nav .nav-link:focus-visible {
+            background: var(--qcu-blue-dark);
+        }
+
+        .qcu-nav .nav-link.active {
+            background: var(--qcu-orange);
+        }
+
+        .qcu-nav .nav-link .qcu-ico {
+            flex: 0 0 auto;
+            opacity: .95;
+        }
+
+    .qcu-nav .dropdown-toggle::after {
+        margin-left: 2px;
+    }
+
+    /* ---- right-hand account area ---- */
+    .qcu-nav .qcu-nav-right {
+        margin-left: auto;
+    }
+
+    /* icon-only buttons (bell, logout): square, centred; the text label is for the mobile menu only */
+    .qcu-nav .qcu-nav-icon {
+        position: relative;
+        justify-content: center;
+        padding-left: .85rem;
+        padding-right: .85rem;
+    }
+
+    .qcu-nav .qcu-nav-label {
+        display: none;
+    }
+
+    /* unread count on the bell */
+    .qcu-nav .qcu-nav-badge {
+        position: absolute;
+        top: 9px;
+        left: calc(50% + 4px);
+        min-width: 18px;
+        height: 18px;
+        padding: 0 5px;
+        border-radius: 9px;
+        background: var(--qcu-orange);
+        border: 2px solid var(--qcu-blue);
+        color: #fff;
+        font-size: .65rem;
+        font-weight: 700;
+        line-height: 14px;
+        text-align: center;
+    }
+
+    .qcu-nav .qcu-nav-icon.active .qcu-nav-badge,
+    .qcu-nav .qcu-nav-icon:hover .qcu-nav-badge {
+        border-color: transparent;
+        background: #fff;
+        color: var(--qcu-orange-dark);
+    }
+
+    /* "Logged in as ..." : sits between the tools and the logout icon, separated by thin lines */
+    .qcu-nav .qcu-nav-user {
+        display: flex;
+        align-items: center;
+        margin: 10px .5rem;
+        padding: 0 1rem;
+        border-left: 1px solid rgba(255, 255, 255, .22);
+        border-right: 1px solid rgba(255, 255, 255, .22);
+    }
+
+    .qcu-nav .navbar-text {
+        padding: 0;
+        color: #bcd2ea;
+        font-size: .8rem;
+        font-weight: 400;
+        line-height: 1.25;
+        white-space: nowrap;
+    }
+
+    .qcu-nav .qcu-user-name {
+        color: #fff;
+        font-weight: 600;
+        font-size: .88rem;
+    }
+
+    .qcu-nav .qcu-user-role {
+        display: inline-block;
+        margin-left: 4px;
+        padding: 1px 8px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, .16);
+        color: #fff;
+        font-size: .68rem;
+        font-weight: 600;
+        letter-spacing: .03em;
+        text-transform: uppercase;
+        vertical-align: 1px;
+    }
+
+    /* logout is the one destructive-ish control: turns red on hover */
+    .qcu-nav .qcu-nav-logout:hover,
+    .qcu-nav .qcu-nav-logout:focus-visible {
+        background: #b02a37;
+    }
+
+    /* ---- dropdown (Maintenance) ---- */
+    .qcu-nav .dropdown-menu {
+        border: 0;
+        border-radius: 0 0 8px 8px;
+        background: var(--qcu-blue-dark);
+        padding: 4px 0;
+        margin-top: 0;
+        min-width: 13rem;
+        box-shadow: 0 10px 24px rgba(0, 30, 70, .28);
+    }
+
+    .qcu-nav .dropdown-item {
+        color: #fff;
+        font-size: .9rem;
+        font-weight: 400;
+        padding: .6rem 1.25rem;
+    }
+
+        .qcu-nav .dropdown-item:hover,
+        .qcu-nav .dropdown-item:focus {
+            background: var(--qcu-orange);
+            color: #fff;
+        }
+
+        .qcu-nav .dropdown-item.active {
+            background: var(--qcu-orange);
+        }
+
+    .qcu-nav .dropdown-divider {
+        margin: 4px 0;
+        border-top-color: rgba(255, 255, 255, .22);
+    }
+
+    .qcu-nav .navbar-toggler {
+        border-color: rgba(255,255,255,.6);
+        margin: 8px 0;
+    }
+
+/* ---------- Content "paper" card on grey background ---------- */
+.body-content {
+    background: #fff;
+    border-radius: 6px;
+    max-width: 1180px;
+    margin: 32px auto;
+    padding: 40px 48px;
+}
+
+    .body-content h2 {
+        color: var(--qcu-blue-title);
+        font-weight: 600;
+        font-size: 2rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .body-content h3, .body-content h4 {
+        color: var(--qcu-blue-title);
+        font-weight: 600;
+    }
+
+@media (max-width: 767px) {
+    .body-content {
+        margin: 12px;
+        padding: 20px;
+    }
+}
+
+/* ---------- Buttons ---------- */
+.btn-primary {
+    --bs-btn-bg: var(--qcu-blue);
+    --bs-btn-border-color: var(--qcu-blue);
+    --bs-btn-hover-bg: var(--qcu-blue-dark);
+    --bs-btn-hover-border-color: var(--qcu-blue-dark);
+    --bs-btn-active-bg: var(--qcu-blue-dark);
+    --bs-btn-active-border-color: var(--qcu-blue-dark);
+}
+
+.btn-success, .btn-warning.qcu-cta, .btn-cta {
+    --bs-btn-color: #fff;
+    --bs-btn-bg: var(--qcu-orange);
+    --bs-btn-border-color: var(--qcu-orange);
+    --bs-btn-hover-color: #fff;
+    --bs-btn-hover-bg: var(--qcu-orange-dark);
+    --bs-btn-hover-border-color: var(--qcu-orange-dark);
+}
+
+.btn-outline-secondary {
+    --bs-btn-color: var(--qcu-blue);
+    --bs-btn-border-color: var(--qcu-blue);
+    --bs-btn-hover-bg: var(--qcu-blue);
+    --bs-btn-hover-border-color: var(--qcu-blue);
+}
+
+.btn {
+    border-radius: 4px;
+    font-weight: 600;
+}
+
+/* ---------- Cards (like the soft panels on the Campuses page) ---------- */
+.card {
+    border: 0;
+    border-radius: 8px;
+    background: var(--qcu-card-soft);
+    box-shadow: 0 2px 8px rgba(0,0,0,.08);
+}
+
+.card-header {
+    background: var(--qcu-blue-mid);
+    color: #fff;
+    border: 0;
+    border-radius: 8px 8px 0 0 !important;
+    padding: .75rem 1.25rem;
+}
+
+    .card-header .text-muted {
+        color: #dbe7f5 !important;
+    }
+
+/* ---------- Forms, tables, alerts ---------- */
+input, select, textarea {
+    max-width: 100%;
+}
+
+.form-control, .form-select {
+    border-radius: 4px;
+}
+
+    .form-control:focus, .form-select:focus {
+        border-color: var(--qcu-blue-title);
+        box-shadow: 0 0 0 .2rem rgba(0,80,158,.2);
+    }
+
+.form-label {
+    font-weight: 600;
+}
+
+.table thead th, .table > thead > tr > th {
+    background: var(--qcu-blue);
+    color: #fff;
+    border: 0;
+}
+
+.table-hover > tbody > tr:hover > * {
+    background: #eaf1fa;
+}
+
+.alert {
+    border: 0;
+    border-left: 5px solid;
+    border-radius: 4px;
+}
+
+/* ---------- Footer (blue band like qcu.edu.ph) ---------- */
+.qcu-site-footer {
+    margin-top: auto; /* pushes the footer to the bottom of the window on short pages */
+}
+
+.qcu-footer {
+    background: var(--qcu-blue-mid);
+    color: #fff;
+    padding: 28px 24px;
+}
+
+    .qcu-footer .qcu-footer-inner {
+        max-width: 1180px;
+        margin: 0 auto;
+        display: grid;
+        grid-template-columns: minmax(0, 1.35fr) minmax(0, 1.25fr) minmax(0, .9fr);
+        align-items: start;
+        gap: 28px 40px;
+    }
+
+    .qcu-footer .qcu-footer-brand {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+    }
+
+    .qcu-footer img {
+        height: 72px;
+        width: auto;
+        flex: 0 0 auto;
+    }
+
+    .qcu-footer .qcu-footer-title {
+        font-size: 1.15rem;
+        font-weight: 600;
+        line-height: 1.2;
+    }
+
+    .qcu-footer .qcu-footer-sys {
+        margin-top: 4px;
+        font-size: .8rem;
+        opacity: .85;
+        line-height: 1.35;
+    }
+
+    .qcu-footer .qcu-footer-head {
+        margin-bottom: 8px;
+        padding-bottom: 6px;
+        border-bottom: 2px solid var(--qcu-orange);
+        display: inline-block;
+        font-size: .78rem;
+        font-weight: 700;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+    }
+
+    .qcu-footer .qcu-footer-line {
+        display: flex;
+        align-items: flex-start;
+        gap: 9px;
+        margin-bottom: 6px;
+        font-size: .88rem;
+        line-height: 1.4;
+        opacity: .95;
+    }
+
+        .qcu-footer .qcu-footer-line svg {
+            flex: 0 0 auto;
+            margin-top: 2px;
+            opacity: .8;
+        }
+
+    .qcu-footer .qcu-footer-col a {
+        display: block;
+        width: fit-content;
+        padding: 2px 0;
+        color: #fff;
+        font-size: .88rem;
+        text-decoration: none;
+        opacity: .92;
+    }
+
+        .qcu-footer .qcu-footer-col a:hover {
+            color: #fff;
+            opacity: 1;
+            text-decoration: underline;
+            text-underline-offset: 3px;
+        }
+
+.qcu-footer-bar {
+    background: var(--qcu-blue);
+    color: #cfe0f3;
+    text-align: center;
+    font-size: .8rem;
+    padding: 9px 12px;
+}
+
+/* =====================================================
+   Login / Register / Change Password
+   ===================================================== */
+.body-content:has(.qcu-auth) {
+    background: transparent;
+    padding: 0;
+    margin: 40px auto;
+}
+
+.qcu-auth {
+    display: flex;
+    justify-content: center;
+    padding: 0 12px;
+}
+
+.qcu-auth-card {
+    width: 100%;
+    max-width: 460px;
+    background: #fff;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 6px 24px rgba(0,40,90,.15);
+}
+
+    .qcu-auth-card.wide {
+        max-width: 640px;
+    }
+
+.qcu-auth-head {
+    background: linear-gradient(135deg, var(--qcu-blue) 0%, var(--qcu-blue-mid) 100%);
+    color: #fff;
+    text-align: center;
+    padding: 28px 24px 22px;
+    border-bottom: 5px solid var(--qcu-orange);
+}
+
+    .qcu-auth-head img {
+        height: 84px;
+        width: auto;
+        background: #fff;
+        border-radius: 50%;
+        padding: 3px;
+        margin-bottom: 10px;
+    }
+
+    .qcu-auth-head .qcu-auth-univ {
+        font-size: .85rem;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+        opacity: .9;
+    }
+
+    .qcu-auth-head h2 {
+        color: #fff !important;
+        font-size: 1.6rem;
+        margin: 4px 0 4px !important;
+    }
+
+    .qcu-auth-head p {
+        margin: 0;
+        font-size: .9rem;
+        opacity: .92;
+    }
+
+.qcu-auth-body {
+    padding: 28px 32px 32px;
+}
+
+    .qcu-auth-body .form-control, .qcu-auth-body .form-select {
+        padding: .6rem .8rem;
+    }
+
+    .qcu-auth-body .btn-primary {
+        width: 100%;
+        padding: .65rem;
+        font-size: 1rem;
+    }
+
+    .qcu-auth-body .btn-link {
+        display: block;
+        text-align: center;
+        margin-top: 10px;
+        color: var(--qcu-blue-title);
+        text-decoration: none;
+    }
+
+        .qcu-auth-body .btn-link:hover {
+            color: var(--qcu-orange);
+            text-decoration: underline;
+        }
+
+    .qcu-auth-body .text-danger {
+        font-size: .85rem;
+    }
+
+    /* "Sign in as" role picker: two pill options side by side */
+    .qcu-auth-body .form-check {
+        padding: 0;
+        display: flex;
+        gap: 8px;
+        position: relative;
+    }
+
+        .qcu-auth-body .form-check br {
+            display: none;
+        }
+
+        .qcu-auth-body .form-check input[type=radio] {
+            position: absolute;
+            opacity: 0;
+        }
+
+        .qcu-auth-body .form-check label {
+            flex: 1;
+            display: block;
+            text-align: center;
+            padding: .5rem .4rem;
+            margin: 0;
+            font-size: .85rem;
+            border: 2px solid #cfd8e3;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            color: var(--qcu-blue);
+        }
+
+        .qcu-auth-body .form-check input[type=radio]:checked + label {
+            background: var(--qcu-blue);
+            border-color: var(--qcu-blue);
+            color: #fff;
+        }
+
+/* =====================================================
+   Student pages
+   (Dashboard, Availability, Reserve, My Reservations,
+    Notifications, Profile)
+   ===================================================== */
+
+/* ---------- Page heading ---------- */
+.qcu-page-head {
+    margin-bottom: 1.25rem;
+}
+
+    .qcu-page-head h2 {
+        margin: 0 !important;
+    }
+
+        .qcu-page-head h2::after {
+            content: "";
+            display: block;
+            width: 56px;
+            height: 4px;
+            margin-top: 8px;
+            background: var(--qcu-orange);
+            border-radius: 2px;
+        }
+
+    .qcu-page-head p {
+        margin: 8px 0 0;
+        color: #5b6b7b;
+        font-size: .95rem;
+    }
+
+/* ---------- Filter / date toolbars ---------- */
+.qcu-toolbar {
+    background: var(--qcu-card-soft);
+    border: 1px solid #dfe6ee;
+    border-radius: 8px;
+    padding: 10px 12px 12px;
+    margin-left: 0;
+    margin-right: 0;
+}
+
+/* ---------- Status badges (all pages) ---------- */
+.badge {
+    font-weight: 600;
+    letter-spacing: .02em;
+    padding: .45em .75em;
+    border-radius: 50rem;
+}
+
+    .badge.bg-dark, .badge.text-bg-dark {
+        background-color: #1c3a5e !important;
+        color: #fff !important;
+    }
+
+/* ---------- Dashboard: welcome banner ---------- */
+.qcu-welcome {
+    background: linear-gradient(135deg, var(--qcu-blue) 0%, var(--qcu-blue-mid) 100%);
+    color: #fff;
+    border-radius: 10px;
+    border-bottom: 4px solid var(--qcu-orange);
+    padding: 20px 24px;
+    box-shadow: 0 4px 14px rgba(0,40,90,.12);
+}
+
+    .qcu-welcome .lead {
+        color: #fff;
+        font-weight: 600;
+        margin: 0;
+    }
+
+    .qcu-welcome .btn-outline-light:hover {
+        background: #fff;
+        color: var(--qcu-blue);
+    }
+
+@media (max-width: 575px) {
+    .qcu-welcome .btn {
+        width: 100%;
+        margin: 0 0 8px 0 !important;
+    }
+}
+
+/* Dashboard: availability glance list */
+.card .list-group-item {
+    border-color: #e3e9f0;
+}
+
+.card .table {
+    margin-bottom: 0;
+}
+
+/* ---------- Dashboard: booking calendar ---------- */
+.qcu-cal {
+    border-collapse: separate !important;
+    border-spacing: 3px !important;
+    border: 0 !important;
+}
+
+    .qcu-cal.table > :not(caption) > * > * {
+        box-shadow: none !important;
+        border-width: 0;
+        border-radius: 6px;
+        padding: .5rem .25rem;
+        font-size: .9rem;
+    }
+
+    .qcu-cal a {
+        color: inherit;
+        text-decoration: none;
+        display: block;
+    }
+
+    .qcu-cal td[style*="border-width"] {
+        background: #fff3e8;
+        color: var(--qcu-orange-dark);
+    }
+
+    .qcu-cal .bg-success, .qcu-cal-legend .bg-success {
+        background: #3d6fa5 !important;
+    }
+    /* Reserved */
+    .qcu-cal .bg-primary, .qcu-cal-legend .bg-primary {
+        background: var(--qcu-orange) !important;
+    }
+    /* Ongoing */
+    .qcu-cal .bg-secondary, .qcu-cal-legend .bg-secondary {
+        background: #8a97a5 !important;
+    }
+/* Done */
+
+/* ---------- Pager (GridView paging) ---------- */
+.qcu-pager > td {
+    background: var(--qcu-card-soft) !important;
+    box-shadow: none !important;
+    border: 0 !important;
+    padding: .8rem !important;
+}
+
+.qcu-pager table {
+    margin: 0 auto;
+    border: 0;
+}
+
+    .qcu-pager table td {
+        padding: 0 3px !important;
+        border: 0 !important;
+        background: transparent !important;
+        box-shadow: none !important;
+    }
+
+.qcu-pager a, .qcu-pager span {
+    display: inline-block;
+    min-width: 34px;
+    padding: .3rem .6rem;
+    text-align: center;
+    text-decoration: none;
+    font-weight: 600;
+    border: 1px solid #cfd8e3;
+    border-radius: 6px;
+    background: #fff;
+    color: var(--qcu-blue);
+}
+
+    .qcu-pager a:hover {
+        background: var(--qcu-orange);
+        border-color: var(--qcu-orange);
+        color: #fff;
+    }
+
+.qcu-pager span {
+    background: var(--qcu-blue);
+    border-color: var(--qcu-blue);
+    color: #fff;
+}
+
+/* ---------- Notifications: unread rows ---------- */
+.table > tbody > tr.fw-bold > * {
+    background-color: #eef5fd !important;
+    box-shadow: none !important;
+}
+
+.table > tbody > tr.fw-bold > td:first-child {
+    box-shadow: inset 4px 0 0 var(--qcu-orange) !important;
+}
+
+/* ---------- Availability grid ---------- */
+.qcu-grid .table {
+    min-width: 640px;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.qcu-grid td, .qcu-grid th {
+    vertical-align: middle;
+    padding: .7rem .5rem;
+    font-size: .9rem;
+}
+
+.qcu-grid .table > :not(caption) > * > * {
+    box-shadow: none !important;
+}
+
+.qcu-grid tbody th {
+    background: #eaf1f9 !important;
+    color: var(--qcu-blue);
+    position: sticky;
+    left: 0;
+    z-index: 1;
+}
+
+.qcu-grid td.table-success {
+    background: #e6f4ea !important;
+    color: #146c43;
+    font-weight: 600;
+}
+
+    .qcu-grid td.table-success a {
+        display: block;
+        margin: -.7rem -.5rem;
+        padding: .7rem .5rem;
+        color: #146c43;
+        font-weight: 700;
+        text-decoration: none;
+    }
+
+        .qcu-grid td.table-success a:hover {
+            background: var(--qcu-orange);
+            color: #fff;
+        }
+
+.qcu-grid td.table-warning {
+    background: #fff4d6 !important;
+    color: #7a5a00;
+}
+
+.qcu-grid td.table-danger {
+    background: #fde8e8 !important;
+    color: #a12622;
+}
+
+.qcu-grid td.table-primary {
+    background: #d6e6f7 !important;
+    color: var(--qcu-blue-dark);
+    font-weight: 600;
+}
+
+.qcu-grid td.table-secondary {
+    background: #eef0f2 !important;
+    color: #8a97a5;
+}
+
+.qcu-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 18px;
+    align-items: center;
+    font-size: .85rem;
+    margin-top: 1rem;
+}
+
+/* Closed = an empty slot on a date before the booking day (grey, hatched, not clickable) */
+.qcu-grid td.qcu-closed {
+    background: repeating-linear-gradient(135deg, #e9ecef 0, #e9ecef 6px, #f4f5f7 6px, #f4f5f7 12px) !important;
+    color: #7b8794;
+    font-weight: 600;
+}
+
+.qcu-sw {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    margin-right: 6px;
+    vertical-align: -2px;
+    border-radius: 3px;
+    border: 1px solid rgba(0,0,0,.18);
+}
+
+    .qcu-sw.sw-open {
+        background: #e6f4ea;
+        border-color: #146c43;
+    }
+
+    .qcu-sw.sw-pending {
+        background: #fff4d6;
+        border-color: #b8860b;
+    }
+
+    .qcu-sw.sw-taken {
+        background: #fde8e8;
+        border-color: #a12622;
+    }
+
+    .qcu-sw.sw-mine {
+        background: #d6e6f7;
+        border-color: var(--qcu-blue);
+    }
+
+    .qcu-sw.sw-closed {
+        background: repeating-linear-gradient(135deg, #e9ecef 0, #e9ecef 3px, #f9fafb 3px, #f9fafb 6px);
+        border-color: #7b8794;
+    }
+
+    .qcu-sw.sw-off {
+        background: #eef0f2;
+        border-color: #8a97a5;
+    }
+
+/* ---------- Reserve: rules card + numbered steps ---------- */
+.qcu-rules {
+    border-left: 5px solid var(--qcu-orange);
+}
+
+    .qcu-rules .card-title {
+        color: var(--qcu-blue);
+        font-weight: 700;
+    }
+
+    .qcu-rules li {
+        margin-bottom: .2rem;
+    }
+
+.qcu-steps {
+    counter-reset: qstep;
+}
+
+    .qcu-steps h5.qcu-section {
+        counter-increment: qstep;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: var(--qcu-blue);
+        font-weight: 700;
+        padding-bottom: 8px;
+        margin-bottom: 14px;
+        border-bottom: 2px solid #dfe6ee;
+    }
+
+        .qcu-steps h5.qcu-section::before {
+            content: counter(qstep);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            flex: 0 0 28px;
+            border-radius: 50%;
+            background: var(--qcu-blue);
+            color: #fff;
+            font-size: .85rem;
+        }
+
+.qcu-soft {
+    background: var(--qcu-card-soft);
+    border: 1px solid #dfe6ee;
+    border-radius: 8px;
+    padding: 14px 18px;
+}
+
+    .qcu-soft dt {
+        color: #5b6b7b;
+        font-weight: 600;
+    }
+
+    .qcu-soft dd {
+        margin-bottom: .35rem;
+    }
+
+/* ---------- Profile: quick links ---------- */
+.list-group-item-action {
+    color: var(--qcu-blue-title);
+    font-weight: 600;
+}
+
+    .list-group-item-action::after {
+        content: "\203A";
+        float: right;
+        font-size: 1.2rem;
+        line-height: 1;
+        color: #9aa9b8;
+    }
+
+    .list-group-item-action:hover {
+        background: #fff3e8;
+        color: var(--qcu-orange-dark);
+    }
+
+        .list-group-item-action:hover::after {
+            color: var(--qcu-orange);
+        }
+
+/* =====================================================
+   Admin pages
+   ===================================================== */
+
+/* ---------- Section sub-headings (h4/h5 above grids and forms) ---------- */
+.qcu-subhead {
+    color: var(--qcu-blue);
+    font-weight: 700;
+    padding-left: 12px;
+    border-left: 4px solid var(--qcu-orange);
+    margin-bottom: .75rem;
+}
+
+/* ---------- Dashboard: welcome strip ---------- */
+.qcu-welcome-sub {
+    color: #dbe7f5;
+}
+
+/* ---------- Colored cards (count cards, reassign / lift / danger panels) ---------- */
+.card.border-primary,
+.card.border-success,
+.card.border-warning,
+.card.border-danger,
+.card.border-secondary {
+    border-left-width: 5px !important;
+    border-left-style: solid !important;
+}
+
+.card.border-primary {
+    border-left-color: var(--qcu-blue) !important;
+}
+
+.card.border-success {
+    border-left-color: #198754 !important;
+}
+
+.card.border-warning {
+    border-left-color: var(--qcu-orange) !important;
+}
+
+.card.border-danger {
+    border-left-color: #c0392b !important;
+}
+
+.card.border-secondary {
+    border-left-color: #8a97a5 !important;
+}
+
+a.card.h-100 {
+    transition: transform .15s ease, box-shadow .15s ease;
+}
+
+    a.card.h-100:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 20px rgba(0,40,90,.16);
+    }
+
+.card .display-5.text-body {
+    color: var(--qcu-blue-dark) !important;
+    line-height: 1.1;
+}
+
+.card.border-warning > .card-header {
+    background: var(--qcu-orange);
+}
+
+.card.border-danger > .card-header {
+    background: #b02a37;
+    color: #fff !important;
+}
+
+/* ---------- Admin grids ---------- */
+.qcu-admin-table > :not(caption) > * > * {
+    vertical-align: middle;
+}
+
+.qcu-admin-table td a:not(.btn) {
+    font-weight: 600;
+    text-decoration: none;
+}
+
+    .qcu-admin-table td a:not(.btn):not(.text-danger):hover {
+        color: var(--qcu-orange-dark);
+        text-decoration: underline;
+    }
+
+.qcu-admin-table td a.text-danger:hover {
+    text-decoration: underline;
+}
+
+.qcu-admin-table td .btn + .btn {
+    margin-left: 2px;
+}
+
+/* ---------- Neat action buttons (Actions columns) ---------- */
+.qcu-actions-cell {
+    min-width: 200px;
+}
+
+.qcu-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+}
+
+    .qcu-actions .btn {
+        white-space: nowrap;
+        margin: 0 !important;
+    }
+
+/* Narrow Actions column: buttons stack, equal width (used on Students, which has many columns) */
+.qcu-actions-cell.qcu-actions-narrow {
+    min-width: 0;
+    width: 1%;
+}
+
+.qcu-actions-stack {
+    flex-direction: column;
+    align-items: stretch;
+    flex-wrap: nowrap;
+    gap: 4px;
+}
+
+    .qcu-actions-stack .btn {
+        text-align: center;
+    }
+
+/* Compact table so wide grids fit the page without sideways scrolling */
+.qcu-compact > :not(caption) > * > * {
+    padding: .5rem .55rem;
+    font-size: .9rem;
+}
+
+.qcu-compact td {
+    overflow-wrap: anywhere;
+}
+
+    .qcu-compact td:first-child {
+        white-space: nowrap;
+        overflow-wrap: normal;
+    }
+
+/* Disable / Enable = neutral grey (the theme's outline-secondary is blue) */
+.qcu-actions .btn-outline-secondary {
+    --bs-btn-color: #5b6770;
+    --bs-btn-border-color: #8a949c;
+    --bs-btn-hover-color: #fff;
+    --bs-btn-hover-bg: #5b6770;
+    --bs-btn-hover-border-color: #5b6770;
+    --bs-btn-active-bg: #5b6770;
+    --bs-btn-active-border-color: #5b6770;
+}
+
+/* sortable header links on Records */
+.qcu-admin-table th a {
+    color: #fff;
+    text-decoration: none;
+}
+
+    .qcu-admin-table th a:hover {
+        color: #ffd2b0;
+        text-decoration: underline;
+    }
+
+/* ---------- Add / edit forms ---------- */
+.qcu-formcard {
+    max-width: 520px;
+    background: var(--qcu-card-soft);
+    border: 1px solid #dfe6ee;
+    border-top: 4px solid var(--qcu-blue-mid);
+    border-radius: 8px;
+    padding: 20px 22px 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,.06);
+    margin-bottom: 2rem;
+}
+
+    .qcu-formcard .btn {
+        margin-bottom: 8px;
+    }
+
+/* ---------- Settings value boxes ---------- */
+table.qcu-admin-table td input.form-control {
+    text-align: center;
+    font-weight: 600;
+}
+
+/* ---------- Mobile ---------- */
+@media (max-width: 575px) {
+    .qcu-formcard {
+        padding: 16px 14px 8px;
+    }
+
+        .qcu-formcard .btn {
+            width: 100%;
+        }
+
+    .qcu-toolbar .btn {
+        margin-bottom: 4px;
+    }
+}
+
+/* ---------- Printing (Restrictions list) ---------- */
+@media print {
+    .qcu-header, .qcu-nav, .qcu-site-footer, .qcu-footer, .qcu-footer-bar {
+        display: none !important;
+    }
+
+    .qcu-subhead {
+        border-left-color: #000;
+        color: #000;
+    }
+
+    .table thead th {
+        background: #fff !important;
+        color: #000 !important;
+        border-bottom: 2px solid #000;
+    }
+}
+
+/* =====================================================
+   Reports (Analytics, Daily Schedule, Print Booking)
+   + mobile / accessibility / print polish for the whole system
+   ===================================================== */
+
+/* ---------- Analytics: summary cards ---------- */
+.qcu-range {
+    color: #5b6b7b;
+    margin-bottom: 1rem;
+}
+
+    .qcu-range strong {
+        color: var(--qcu-blue-dark);
+    }
+
+.qcu-stat {
+    border-left: 5px solid var(--qcu-blue);
+    transition: transform .15s ease, box-shadow .15s ease;
+}
+
+    .qcu-stat:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(0,40,90,.14);
+    }
+
+    .qcu-stat .stat-label {
+        color: #5b6b7b;
+        font-size: .8rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .04em;
+    }
+
+    .qcu-stat .stat-value {
+        color: var(--qcu-blue-dark);
+        font-size: 1.6rem;
+        font-weight: 700;
+        line-height: 1.2;
+        overflow-wrap: anywhere;
+    }
+
+    .qcu-stat .stat-note {
+        color: #6c7a89;
+        font-size: .78rem;
+    }
+
+.qcu-stat-blue {
+    border-left-color: var(--qcu-blue);
+}
+
+.qcu-stat-orange {
+    border-left-color: var(--qcu-orange);
+}
+
+.qcu-stat-red {
+    border-left-color: #c0392b;
+}
+
+.qcu-stat-green {
+    border-left-color: #198754;
+}
+
+.qcu-stat-grey {
+    border-left-color: #8a97a5;
+}
+
+/* ---------- Analytics: bar charts inside the grids ---------- */
+.bar-track {
+    background: #e3eaf3;
+    border-radius: 50rem;
+    height: 12px;
+    min-width: 120px;
+    overflow: hidden;
+}
+
+.bar-fill {
+    background: linear-gradient(90deg, var(--qcu-blue) 0%, var(--qcu-blue-title) 100%);
+    height: 100%;
+    border-radius: 50rem;
+}
+
+.table-striped > tbody > tr:nth-of-type(odd) > * {
+    --bs-table-bg-type: #f1f5fa;
+}
+
+/* ---------- Daily Schedule ---------- */
+.print-only {
+    display: none;
+}
+
+.qcu-day-title {
+    margin-bottom: .25rem;
+}
+
+.body-content p.text-muted {
+    color: #5b6b7b !important;
+}
+
+/* ---------- Print Booking: on-screen preview of the printed form ---------- */
+.report {
+    max-width: 800px;
+    margin: 0 auto;
+    background: #fff;
+    border: 1px solid #dfe6ee;
+    border-top: 5px solid var(--qcu-blue);
+    border-radius: 8px;
+    padding: 24px 28px;
+    box-shadow: 0 2px 10px rgba(0,0,0,.07);
+}
+
+.report-header {
+    text-align: center;
+    border-bottom: 3px double var(--qcu-blue);
+    padding-bottom: 10px;
+    margin-bottom: 14px;
+}
+
+    .report-header .report-seal {
+        height: 72px;
+        width: auto;
+        margin-bottom: 6px;
+    }
+
+    .report-header h3 {
+        margin: 0;
+        font-weight: 700;
+        color: var(--qcu-blue-dark);
+    }
+
+    .report-header .sub {
+        font-size: 1.05rem;
+        font-weight: 600;
+    }
+
+.report h5 {
+    margin-top: 18px;
+    margin-bottom: 6px;
+    padding-bottom: 3px;
+    color: var(--qcu-blue);
+    font-weight: 700;
+    border-bottom: 1px solid #b9c7d8;
+}
+
+.report table.kv td {
+    padding: 2px 8px 2px 0;
+    vertical-align: top;
+}
+
+    .report table.kv td.k {
+        width: 170px;
+        color: #5b6b7b;
+    }
+
+.report table.grid {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+    .report table.grid th, .report table.grid td {
+        border: 1px solid #8a97a5;
+        padding: 3px 8px;
+        font-size: .92rem;
+    }
+
+    .report table.grid th {
+        background: #e8eef6;
+        color: var(--qcu-blue-dark);
+    }
+
+.sign-row {
+    display: flex;
+    gap: 40px;
+    margin-top: 36px;
+}
+
+.sign-box {
+    flex: 1;
+    text-align: center;
+}
+
+.sign-line {
+    border-top: 1px solid #000;
+    margin-top: 34px;
+    padding-top: 3px;
+    font-size: .9rem;
+}
+
+/* =====================================================
+   Whole-system mobile pass
+   ===================================================== */
+
+/* collapsed nav (below the lg breakpoint): one tidy column, account area at the bottom */
+@media (max-width: 991px) {
+    .qcu-nav .container {
+        padding: 0 16px;
+    }
+
+    .qcu-nav .nav-link {
+        padding: .8rem 1rem;
+        font-weight: 400;
+        border-top: 1px solid rgba(255,255,255,.12);
+    }
+
+    .qcu-nav .qcu-nav-right {
+        margin-left: 0;
+        margin-top: 6px;
+        border-top: 2px solid rgba(255,255,255,.22);
+    }
+
+    /* icon buttons show their text label again, because there is room */
+    .qcu-nav .qcu-nav-icon {
+        justify-content: flex-start;
+    }
+
+    .qcu-nav .qcu-nav-label {
+        display: inline;
+    }
+
+    .qcu-nav .qcu-nav-badge {
+        position: static;
+        margin-left: auto;
+        border: 0;
+    }
+
+    .qcu-nav .qcu-nav-user {
+        order: -1; /* "Logged in as" first inside the account area */
+        margin: 0;
+        padding: .75rem 1rem;
+        border: 0;
+        border-bottom: 1px solid rgba(255,255,255,.12);
+    }
+
+    .qcu-nav .dropdown-menu {
+        background: var(--qcu-blue-dark);
+        border-radius: 0;
+        box-shadow: none;
+    }
+
+    .qcu-nav .dropdown-item {
+        padding-left: 2rem;
+        font-weight: 400;
+    }
+}
+
+@media (max-width: 767px) and (min-width: 576px) {
+    .qcu-footer .qcu-footer-inner {
+        grid-template-columns: 1fr 1fr;
+    }
+
+        .qcu-footer .qcu-footer-inner .qcu-footer-brand {
+            grid-column: 1 / -1;
+        }
+}
+
+@media (max-width: 575px) {
+    /* header */
+    .qcu-header .qcu-header-inner {
+        padding: 6px 14px;
+        gap: 10px;
+    }
+
+    .qcu-header img {
+        height: 46px;
+    }
+
+    .qcu-brand-name {
+        font-size: 1.15rem;
+    }
+
+    .qcu-brand-sub {
+        font-size: .65rem;
+        letter-spacing: .02em;
+    }
+
+    /* page card */
+    .body-content {
+        margin: 8px;
+        padding: 16px 14px;
+    }
+
+        .body-content h2 {
+            font-size: 1.5rem;
+        }
+
+    /* footer stacks and centers */
+    .qcu-footer {
+        padding: 22px 16px;
+    }
+
+        .qcu-footer .qcu-footer-inner {
+            grid-template-columns: 1fr;
+            text-align: center;
+            gap: 20px;
+        }
+
+        .qcu-footer .qcu-footer-brand {
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .qcu-footer img {
+            height: 60px;
+        }
+
+        .qcu-footer .qcu-footer-line {
+            justify-content: center;
+            text-align: left;
+        }
+
+        .qcu-footer .qcu-footer-col a {
+            margin: 0 auto;
+        }
+
+    /* easier tapping; 16px inputs stop iOS from zooming on focus */
+    .btn {
+        min-height: 42px;
+    }
+
+    .form-control, .form-select {
+        font-size: 16px;
+    }
+
+    .qcu-toolbar .btn {
+        width: 100%;
+        margin: 0 0 6px 0 !important;
+    }
+
+    .qcu-stat .stat-value {
+        font-size: 1.3rem;
+    }
+
+    .report {
+        padding: 16px 14px;
+    }
+
+    .sign-row {
+        flex-direction: column;
+        gap: 0;
+    }
+
+    table.table {
+        font-size: .85rem;
+    }
+}
+
+/* =====================================================
+   Accessibility polish
+   ===================================================== */
+a:focus-visible,
+.btn:focus-visible,
+.nav-link:focus-visible,
+.dropdown-item:focus-visible,
+.form-control:focus-visible,
+.form-select:focus-visible {
+    outline: 3px solid var(--qcu-orange);
+    outline-offset: 2px;
+}
+
+.qcu-nav .navbar-toggler:focus {
+    box-shadow: 0 0 0 .2rem rgba(242,106,15,.5);
+}
+
+::selection {
+    background: #cfe0f3;
+    color: var(--qcu-blue-dark);
+}
+
+.text-danger, .field-validation-error {
+    font-weight: 600;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        transition: none !important;
+        animation: none !important;
+    }
+}
+
+/* =====================================================
+   Print polish (all pages)
+   ===================================================== */
+@media print {
+    body {
+        background: #fff !important;
+        color: #000;
+        font-size: 10.5pt;
+    }
+
+    .qcu-header, .qcu-nav, .qcu-site-footer, .qcu-footer, .qcu-footer-bar,
+    .no-print, hr, form > .alert {
+        display: none !important;
+    }
+
+    .print-only {
+        display: block !important;
+    }
+
+    .body-content {
+        max-width: 100% !important;
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        background: #fff;
+        box-shadow: none;
+        border-radius: 0;
+    }
+
+    .qcu-print-head {
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        gap: 14px;
+        text-align: center;
+        border-bottom: 3px double #000;
+        padding-bottom: 8px;
+        margin-bottom: 10px;
+    }
+
+        .qcu-print-head img {
+            height: 64px;
+            width: auto;
+        }
+
+        .qcu-print-head h4 {
+            margin: 0;
+            color: #000;
+            font-weight: 700;
+        }
+
+    .qcu-sign {
+        margin-top: 36px;
+    }
+
+    .qcu-day-title {
+        color: #000 !important;
+    }
+
+    .table, .table > :not(caption) > * > * {
+        --bs-table-striped-bg: #fff;
+        background-image: none;
+    }
+
+    table tr {
+        page-break-inside: avoid;
+    }
+
+    .report {
+        max-width: 100%;
+        border: 0;
+        box-shadow: none;
+        padding: 0;
+    }
+
+        .report-header, .report-header h3, .report h5 {
+            color: #000;
+            border-color: #000;
+        }
+
+        .report-header, .report h5, .sign-row, table.grid tr {
+            page-break-inside: avoid;
+        }
+
+        .report table.grid th {
+            background: #fff;
+            color: #000;
+        }
+
+    .badge {
+        border: 1px solid #000;
+        background: #fff !important;
+        color: #000 !important;
+    }
+}
+
+/* =====================================================
+   Password eye, strength meter, auth tweaks
+   ===================================================== */
+
+/* Guests on Login / Register see only the QCU logo header */
+.qcu-nav.qcu-nav-hidden {
+    display: none;
+}
+
+/* ---------- Show / hide password (eye) ---------- */
+.qcu-pw-wrap {
+    position: relative;
+}
+
+    .qcu-pw-wrap > input.form-control {
+        padding-right: 2.9rem;
+    }
+
+.qcu-pw-toggle {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: 0;
+    width: 2.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: 0;
+    border-radius: 0 .375rem .375rem 0;
+    background: transparent;
+    color: #5b6770;
+    cursor: pointer;
+}
+
+    .qcu-pw-toggle:hover {
+        color: var(--qcu-blue);
+    }
+
+    .qcu-pw-toggle:focus-visible {
+        outline: 3px solid var(--qcu-orange);
+        outline-offset: -3px;
+    }
+
+/* Edge / IE draw their own eye and clear (x) buttons; hide them so there is only one eye */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear,
+.qcu-pw-wrap input::-ms-reveal,
+.qcu-pw-wrap input::-ms-clear {
+    display: none;
+}
+
+/* ---------- Password strength meter ---------- */
+.qcu-strength {
+    margin-top: 10px;
+    font-size: .85rem;
+}
+
+.qcu-strength-top {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.qcu-strength-bar {
+    flex: 1;
+    height: 8px;
+    background: #e3e8ee;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.qcu-strength-fill {
+    height: 100%;
+    width: 0;
+    border-radius: 6px;
+    background: #d64545;
+    transition: width .25s ease, background-color .25s ease;
+}
+
+    .qcu-strength-fill.lv0 {
+        background: #d64545;
+    }
+
+    .qcu-strength-fill.lv1 {
+        background: #f08a24;
+    }
+
+    .qcu-strength-fill.lv2 {
+        background: #e8c01f;
+    }
+
+    .qcu-strength-fill.lv3 {
+        background: #8cc63f;
+    }
+
+    .qcu-strength-fill.lv4 {
+        background: #2e9e4f;
+    }
+
+.qcu-strength-label {
+    min-width: 72px;
+    text-align: right;
+    font-weight: 700;
+}
+
+    .qcu-strength-label.lv0 {
+        color: #b02a37;
+    }
+
+    .qcu-strength-label.lv1 {
+        color: #c25f08;
+    }
+
+    .qcu-strength-label.lv2 {
+        color: #9a7b00;
+    }
+
+    .qcu-strength-label.lv3 {
+        color: #4f8a14;
+    }
+
+    .qcu-strength-label.lv4 {
+        color: #1d7a3a;
+    }
+
+.qcu-strength-need {
+    margin-top: 6px;
+    color: #44505a;
+}
+
+.qcu-strength-list {
+    list-style: none;
+    margin: 8px 0 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2px 14px;
+}
+
+    .qcu-strength-list li.ok {
+        color: #1d7a3a;
+    }
+
+    .qcu-strength-list li.bad {
+        color: #b02a37;
+    }
+
+    .qcu-strength-list li.idle {
+        color: #6c757d;
+    }
+
+.qcu-match {
+    margin-top: 4px;
+    font-size: .85rem;
+    font-weight: 600;
+}
+
+    .qcu-match.ok {
+        color: #1d7a3a;
+    }
+
+    .qcu-match.bad {
+        color: #b02a37;
+    }
+
+@media (max-width: 575px) {
+    .qcu-strength-list {
+        grid-template-columns: 1fr;
+    }
+}
+
+
+/* =====================================================
+   Confirmation modal + live-filter refresh
+   ===================================================== */
+html.qcu-modal-open,
+html.qcu-modal-open body {
+    overflow: hidden;
+}
+
+/* Dimmed backdrop, tinted with the QCU-CRAM navy so it reads as part of the system */
+.qcu-modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    background: rgba(0, 32, 70, .55);
+    opacity: 0;
+    transition: opacity .18s ease;
+}
+
+    .qcu-modal-overlay[hidden] {
+        display: none;
+    }
+
+    .qcu-modal-overlay.show {
+        opacity: 1;
+    }
+
+/* The dialog itself: white card, 14px radius (same as the Add / Edit pop-ups) and a
+   tone-coloured bar across the top that mirrors the form pop-ups' accent border. */
+.qcu-modal {
+    --tone: var(--qcu-orange-dark); /* icon colour   */
+    --tone-bg: #fff4e0; /* soft icon bg  */
+    --tone-btn: var(--qcu-orange); /* Confirm button */
+    --tone-btn-hover: var(--qcu-orange-dark);
+    --tone-bar: var(--qcu-orange); /* top accent bar */
+    width: 100%;
+    max-width: 440px;
+    max-height: calc(100vh - 32px);
+    overflow-y: auto;
+    padding: 30px 28px 22px;
+    background: #fff;
+    border-radius: 14px;
+    border-top: 4px solid var(--tone-bar);
+    box-shadow: 0 18px 50px rgba(0, 32, 70, .32);
+    text-align: center;
+    outline: none;
+    transform: translateY(8px) scale(.96);
+    transition: transform .18s ease;
+}
+
+.qcu-modal-overlay.show .qcu-modal {
+    transform: none;
+}
+
+/* Tone variants - all drawn from the QCU-CRAM palette (blue / orange / green / red) */
+.qcu-modal[data-tone="success"] {
+    --tone: #146c43;
+    --tone-bg: #e6f4ea;
+    --tone-btn: #198754;
+    --tone-btn-hover: #146c43;
+    --tone-bar: #198754;
+}
+
+.qcu-modal[data-tone="danger"] {
+    --tone: #b02a37;
+    --tone-bg: #fdecea;
+    --tone-btn: #b02a37;
+    --tone-btn-hover: #8f212c;
+    --tone-bar: #b02a37;
+}
+
+.qcu-modal[data-tone="warning"] {
+    --tone: var(--qcu-orange-dark);
+    --tone-bg: #fff4e0;
+    --tone-btn: var(--qcu-orange);
+    --tone-btn-hover: var(--qcu-orange-dark);
+    --tone-bar: var(--qcu-orange);
+}
+
+.qcu-modal[data-tone="primary"] {
+    --tone: var(--qcu-blue);
+    --tone-bg: #e7f0fa;
+    --tone-btn: var(--qcu-blue);
+    --tone-btn-hover: var(--qcu-blue-dark);
+    --tone-bar: var(--qcu-blue);
+}
+
+.qcu-modal-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 62px;
+    height: 62px;
+    margin: 0 auto 14px;
+    border-radius: 50%;
+    color: var(--tone);
+    background: var(--tone-bg);
+}
+
+.qcu-modal-title {
+    margin: 0 0 8px;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--qcu-blue-dark);
+}
+
+.qcu-modal-msg {
+    margin: 0 0 6px;
+    color: #44505a;
+    font-size: .95rem;
+    line-height: 1.5;
+    white-space: pre-line;
+}
+
+.qcu-modal-extra {
+    text-align: left;
+}
+
+.qcu-modal-field {
+    margin-top: 14px;
+}
+
+    .qcu-modal-field label {
+        display: block;
+        margin-bottom: 4px;
+        font-weight: 600;
+        font-size: .9rem;
+        color: var(--qcu-blue-dark);
+    }
+
+.qcu-modal-error {
+    min-height: 1.2em;
+    margin-top: 4px;
+    font-size: .85rem;
+    font-weight: 600;
+    color: #b02a37;
+}
+
+.qcu-modal-check {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-top: 16px;
+    padding: 10px 12px;
+    border: 1px solid #dfe6ee;
+    border-radius: 8px;
+    background: var(--qcu-card-soft);
+    font-size: .92rem;
+    cursor: pointer;
+}
+
+    .qcu-modal-check input {
+        flex: 0 0 auto;
+        width: 18px;
+        height: 18px;
+        margin-top: 2px;
+        accent-color: var(--qcu-blue);
+    }
+
+.qcu-modal-actions {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 22px;
+}
+
+    .qcu-modal-actions .btn {
+        min-width: 120px;
+    }
+
+/* Confirm button takes the tone colour (overrides the Bootstrap btn-* colour so every
+   dialog uses the QCU-CRAM palette). Cancel keeps the shared blue outline style. */
+.qcu-modal .qcu-modal-ok {
+    --bs-btn-color: #fff;
+    --bs-btn-bg: var(--tone-btn);
+    --bs-btn-border-color: var(--tone-btn);
+    --bs-btn-hover-color: #fff;
+    --bs-btn-hover-bg: var(--tone-btn-hover);
+    --bs-btn-hover-border-color: var(--tone-btn-hover);
+    --bs-btn-active-color: #fff;
+    --bs-btn-active-bg: var(--tone-btn-hover);
+    --bs-btn-active-border-color: var(--tone-btn-hover);
+    --bs-btn-focus-shadow-rgb: 0, 80, 158;
+}
+
+@media (max-width: 480px) {
+    .qcu-modal {
+        padding: 22px 18px 18px;
+    }
+
+    .qcu-modal-actions {
+        flex-direction: column-reverse;
+    }
+
+        .qcu-modal-actions .btn {
+            width: 100%;
+        }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .qcu-modal-overlay,
+    .qcu-modal {
+        transition: none;
+    }
+}
+
+/* Live search / filters: results dim slightly while they refresh */
+html.qcu-refreshing .table-responsive,
+html.qcu-refreshing .qcu-grid {
+    opacity: .6;
+    transition: opacity .15s ease;
+}
+
+html.qcu-refreshing {
+    cursor: progress;
+}
+
+@media print {
+    .qcu-modal-overlay {
+        display: none !important;
+    }
+}
+
+
+/* =====================================================
+   Add / Edit pop-up forms + "Add" buttons
+   (Rooms, Time Slots, Students, Admin Accounts)
+   ===================================================== */
+
+/* Heading row: page title on the left, "+ Add ..." button on the right */
+.qcu-page-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 12px 16px;
+    margin-bottom: 1.25rem;
+}
+
+    .qcu-page-bar > .qcu-page-head {
+        margin-bottom: 0;
+    }
+
+    /* Students: the button sits on the same row as the search box */
+    .qcu-page-bar.qcu-page-bar-search {
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+
+        .qcu-page-bar.qcu-page-bar-search > .qcu-toolbar {
+            flex: 1 1 340px;
+            max-width: 640px;
+            margin-bottom: 0;
+        }
+
+.qcu-add-btn {
+    white-space: nowrap;
+    font-weight: 600;
+}
+
+/* ---------- The pop-up itself ----------
+   The server adds "is-open" while the pop-up should be showing, so a refreshed
+   UpdatePanel brings it back open (validation error) or closed (saved). */
+.qcu-form-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 1900; /* below the confirmation modal (2000) */
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    background: rgba(0, 32, 70, .55);
+}
+
+    .qcu-form-overlay.is-open {
+        display: flex;
+        animation: qcuFormFade .18s ease both;
+    }
+
+.qcu-form-modal {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 520px;
+    max-height: calc(100vh - 32px);
+    max-height: calc(100dvh - 32px);
+    background: #fff;
+    border-top: 4px solid var(--qcu-blue-mid);
+    border-radius: 14px;
+    box-shadow: 0 18px 50px rgba(0, 0, 0, .3);
+    outline: none;
+    animation: qcuFormPop .2s ease both;
+}
+
+    .qcu-form-modal.qcu-form-modal-lg {
+        max-width: 680px;
+    }
+
+.qcu-form-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 16px 22px 8px;
+}
+
+.qcu-form-title {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--qcu-blue);
+    overflow-wrap: anywhere;
+}
+
+.qcu-form-close {
+    flex: 0 0 auto;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: #5b6770;
+    font-size: 1.7rem;
+    line-height: 1;
+    cursor: pointer;
+}
+
+    .qcu-form-close:hover {
+        background: #eef2f6;
+        color: var(--qcu-blue);
+    }
+
+    .qcu-form-close:focus-visible {
+        outline: 3px solid var(--qcu-orange);
+        outline-offset: -3px;
+    }
+
+.qcu-form-body {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    padding: 8px 22px 6px;
+}
+
+.qcu-form-foot {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 14px 22px 18px;
+    border-top: 1px solid #e6ebf1;
+    background: var(--qcu-card-soft);
+    border-radius: 0 0 14px 14px;
+}
+
+    .qcu-form-foot .btn {
+        min-width: 110px;
+    }
+
+/* error / info box at the top of the pop-up */
+.qcu-form-body .alert {
+    margin-bottom: 14px;
+    padding: 10px 12px;
+    font-size: .92rem;
+}
+
+@keyframes qcuFormFade {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes qcuFormPop {
+    from {
+        opacity: 0;
+        transform: translateY(8px) scale(.97);
+    }
+
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+@media (max-width: 575px) {
+    .qcu-page-bar {
+        align-items: stretch;
+    }
+
+    .qcu-add-btn {
+        width: 100%;
+    }
+
+    .qcu-form-head {
+        padding: 14px 16px 6px;
+    }
+
+    .qcu-form-body {
+        padding: 6px 16px 4px;
+    }
+
+    .qcu-form-foot {
+        flex-direction: column-reverse;
+        padding: 12px 16px 16px;
+    }
+
+        .qcu-form-foot .btn {
+            width: 100%;
+        }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .qcu-form-overlay.is-open,
+    .qcu-form-modal {
+        animation: none;
+    }
+}
+
+@media print {
+    .qcu-form-overlay,
+    .qcu-add-btn {
+        display: none !important;
+    }
+}
+
+
+
+/* ============================================================
+   Content modal (reusable in-page loader)
+   Any link/button with data-qcu-load opens the target page INSIDE this
+   modal (Print / Details) instead of a new browser tab. Built by
+   openContent() in Scripts/qcu-ui.js. z-index sits above the Add / Edit
+   pop-ups (1900) but below the confirmation modal (2000).
+   ============================================================ */
+.qcu-content-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1950; /* above form pop-ups (1900), below confirm (2000) */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    background: rgba(0, 32, 70, .55);
+    opacity: 0;
+    transition: opacity .18s ease;
+}
+
+    .qcu-content-overlay[hidden] {
+        display: none;
+    }
+
+    .qcu-content-overlay.show {
+        opacity: 1;
+    }
+
+.qcu-content-modal {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 860px;
+    max-height: calc(100vh - 32px);
+    max-height: calc(100dvh - 32px);
+    background: #fff;
+    border-top: 4px solid var(--qcu-blue);
+    border-radius: 14px;
+    box-shadow: 0 18px 50px rgba(0, 0, 0, .3);
+    outline: none;
+    transform: translateY(8px) scale(.98);
+    transition: transform .2s ease;
+}
+
+.qcu-content-overlay.show .qcu-content-modal {
+    transform: none;
+}
+
+.qcu-content-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 16px 22px 12px;
+    border-bottom: 1px solid #e6ebf1;
+}
+
+.qcu-content-title {
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--qcu-blue);
+    overflow-wrap: anywhere;
+}
+
+.qcu-content-body {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    padding: 18px 22px;
+    background: var(--qcu-bg);
+}
+
+    /* the fetched report already carries its own card styling */
+    .qcu-content-body .report {
+        margin: 0 auto;
+    }
+
+.qcu-content-loading {
+    padding: 40px 0;
+    text-align: center;
+    color: #5b6770;
+    font-size: .95rem;
+}
+
+.qcu-content-foot {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 14px 22px 18px;
+    border-top: 1px solid #e6ebf1;
+    background: var(--qcu-card-soft);
+    border-radius: 0 0 14px 14px;
+}
+
+    .qcu-content-foot .btn {
+        min-width: 110px;
+    }
+
+@media (max-width: 575px) {
+    .qcu-content-head {
+        padding: 14px 16px 10px;
+    }
+
+    .qcu-content-body {
+        padding: 14px 16px;
+    }
+
+    .qcu-content-foot {
+        flex-direction: column-reverse;
+        padding: 12px 16px 16px;
+    }
+
+        .qcu-content-foot .btn {
+            width: 100%;
+        }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .qcu-content-overlay,
+    .qcu-content-modal {
+        transition: none;
+    }
+}
+
+@media print {
+    .qcu-content-overlay {
+        display: none !important;
+    }
+}
+/* ============================================================
+   Toast messages (upper-right): slide in, 5-second countdown bar, slide out.
+   Built by qcuToast() in Scripts/qcu-ui.js
+   ============================================================ */
+.qcu-toast-stack {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    z-index: 3000; /* above the confirmation modal (2000) and the Add / Edit pop-ups (1900) */
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: min(390px, calc(100vw - 24px));
+    pointer-events: none; /* only the cards themselves take clicks */
+}
+
+.qcu-toast {
+    --qcu-toast-color: #dc3545;
+    --qcu-toast-soft: #fdeaec;
+    --qcu-toast-bar: #f4b6bd;
+    position: relative;
+    overflow: hidden;
+    pointer-events: auto;
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 16px 46px 22px 16px;
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 12px 32px rgba(15, 23, 42, .18), 0 2px 8px rgba(15, 23, 42, .08);
+    animation: qcu-toast-in .38s cubic-bezier(.21, 1.02, .73, 1) both;
+}
+
+.qcu-toast-success {
+    --qcu-toast-color: #198754;
+    --qcu-toast-soft: #e4f4ec;
+    --qcu-toast-bar: #a6dcc0;
+}
+
+.qcu-toast.is-leaving {
+    animation: qcu-toast-out .3s ease-in forwards;
+}
+
+.qcu-toast-icon {
+    flex: 0 0 44px;
+    width: 44px;
+    height: 44px;
+    border-radius: 13px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--qcu-toast-soft);
+    color: var(--qcu-toast-color);
+    box-shadow: 0 3px 10px rgba(15, 23, 42, .10);
+}
+
+.qcu-toast-body {
+    min-width: 0;
+    padding-top: 1px;
+}
+
+.qcu-toast-title {
+    font-weight: 700;
+    font-size: 1.02rem;
+    line-height: 1.3;
+    color: #1f2430;
+}
+
+.qcu-toast-msg {
+    margin-top: 2px;
+    font-size: .92rem;
+    line-height: 1.4;
+    color: #5b6270;
+    overflow-wrap: anywhere;
+}
+
+.qcu-toast-close {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: #8a909c;
+    font-size: 1.35rem;
+    line-height: 1;
+    cursor: pointer;
+}
+
+    .qcu-toast-close:hover,
+    .qcu-toast-close:focus-visible {
+        background: #eef0f4;
+        color: #333;
+    }
+
+/* countdown bar along the bottom edge: full width at the start, empty after 5 seconds */
+.qcu-toast-bar {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 5px;
+    background: rgba(15, 23, 42, .05);
+}
+
+    .qcu-toast-bar > span {
+        display: block;
+        width: 100%;
+        height: 100%;
+        background: var(--qcu-toast-bar);
+        transform-origin: left center;
+        animation: qcu-toast-bar linear forwards; /* duration is set from JavaScript (5000 ms) */
+    }
+
+.qcu-toast:hover .qcu-toast-bar > span {
+    animation-play-state: paused; /* point at it to keep it open while you read */
+}
+
+@keyframes qcu-toast-in {
+    from {
+        opacity: 0;
+        transform: translateX(120%);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes qcu-toast-out {
+    from {
+        opacity: 1;
+        transform: translateX(0);
+    }
+
+    to {
+        opacity: 0;
+        transform: translateX(120%);
+    }
+}
+
+@keyframes qcu-toast-bar {
+    from {
+        transform: scaleX(1);
+    }
+
+    to {
+        transform: scaleX(0);
+    }
+}
+
+@media (max-width: 575.98px) {
+    .qcu-toast-stack {
+        top: 10px;
+        right: 12px;
+        left: 12px;
+        width: auto;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .qcu-toast,
+    .qcu-toast.is-leaving {
+        animation: none;
+    }
+}
+
+@media print {
+    .qcu-toast-stack {
+        display: none !important;
+    }
+}
+
+/* ============================================================
+   Buttons that wait for required fields (data-qcu-needs / data-qcu-gate)
+   Bootstrap switches off pointer events on disabled buttons; turn them back on so the
+   "fill in the fields first" tooltip can show and the cursor says "not allowed".
+   ============================================================ */
+.btn[data-qcu-gated]:disabled {
+    pointer-events: auto;
+    cursor: not-allowed;
+}
+
+/* ============================================================
+   "Temporary password" note inside the Add Student / Add Admin pop-ups
+   ============================================================ */
+.qcu-temp-note {
+    margin-bottom: 1rem;
+    padding: .7rem .9rem;
+    border: 1px solid #cfe2ff;
+    border-left: 4px solid #0d6efd;
+    border-radius: .5rem;
+    background: #f1f6ff;
+    font-size: .93rem;
+}
+
+    .qcu-temp-note code {
+        padding: .1rem .4rem;
+        border-radius: .3rem;
+        background: #fff;
+        border: 1px solid #cfe2ff;
+        color: #0a3c93;
+        font-weight: 600;
+    }
+
+/* ============================================================
+   Library Booking Rules pop-up (Availability) + the same list on the Reserve page
+   ============================================================ */
+.qcu-rules-modal .modal-content {
+    border: 0;
+    border-radius: 16px;
+    box-shadow: 0 24px 60px rgba(15, 23, 42, .28);
+    overflow: hidden;
+}
+
+.qcu-rules-modal .modal-header {
+    background: var(--qcu-blue);
+    color: #fff;
+    border-bottom: 4px solid #f26a10;
+}
+
+.qcu-rules-modal .modal-title {
+    font-weight: 700;
+}
+
+.qcu-rules-modal .btn-close {
+    filter: invert(1) grayscale(1) brightness(2);
+    opacity: .9;
+}
+
+.qcu-rules-modal .modal-footer {
+    border-top: 0;
+}
+
+.qcu-rules-list {
+    margin: 0;
+    padding-left: 1.3rem;
+}
+
+    .qcu-rules-list li {
+        margin-bottom: .6rem;
+        line-height: 1.45;
+    }
+
+        .qcu-rules-list li:last-child {
+            margin-bottom: 0;
+        }
+
+/* ============================================================
+   Phase 6 — final polish
+   Small, safe refinements that keep the QCU-CRAM identity.
+   ============================================================ */
+
+/* Buttons: slightly softer corners to match the 8px cards */
+.btn {
+    border-radius: 6px;
+}
+
+/* Page heading: a little more room before the content starts */
+.qcu-page-head {
+    margin-bottom: 1.35rem;
+}
+
+/* Table headers: even weight + subtle tracking */
+.table thead th,
+.table > thead > tr > th {
+    letter-spacing: .2px;
+}
+
+/* Grid action buttons: consistent, comfortable hit area */
+.qcu-actions .btn {
+    min-height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Pop-up footers wrap neatly when there are several buttons (e.g. Review) */
+.qcu-form-foot,
+.qcu-content-foot {
+    flex-wrap: wrap;
+}
+
+/* Content modal: the fetched report rests on a soft card */
+.qcu-content-body .report {
+    box-shadow: 0 2px 10px rgba(0, 32, 70, .08);
+}
+
+/* =====================================================================
+   Phase 05 - layout bridge
+   The Web Forms master wrapped the whole page in <form runat="server"> and
+   Site.css used  form { display:flex; min-height:100vh }  to keep the footer
+   at the bottom of the window. Razor layouts have no such wrapper, so the
+   same job is done here by .qcu-app-shell.
+   ===================================================================== */
+.qcu-app-shell {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+    .qcu-app-shell > .body-content {
+        width: 100%;
+        flex: 0 0 auto;
+    }
+
+/* The Razor layout renders the dev-clock banner above the header; keep it flush. */
+.qcu-app-shell > .alert {
+    margin-bottom: 0;
+    border-radius: 0;
+}
+
+/* Toast partial: the ported stylesheet positions .qcu-toast for the old JS pop-out;
+   the server-rendered alert just needs to sit above the page card. */
+.body-content > .qcu-toast,
+main > .qcu-toast {
+    max-width: 1180px;
+    margin: 24px auto -8px;
+}
+
+/* Validation summary rendered by _QCU-CRAM_ValidationSummary */
+.qcu-validation-summary ul {
+    margin-bottom: 0;
+    padding-left: 1.25rem;
+}
+
+/* Status badge fallback for a status the stylesheet has no colour for */
+.qcu-badge--unknown {
+    background: #f1f2f4;
+    color: var(--qcu-muted);
+}

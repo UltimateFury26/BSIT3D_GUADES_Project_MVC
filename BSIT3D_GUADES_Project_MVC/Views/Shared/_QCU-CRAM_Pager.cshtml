@@ -1,0 +1,73 @@
+@model BSIT3D_GUADES_Project_MVC.QCUCRAM_ViewModels.QCUCRAMPagerViewModel
+@using System
+@{
+    /* =====================================================================
+       QCU-CRAM  |  Views/Shared/_QCU-CRAM_Pager.cshtml
+       ---------------------------------------------------------------------
+       Usage from a view:
+
+           @Html.Partial("_QCU-CRAM_Pager", Model.Pager)
+
+       or, from a controller:
+
+           var pager = QCUCRAMPagerViewModel.FromRequest(Request, page, 20, total);
+           return View(new SomeListViewModel { Rows = rows, Pager = pager });
+
+       Renders nothing when there is only one page, so a list view never
+       shows a lonely "1".
+       ===================================================================== */
+
+    if (Model == null || !Model.HasPages)
+    {
+        return;
+    }
+
+    var total = Model.TotalPages;
+    var current = Model.Page < 1 ? 1 : (Model.Page > total ? total : Model.Page);
+
+    // Show a window of at most 7 numbers so a 400-page list does not explode.
+    const int window = 7;
+    var first = current - (window / 2);
+    if (first < 1) { first = 1; }
+    var last = first + window - 1;
+    if (last > total) { last = total; first = last - window + 1; if (first < 1) { first = 1; } }
+}
+
+<nav aria-label="Pagination">
+    <ul class="pagination pagination-sm justify-content-center mb-0">
+
+        <li class="page-item @(current <= 1 ? "disabled" : string.Empty)">
+            <a class="page-link" href="@Model.UrlFor(current - 1)" aria-label="Previous">&laquo;</a>
+        </li>
+
+        @if (first > 1)
+        {
+            <li class="page-item"><a class="page-link" href="@Model.UrlFor(1)">1</a></li>
+            if (first > 2)
+            {
+                <li class="page-item disabled"><span class="page-link">&hellip;</span></li>
+            }
+        }
+
+        @for (var p = first; p <= last; p++)
+        {
+            <li class="page-item @(p == current ? "active" : string.Empty)">
+                <a class="page-link" href="@Model.UrlFor(p)">@p</a>
+            </li>
+        }
+
+        @if (last < total)
+        {
+            if (last < total - 1)
+            {
+                <li class="page-item disabled"><span class="page-link">&hellip;</span></li>
+            }
+            <li class="page-item"><a class="page-link" href="@Model.UrlFor(total)">@total</a></li>
+        }
+
+        <li class="page-item @(current >= total ? "disabled" : string.Empty)">
+            <a class="page-link" href="@Model.UrlFor(current + 1)" aria-label="Next">&raquo;</a>
+        </li>
+
+    </ul>
+</nav>
