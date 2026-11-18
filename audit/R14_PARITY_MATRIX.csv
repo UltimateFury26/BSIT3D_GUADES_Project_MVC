@@ -1,0 +1,12 @@
+﻿Area,Check,Source basis,MVC target/evidence,Result,Notes
+Configuration,Connection string key,Source Web.config: Guades_QCUCram_Connection,Web.config: QCU-CRAM_Connection; QCUCRAMContext and QCUCRAM_Db resolve this key,STATIC PASS,Expected migration-specific target key; runtime DB session not checked
+Configuration,Database target,Source Web.config: Guades_QCUCram_DB,Web.config: QCU-CRAM_DB,STATIC PASS,Target value retained; no runtime SQL session evidence
+Configuration,Legacy DB literal outside copy script,R14 requirement,Repository-wide search of MVC target excluding QCU-CRAM_CopyFromOldDb.sql,STATIC PASS,Zero occurrences after R14 documentation/comment edits
+Strings,"User-facing labels, validation, toast and redirect wording",All source .aspx/.aspx.cs pages,Corresponding MVC .cs/.cshtml actions and views,NOT RUN,Complete runtime string parity is not established by a raw literal diff; use source-to-view mapping and manual cases
+Role matrix,Guest access and redirects,Runbook §4.1 (not supplied),MVC routes/auth filters,NOT RUN,Exact acceptance rows unavailable; obtain runbook before marking pass
+Role matrix,Student access and ownership boundaries,Runbook §4.1 (not supplied),MVC student routes/actions,NOT RUN,"Run TC-SEC-01, TC-SEC-03, TC-SEC-04 and runbook cases"
+Role matrix,Admin access and admin workflows,Runbook §4.1 (not supplied),MVC admin routes/actions,NOT RUN,"Run TC-RTE-02, TC-WF-01 and runbook cases"
+Edge states,"Expired restriction, missing/stale records, invalid dates, empty results, session expiry",Runbook §4.1 (not supplied) plus R02-R12 phase checks,MVC services/controllers/views,NOT RUN,Use exact source messages and phase test cases; record evidence
+Build,Debug and Release builds,R14 final regression gate,MVC solution,NOT RUN,See R14_NOT_RUN_TESTS.md
+Database,"Schema, constraints, copy and active connection",R14 final regression gate,QCU-CRAM_Sql scripts and Web.config,NOT RUN,See R14_NOT_RUN_TESTS.md
+Regression,Visual and workflow comparison,Source Web Forms pages vs MVC routes/views,Existing audit/FINAL_PARITY_MATRIX.csv and TEST_EVIDENCE_INDEX.md,NOT RUN,Existing matrix is static mapping only; no screenshots/browser evidence supplied

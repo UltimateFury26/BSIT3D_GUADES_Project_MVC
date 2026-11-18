@@ -13,7 +13,7 @@ Because the name contains a hyphen, it must always be written in brackets in T-S
 | --- | --- | --- | --- |
 | 1 | `QCU-CRAM_Schema.sql` | Creates `[QCU-CRAM_DB]` **only if it does not already exist**, aborts cleanly if the tables already exist, then creates the nine tables, all six CHECK constraints, and the filtered unique index `UX_Res_ActiveSlot` | **Yes** |
 | 2 | `QCU-CRAM_Seed.sql` | Six rooms, nine time slots (08:00–17:00), five settings rows. Every insert is guarded, so it is safe to re-run | **Yes** |
-| 3 | `QCU-CRAM_CopyFromOldDb.sql` | **Optional.** Copies your data out of the old `Guades_QCUCram_DB` into `[QCU-CRAM_DB]`. Reads only — it never modifies or deletes the old database | Only if you have data to keep |
+| 3 | `QCU-CRAM_CopyFromOldDb.sql` | **Optional.** Copies your data out of the legacy source database into `[QCU-CRAM_DB]`. Reads only — it never modifies or deletes the old database | Only if you have data to keep |
 | 4 | `QCU-CRAM_TestChecks.sql` | Asserts the constraints actually exist and bite; safe to re-run | Optional |
 | 5 | `QCU-CRAM_Analytics.sql` | The reporting queries behind Phase 9; run ad hoc | Optional |
 
@@ -28,7 +28,7 @@ connection string.
 
 ## Your old database is left alone
 
-`Guades_QCUCram_DB` is not touched by any of these scripts except by
+The legacy source database is not touched by any of these scripts except by
 `QCU-CRAM_CopyFromOldDb.sql`, which only issues `SELECT`s against it. Nothing drops,
 truncates or renames it. You can keep it as a fallback, compare the two, or delete it
 yourself later.
