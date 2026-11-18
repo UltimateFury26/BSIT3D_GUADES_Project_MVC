@@ -79,10 +79,7 @@
                 @Html.ValidationMessageFor(m => m.Password, string.Empty, new { @class = "text-danger" })
             </div>
 
-            <button type="submit" class="btn btn-primary"
-                    onclick="if (typeof($(this.form).valid) === 'function' &amp;&amp; !$(this.form).valid()) { return false; } this.disabled = true; this.innerHTML = 'Please wait...';">
-                Login
-            </button>
+            <button type="submit" id="btnLogin" class="btn btn-primary">Login</button>
 
             <a href="@Url.Action("Register", "Account")" class="btn btn-link">Create an account</a>
         }
@@ -92,6 +89,28 @@
 
 @section scripts {
     <script>
+        // "Please wait..." on Login. This used to be an inline onclick that disabled the
+        // button; a browser skips the form submit when the submit button is disabled before
+        // the click finishes, so the page just sat on "Please wait...". Disabling it from the
+        // form's submit event is safe because the submit is already under way.
+        (function () {
+            var btn = document.getElementById('btnLogin');
+            var form = btn ? btn.form : null;
+            if (!btn || !form) { return; }
+
+            form.addEventListener('submit', function () {
+                if (window.jQuery && jQuery.fn.valid && !jQuery(form).valid()) { return; }
+                btn.disabled = true;
+                btn.textContent = 'Please wait...';
+            });
+
+            // Back / forward cache: never come back to a stuck "Please wait..." button.
+            window.addEventListener('pageshow', function () {
+                btn.disabled = false;
+                btn.textContent = 'Login';
+            });
+        })();
+
         // Role picker changes the first field: "Student Number / ID" (dash
         // auto-format) vs "Username" (plain text). Same behaviour as the
         // ApplyRoleLabels() helper on the Web Forms page.

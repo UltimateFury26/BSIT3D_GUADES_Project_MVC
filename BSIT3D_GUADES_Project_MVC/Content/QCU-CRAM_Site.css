@@ -3044,10 +3044,10 @@ input[type="date"][readonly] {
 .qcu-btn--sm      { padding:5px 10px; font-size:.8rem; }
 .qcu-btn[disabled] { opacity:.45; cursor:not-allowed; }
 
-/* modal panels - server-rendered, no JavaScript required */
-.qcu-modal { display:none; position:fixed; inset:0; z-index:60;
-             background:rgba(15,23,42,.55); padding:24px; overflow:auto; }
-.qcu-modal.is-open { display:flex; align-items:flex-start; justify-content:center; }
+/* modal panels - server-rendered, no JavaScript required.
+   Phase 09 fix: the old bare ".qcu-modal" / ".qcu-modal.is-open" rules were removed. They collided with
+   the qcuConfirm() dialog (class "qcu-modal", defined near line 1954) and hid it with display:none,
+   leaving only the dark overlay. Nothing in Views/ uses them; the pop-ups use .qcu-form-overlay. */
 .qcu-modal__box { width:100%; max-width:560px; background:var(--qcu-surface);
                   border-radius:16px; box-shadow:0 24px 60px rgba(0,0,0,.28);
                   margin:auto; }
