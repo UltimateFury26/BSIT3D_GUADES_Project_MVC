@@ -191,9 +191,9 @@
                         <td><span class="badge @row.StatusCss">@(row.Status == "CheckedIn" ? "Checked In" : row.Status)</span></td>
                         <td>
                             <a class="btn btn-sm btn-outline-primary me-2" href="@detailUrl(row.ReservationID)">Details</a>
-                            <a class="btn btn-sm btn-outline-secondary"
-                               href="@Url.Action("PrintBooking", "Reports", new { id = row.ReservationID })"
-                               target="_blank">Print</a>
+                            <a class="btn btn-sm btn-outline-secondary" data-qcu-load="1"
+                               data-qcu-load-title="Reservation #@row.ReservationID"
+                               href="@Url.Action("PrintBooking", "Reports", new { id = row.ReservationID })">Print</a>
                         </td>
                     </tr>
                 }
@@ -224,9 +224,9 @@
 
             <div class="qcu-form-foot">
                 <a class="btn btn-outline-secondary" href="@closeUrl">Close</a>
-                <a class="btn btn-primary"
-                   href="@Url.Action("PrintBooking", "Reports", new { id = Model.Detail.ReservationID })"
-                   target="_blank">Printable report</a>
+                <a class="btn btn-primary" data-qcu-load="1"
+                   data-qcu-load-title="Reservation #@Model.Detail.ReservationID report"
+                   href="@Url.Action("PrintBooking", "Reports", new { id = Model.Detail.ReservationID })">Printable report</a>
             </div>
         </div>
     </div>
