@@ -29,6 +29,14 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Security
                 .GetCustomAttributes(typeof(QCUCRAM_RequireLoginAttribute), true).Length > 0;
             if (needsLogin) { return; }
 
+            // Logout is the whole point of being signed in on this controller: it must run for a
+            // signed-in user (GET /logout has no ?msg=, so without this the bounce below sent
+            // the user straight back to the dashboard and the session was never cleared).
+            if (string.Equals(filterContext.ActionDescriptor.ActionName, "Logout", StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
             string code = filterContext.HttpContext.Request.QueryString[QCUCRAM_Constants.QueryKeys.Message];
             if (!string.IsNullOrWhiteSpace(code)) { return; }
 
