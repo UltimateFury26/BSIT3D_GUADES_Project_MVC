@@ -37,7 +37,7 @@
         <tr><th>Time</th><td>@Model.SlotLabel</td></tr>
         <tr><th>Members</th><td>@Model.NumberOfMembers</td></tr>
         <tr><th>Purpose</th><td>@Model.Purpose</td></tr>
-        <tr><th>Status</th><td><span class="badge @Model.StatusCss">@Model.Status</span></td></tr>
+        <tr><th>Status</th><td><span class="badge @Model.StatusCss">@(Model.Status == "CheckedIn" ? "Checked In" : Model.Status)</span></td></tr>
         <tr><th>Submitted</th><td>@Model.CreatedAt.ToString("MMM d, yyyy h:mm tt", inv)</td></tr>
         <tr><th>Checked in</th><td>@checkedIn</td></tr>
     </tbody>
@@ -80,9 +80,8 @@
             foreach (var h in Model.History)
             {
                 string from = string.IsNullOrEmpty(h.FromStatus) ? "(new)" : h.FromStatus;
-                string by = string.IsNullOrEmpty(h.ActorName)
-                    ? (string.IsNullOrEmpty(h.ActorRole) ? "System" : h.ActorRole)
-                    : h.ActorRole + ": " + h.ActorName;
+                // Records.aspx.cs: "Admin: name", "Student: name", anything else "System".
+                string by = string.IsNullOrEmpty(h.ActorName) ? "System" : h.ActorRole + ": " + h.ActorName;
 
                 <tr>
                     <td>@h.ChangedAt.ToString("MMM d, yyyy h:mm:ss tt", inv)</td>

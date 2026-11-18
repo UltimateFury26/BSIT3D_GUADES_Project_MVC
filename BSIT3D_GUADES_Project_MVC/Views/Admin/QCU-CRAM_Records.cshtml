@@ -138,10 +138,18 @@
     </div>
 </form>
 
+@if (!string.IsNullOrEmpty(Model.FilterError))
+{
+    <div class="alert alert-danger">@Model.FilterError</div>
+}
+
 <p class="text-muted">
-    @(f.HasFilters
-          ? Model.TotalRows + " reservation(s) match the filters."
-          : Model.TotalRows + " reservation(s) in total.")
+    @if (string.IsNullOrEmpty(Model.FilterError))
+    {
+        @(f.HasFilters
+              ? Model.TotalRows + " reservation(s) match the filters."
+              : Model.TotalRows + " reservation(s) in total.")
+    }
 </p>
 
 <div class="table-responsive">

@@ -45,7 +45,18 @@ namespace BSIT3D_GUADES_Project_MVC.Controllers
         {
             QCUCRAMRecordsFilter filter = BuildFilter(status, room, program, from, to, q, sort, dir, page);
 
+            // Phase 16A: GetFilteredTable showed the message and an empty grid.
+            string error = ValidateDates(from, to);
+
             QCUCRAMRecordsViewModel model = _service.Records(filter);
+
+            if (error != null)
+            {
+                model.FilterError = error;
+                model.Rows.Clear();
+                model.TotalRows = 0;
+                return View("QCU-CRAM_Records", model);
+            }
 
             if (detail.HasValue && detail.Value > 0)
             {
@@ -80,7 +91,31 @@ namespace BSIT3D_GUADES_Project_MVC.Controllers
                                       string sort, string dir, int? page)
         {
             QCUCRAMRecordsFilter filter = BuildFilter(status, room, program, from, to, q, sort, dir, page);
-            string csv = _service.ExportCsv(filter);
+
+            object back = new { status = status, room = room, program = program, from = from, to = to, q = q, sort = sort, dir = dir };
+
+            // An invalid date: the Index page shows the same message the source showed.
+            if (ValidateDates(from, to) != null)
+            {
+                return RedirectToAction("Index", back);
+            }
+
+            string csv;
+            try
+            {
+                csv = _service.ExportCsv(filter);
+            }
+            catch (Exception)
+            {
+                FlashError("Sorry, the export could not be created. Please try again.");
+                return RedirectToAction("Index", back);
+            }
+
+            if (csv == null)
+            {
+                FlashError("There are no reservations to export for these filters.");
+                return RedirectToAction("Index", back);
+            }
 
             // UTF-8 with a BOM so Excel opens the en-dash and the Filipino names
             // correctly instead of guessing the ANSI code page.
@@ -102,7 +137,9 @@ namespace BSIT3D_GUADES_Project_MVC.Controllers
         {
             QCUCRAMRecordsFilter filter = new QCUCRAMRecordsFilter
             {
-                Status = (status ?? string.Empty).Trim(),
+                // Records.aspx.cs only applied ?status= when it was one of the list items.
+                Status = Array.IndexOf(QCUCRAM_Status.All, (status ?? string.Empty).Trim()) >= 0
+                    ? status.Trim() : string.Empty,
                 RoomID = room.HasValue && room.Value > 0 ? room : (int?)null,
                 Program = (program ?? string.Empty).Trim(),
                 From = ParseDate(from),
@@ -120,6 +157,25 @@ namespace BSIT3D_GUADES_Project_MVC.Controllers
                                        StringComparison.OrdinalIgnoreCase) ? "asc" : "desc";
 
             return filter;
+        }
+
+        /// <summary>The two messages Records.aspx.cs GetFilteredTable showed; null when the dates are fine.</summary>
+        private static string ValidateDates(string from, string to)
+        {
+            bool hasFrom = !string.IsNullOrWhiteSpace(from);
+            bool hasTo = !string.IsNullOrWhiteSpace(to);
+            DateTime? f = ParseDate(from);
+            DateTime? t = ParseDate(to);
+
+            if ((hasFrom && !f.HasValue) || (hasTo && !t.HasValue))
+            {
+                return "Enter the dates as year-month-day, for example 2026-10-06.";
+            }
+            if (f.HasValue && t.HasValue && f.Value > t.Value)
+            {
+                return "The From date is after the To date.";
+            }
+            return null;
         }
 
         /// <summary>

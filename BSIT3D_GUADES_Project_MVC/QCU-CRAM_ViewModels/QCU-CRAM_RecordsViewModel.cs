@@ -87,6 +87,10 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_ViewModels
         public string SlotLabel { get; set; }
         public string RoomName { get; set; }
         public string Requester { get; set; }
+
+        /// <summary>Phase 16A: sort keys only. Records.aspx.cs sorted Requester on s.LastName then s.FirstName, not on the joined display text.</summary>
+        public string SortLastName { get; set; }
+        public string SortFirstName { get; set; }
         public string StudentNumber { get; set; }
         public string Program { get; set; }
         public int NumberOfMembers { get; set; }
@@ -104,6 +108,12 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_ViewModels
         public QCUCRAMRecordsFilter Filter { get; set; }
         public IList<QCUCRAMRecordsRow> Rows { get; set; }
         public int TotalRows { get; set; }
+
+        /// <summary>
+        /// Phase 16A: lblMessage on Records.aspx. Set when a date filter is invalid; the
+        /// grid is then empty and the count line is not shown.
+        /// </summary>
+        public string FilterError { get; set; }
 
         /// <summary>Ready-made pager whose UrlFor keeps every current filter.</summary>
         public QCUCRAMPagerViewModel Pager { get; set; }

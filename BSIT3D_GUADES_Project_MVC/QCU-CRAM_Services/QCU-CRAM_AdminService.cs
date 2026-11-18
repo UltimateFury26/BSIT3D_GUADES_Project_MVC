@@ -1015,6 +1015,10 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
             Dictionary<int, QCUCRAM_Student> map = LoadStudents();
             List<QCUCRAMRecordsRow> rows = LoadRecordRows(filter, map);
 
+            // Phase 16A: btnExportCsv_Click wrote no file when nothing matched. Null tells
+            // the controller to show "There are no reservations to export for these filters."
+            if (rows.Count == 0) { return null; }
+
             StringBuilder sb = new StringBuilder();
 
             // Same heading, same order, same CRLF line ending as Records.aspx.cs.
@@ -1146,25 +1150,30 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
         /// </summary>
         private string HistoryActor(QCUCRAM_HistoryItem item)
         {
-            if (!item.ChangedBy.HasValue) { return string.Empty; }
+            bool isAdmin = string.Equals(item.ChangedByRole, QCUCRAM_ReservationRepository.ActorAdmin,
+                                         StringComparison.OrdinalIgnoreCase);
+            bool isStudent = string.Equals(item.ChangedByRole, QCUCRAM_ReservationRepository.ActorStudent,
+                                           StringComparison.OrdinalIgnoreCase);
+
+            // Anything else is shown as "System" by the view.
+            if (!isAdmin && !isStudent) { return string.Empty; }
+
+            // Phase 16A: the source CASE looked the id up even when it was NULL, which
+            // gave "(account removed)". Student names are "Last, First" with no MI.
+            if (!item.ChangedBy.HasValue) { return "(account removed)"; }
 
             int id = item.ChangedBy.Value;
 
-            if (string.Equals(item.ChangedByRole, QCUCRAM_ReservationRepository.ActorAdmin,
-                              StringComparison.OrdinalIgnoreCase))
+            if (isAdmin)
             {
                 QCUCRAM_AdminUser admin = _admins.GetById(id);
                 return admin == null ? "(account removed)" : admin.FullName;
             }
 
-            if (string.Equals(item.ChangedByRole, QCUCRAM_ReservationRepository.ActorStudent,
-                              StringComparison.OrdinalIgnoreCase))
-            {
-                QCUCRAM_Student student = _students.GetById(id);
-                return student == null ? "(account removed)" : FullName(student);
-            }
-
-            return string.Empty;
+            QCUCRAM_Student student = _students.GetById(id);
+            return student == null
+                ? "(account removed)"
+                : (student.LastName ?? string.Empty) + ", " + (student.FirstName ?? string.Empty);
         }
 
         // ==================================================================
@@ -1200,6 +1209,8 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
                 SlotLabel = x.SlotLabel,
                 RoomName = x.RoomName,
                 Requester = DisplayName(map, x.StudentId),
+                SortLastName = SortLast(map, x.StudentId),
+                SortFirstName = SortFirst(map, x.StudentId),
                 StudentNumber = x.StudentNumber,
                 Program = ProgramOf(map, x.StudentId),
                 NumberOfMembers = x.NumberOfMembers,
@@ -1249,11 +1260,14 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
                               .ThenByDescending(r => r.ReservationID).ToList();
                     break;
                 case "Requester":
+                    // Phase 16A: s.LastName d, s.FirstName d, then the DESC tail.
                     rows = asc
-                        ? rows.OrderBy(r => r.Requester, StringComparer.OrdinalIgnoreCase)
+                        ? rows.OrderBy(r => r.SortLastName, StringComparer.OrdinalIgnoreCase)
+                              .ThenBy(r => r.SortFirstName, StringComparer.OrdinalIgnoreCase)
                               .ThenByDescending(r => r.ReservationDate)
                               .ThenByDescending(r => r.ReservationID).ToList()
-                        : rows.OrderByDescending(r => r.Requester, StringComparer.OrdinalIgnoreCase)
+                        : rows.OrderByDescending(r => r.SortLastName, StringComparer.OrdinalIgnoreCase)
+                              .ThenByDescending(r => r.SortFirstName, StringComparer.OrdinalIgnoreCase)
                               .ThenByDescending(r => r.ReservationDate)
                               .ThenByDescending(r => r.ReservationID).ToList();
                     break;
@@ -1311,7 +1325,7 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
                 ? filter.From.Value.ToString("yyyy-MM-dd", Inv) : string.Empty);
             sb.Append("&to=").Append(filter.To.HasValue
                 ? filter.To.Value.ToString("yyyy-MM-dd", Inv) : string.Empty);
-            sb.Append("&search=").Append(HttpUtility.UrlEncode(filter.Search ?? string.Empty));
+            sb.Append("&q=").Append(HttpUtility.UrlEncode(filter.Search ?? string.Empty));
             sb.Append("&sort=").Append(HttpUtility.UrlEncode(filter.Sort ?? "ReservationDate"));
             sb.Append("&dir=").Append(HttpUtility.UrlEncode(filter.Dir ?? "desc"));
             sb.Append("&page=").Append(page.ToString(Inv));
@@ -1350,6 +1364,18 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
         {
             QCUCRAM_Student student;
             return map.TryGetValue(studentId, out student) ? FullName(student) : "Unknown requester";
+        }
+
+        private static string SortLast(Dictionary<int, QCUCRAM_Student> map, int studentId)
+        {
+            QCUCRAM_Student student;
+            return map.TryGetValue(studentId, out student) ? (student.LastName ?? string.Empty) : "Unknown requester";
+        }
+
+        private static string SortFirst(Dictionary<int, QCUCRAM_Student> map, int studentId)
+        {
+            QCUCRAM_Student student;
+            return map.TryGetValue(studentId, out student) ? (student.FirstName ?? string.Empty) : string.Empty;
         }
 
         private static string ProgramOf(Dictionary<int, QCUCRAM_Student> map, int studentId)
