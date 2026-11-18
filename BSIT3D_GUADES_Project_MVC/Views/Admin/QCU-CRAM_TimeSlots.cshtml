@@ -1,11 +1,21 @@
-﻿@model BSIT3D_GUADES_Project_MVC.QCUCRAM_ViewModels.QCUCRAMTimeSlotsViewModel
+@model BSIT3D_GUADES_Project_MVC.QCUCRAM_ViewModels.QCUCRAMTimeSlotsViewModel
 @using System
 @using System.Linq
 @{
     /* =====================================================================
        QCU-CRAM  |  Views/Admin/QCU-CRAM_TimeSlots.cshtml
        ---------------------------------------------------------------------
-       Port of Guades_QCUCram_Admin/Guades_QCUCram_TimeSlots.aspx.
+       One-to-one port of Guades_QCUCram_Admin/Guades_QCUCram_TimeSlots.aspx.
+
+       Phase 22 parity points:
+         * same heading / sub-heading and "+ Add Time Slot" button,
+         * same column set and order: ID, Time Slot, Status, Reservations,
+           Actions,
+         * Active / Disabled badge wording,
+         * Disable / Enable action with the source confirmation text,
+         * same empty-state sentence and the same help note under the grid,
+         * pop-up titled "Add Time Slot" / "Edit Time Slot #id" with the
+           source labels and button captions.
 
        Two business rules carried over verbatim:
          * the start/end times of a slot that already has reservations are
@@ -17,36 +27,33 @@
     Layout = "~/Views/Shared/_QCU-CRAM_Layout.cshtml";
 
     bool isNew = Model.Edit == null || Model.Edit.TimeSlotID <= 0;
+    string modalTitle = isNew ? "Add Time Slot" : "Edit Time Slot #" + Model.Edit.TimeSlotID;
 }
 
 <div class="qcu-page-head">
     <div>
         <h1 class="qcu-page-title">Time Slots</h1>
-        <p class="qcu-page-sub">The one-hour blocks a room can be booked for.</p>
+        <p class="qcu-page-sub">The bookable hours for each day</p>
     </div>
     <div class="qcu-page-actions">
-        <a class="qcu-btn qcu-btn--primary" href="@Url.Action("TimeSlots", new { edit = 0 })">Add time slot</a>
+        <a class="qcu-btn qcu-btn--primary" href="@Url.Action("TimeSlots", new { edit = 0 })">+ Add Time Slot</a>
     </div>
 </div>
 
 <section class="qcu-panel">
-    <header class="qcu-panel__head">
-        <h2>@Model.Rows.Count slot(s)</h2>
-    </header>
-
     @if (Model.Rows.Count == 0)
     {
-        <p class="qcu-empty">No time slots yet. Add the first one.</p>
+        <p class="qcu-empty">No time slots yet. Click &quot;+ Add Time Slot&quot; to create one.</p>
     }
     else
     {
         <table class="qcu-table">
             <thead>
                 <tr>
-                    <th>#</th>
-                    <th>Slot</th>
-                    <th>Reservations</th>
+                    <th>ID</th>
+                    <th>Time Slot</th>
                     <th>Status</th>
+                    <th>Reservations</th>
                     <th class="qcu-table__actions">Actions</th>
                 </tr>
             </thead>
@@ -56,27 +63,28 @@
                     <tr>
                         <td>@row.TimeSlotID</td>
                         <td><strong>@row.Label</strong></td>
-                        <td>@row.ReservationCount</td>
                         <td>
                             <span class="qcu-badge @(row.IsActive ? "is-approved" : "is-cancelled")">
-                                @(row.IsActive ? "Active" : "Inactive")
+                                @(row.IsActive ? "Active" : "Disabled")
                             </span>
                         </td>
+                        <td>@row.ReservationCount</td>
                         <td class="qcu-table__actions">
                             <div class="qcu-btn-row">
                                 <a class="qcu-btn qcu-btn--sm" href="@Url.Action("TimeSlots", new { edit = row.TimeSlotID })">Edit</a>
 
-                                <form method="post" action="@Url.Action("ToggleSlot", new { id = row.TimeSlotID })">
+                                <form method="post" action="@Url.Action("ToggleSlot", new { id = row.TimeSlotID })"
+                                      onsubmit="return confirm('@(row.IsActive ? "Disable" : "Enable") this time slot? A disabled slot cannot be booked. You can change this again at any time.');">
                                     @Html.AntiForgeryToken()
                                     <button type="submit" class="qcu-btn qcu-btn--sm">
-                                        @(row.IsActive ? "Deactivate" : "Activate")
+                                        @(row.IsActive ? "Disable" : "Enable")
                                     </button>
                                 </form>
 
                                 @if (row.CanDelete)
                                 {
                                     <form method="post" action="@Url.Action("DeleteSlot", new { id = row.TimeSlotID })"
-                                          onsubmit="return confirm('Delete the @row.Label slot? This cannot be undone.');">
+                                          onsubmit="return confirm('Delete this time slot? It is removed permanently. This cannot be undone.');">
                                         @Html.AntiForgeryToken()
                                         <button type="submit" class="qcu-btn qcu-btn--sm qcu-btn--danger">Delete</button>
                                     </form>
@@ -94,16 +102,24 @@
                 }
             </tbody>
         </table>
+
+        <div class="qcu-panel__body">
+            <p class="qcu-hint">
+                A slot that has reservations cannot be deleted or have its times changed. Disable it
+                instead: it disappears from new bookings, but existing reservations still display.
+                Slots may touch (for example 9:00-10:00 and 10:00-11:00) but may not overlap.
+            </p>
+        </div>
     }
 </section>
 
 @Html.Partial("_QCU-CRAM_SetupModal", new BSIT3D_GUADES_Project_MVC.QCUCRAM_ViewModels.QCUCRAM_SetupModalViewModel
 {
     Open = Model.ModalOpen,
-    Title = isNew ? "Add time slot" : "Edit time slot",
+    Title = modalTitle,
     Action = Url.Action("SaveSlot"),
     Error = Model.ModalError,
-    SubmitText = isNew ? "Add slot" : "Save changes",
+    SubmitText = isNew ? "Add Time Slot" : "Update Time Slot",
     CancelUrl = Url.Action("TimeSlots"),
     Body = @<text>
         <input type="hidden" name="TimeSlotID" value="@(isNew ? 0 : Model.Edit.TimeSlotID)" />
@@ -114,28 +130,30 @@
             if (edited != null && !edited.CanEditTimes)
             {
                 <div class="qcu-alert qcu-alert--info">
-                    This slot already has <strong>@edited.ReservationCount</strong> reservation(s),
-                    so its start and end times are frozen. You can still activate or deactivate it.
+                    This slot has reservations, so its times cannot be changed. Disable it and add a
+                    new slot instead. You can still activate or deactivate it.
                 </div>
             }
         }
 
         <div class="qcu-form__row qcu-form__row--split">
             <div>
-                <label for="Start">Start time</label>
-                <input id="Start" name="Start" type="time" class="form-control qcu-input--num"
+                <label for="Start">Start Time</label>
+                <input id="Start" name="Start" type="time" class="form-control qcu-input--num" required="required"
                        value="@(isNew ? "08:00" : Model.Edit.Start)" />
+                <span class="qcu-hint">Start time is required.</span>
             </div>
             <div>
-                <label for="End">End time</label>
-                <input id="End" name="End" type="time" class="form-control qcu-input--num"
+                <label for="End">End Time</label>
+                <input id="End" name="End" type="time" class="form-control qcu-input--num" required="required"
                        value="@(isNew ? "09:00" : Model.Edit.End)" />
+                <span class="qcu-hint">End time is required and must be later than the start time.</span>
             </div>
         </div>
 
         <label class="qcu-switch">
             <input type="checkbox" name="IsActive" value="true" @Html.Raw(isNew || Model.Edit.IsActive ? "checked=\"checked\"" : string.Empty) />
-            <span>Active (this slot can be booked)</span>
+            <span>Active (available for booking)</span>
         </label>
     </text>
 })

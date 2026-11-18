@@ -121,14 +121,16 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_ViewModels
             }
         }
 
+        /// <summary>Source FormatRestricted(): No / Yes / Yes (until MMM d, yyyy h:mm tt).</summary>
         public string RestrictionText
         {
             get
             {
-                if (!IsRestricted) { return ""; }
-                if (!RestrictionLiftDate.HasValue) { return "Restricted"; }
-                return "Restricted until " +
-                       RestrictionLiftDate.Value.ToString("MMM d, yyyy");
+                if (!IsRestricted) { return "No"; }
+                if (!RestrictionLiftDate.HasValue) { return "Yes"; }
+                return "Yes (until " +
+                       RestrictionLiftDate.Value.ToString("MMM d, yyyy h:mm tt",
+                           System.Globalization.CultureInfo.InvariantCulture) + ")";
             }
         }
 
@@ -232,7 +234,8 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_ViewModels
         public int Min { get; set; }
         public int Max { get; set; }
 
-        public string RangeText { get { return Min + " - " + Max; } }
+        /// <summary>Source RangeText(): "Whole number from X to Y."</summary>
+        public string RangeText { get { return "Whole number from " + Min + " to " + Max + "."; } }
     }
 
     public class QCUCRAMSettingsViewModel

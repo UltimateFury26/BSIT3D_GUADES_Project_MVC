@@ -4,12 +4,16 @@
     /* =====================================================================
        QCU-CRAM  |  Views/Admin/QCU-CRAM_Settings.cshtml
        ---------------------------------------------------------------------
-       Port of Guades_QCUCram_Admin/Guades_QCUCram_Settings.aspx.
+       One-to-one port of Guades_QCUCram_Admin/Guades_QCUCram_Settings.aspx.
 
-       The Settings table is a plain key/value store, so the page renders one
-       row per setting with the value in a number box and the allowed range
-       spelled out. Every value must be a whole number inside its range - the
-       server re-checks and bounces back with the reason.
+       Phase 25 parity points:
+         * same heading / sub-heading,
+         * same empty-state sentence ("No settings found. Run the seed script."),
+         * one row per setting with the value in a whole-number box, the
+           description and the "Whole number from X to Y." range note,
+         * same "Save Settings" caption and the developer-clock footnote,
+         * the server re-checks every value and only writes the ones that
+           actually changed ("No changes to save." / "Settings saved (N changed).").
        ===================================================================== */
 
     ViewBag.Title = "Settings";
@@ -19,7 +23,7 @@
 <div class="qcu-page-head">
     <div>
         <h1 class="qcu-page-title">Settings</h1>
-        <p class="qcu-page-sub">Booking rules and the developer clock offset.</p>
+        <p class="qcu-page-sub">System rules and limits</p>
     </div>
 </div>
 
@@ -33,13 +37,9 @@
     @Html.AntiForgeryToken()
 
     <section class="qcu-panel">
-        <header class="qcu-panel__head">
-            <h2>Rule values</h2>
-        </header>
-
         @if (Model.Rows.Count == 0)
         {
-            <p class="qcu-empty">No settings have been seeded yet.</p>
+            <p class="qcu-empty">No settings found. Run the seed script.</p>
         }
         else
         {
@@ -48,24 +48,24 @@
                     <tr>
                         <th>Setting</th>
                         <th>Value</th>
-                        <th>Allowed range</th>
+                        <th>Description</th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach (var row in Model.Rows)
                     {
                         <tr>
-                            <td>
-                                <strong>@row.Key</strong>
-                                <div class="qcu-hint">@row.Description</div>
-                            </td>
+                            <td><strong>@row.Key</strong></td>
                             <td>
                                 <input type="number" class="form-control qcu-input--num"
                                        name="s_@row.Key" value="@row.Value"
-                                       min="@row.Min" max="@row.Max" step="1"
-                                       aria-label="@row.Key" />
+                                       min="@row.Min" max="@row.Max" step="1" maxlength="9"
+                                       required="required" aria-label="@row.Key" />
                             </td>
-                            <td>@row.RangeText</td>
+                            <td>
+                                @row.Description
+                                <div class="text-muted small">@row.RangeText</div>
+                            </td>
                         </tr>
                     }
                 </tbody>
@@ -74,7 +74,13 @@
     </section>
 
     <div class="qcu-form__actions">
-        <button type="submit" class="qcu-btn qcu-btn--primary">Save settings</button>
+        <button type="submit" class="qcu-btn qcu-btn--primary">Save Settings</button>
         <a class="qcu-btn qcu-btn--ghost" href="@Url.Action("Settings")">Discard changes</a>
     </div>
+
+    <p class="qcu-hint">
+        <strong>DevTimeOffsetMinutes</strong> is for testing only: it shifts the system clock so
+        you can test forfeiture and restrictions without waiting. Keep it at 0 for normal use.
+        While it is not 0, a red banner shows on every page.
+    </p>
 }

@@ -326,6 +326,114 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Data
         }
 
         /// <summary>0 = OK, 1 = wrong current password, 2 = not found, 3 = new password too weak.</summary>
+        /// <summary>
+        /// Admin search used by the Students maintenance screen. Mirrors the source
+        /// LIKE-escaped search across number, names, e-mail and program, including the
+        /// computed "First Last" and "Last, First" forms, ordered by last/first name.
+        /// </summary>
+        public List<QCUCRAM_Student> SearchAdmin(string search)
+        {
+            string sql = SelectStudent + " WHERE 1 = 1";
+            List<SqlParameter> p = new List<SqlParameter>();
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                string q = "%" + EscapeLike(search.Trim()) + "%";
+
+                sql += @" AND (StudentNumber LIKE @q ESCAPE '\'
+                          OR LastName LIKE @q ESCAPE '\'
+                          OR FirstName LIKE @q ESCAPE '\'
+                          OR Email LIKE @q ESCAPE '\'
+                          OR Program LIKE @q ESCAPE '\'
+                          OR (FirstName + ' ' + LastName) LIKE @q ESCAPE '\'
+                          OR (LastName + ', ' + FirstName) LIKE @q ESCAPE '\')";
+
+                p.Add(QCUCRAM_Db.P("@q", q));
+            }
+
+            sql += " ORDER BY LastName, FirstName, StudentID";
+            return _db.Query<QCUCRAM_Student>(sql, p.ToArray());
+        }
+
+        private static string EscapeLike(string value)
+        {
+            return (value ?? string.Empty)
+                .Replace("\\", "\\\\")
+                .Replace("%", "\\%")
+                .Replace("_", "\\_")
+                .Replace("[", "\\[");
+        }
+
+        /// <summary>
+        /// Admin edit from the Students page. Unlike the self-service
+        /// <see cref="UpdateProfile"/> this also writes StudentNumber and
+        /// RequesterType, exactly like the source SaveEdit().
+        /// 0 = OK, 1 = e-mail taken, 2 = not found, 3 = invalid, 4 = ID taken.
+        /// </summary>
+        public int UpdateAdminProfile(int studentId, string studentNumber, string lastName,
+                                      string firstName, string mi, string email,
+                                      string program, string requesterType)
+        {
+            string number = (studentNumber ?? "").Trim();
+            string last = (lastName ?? "").Trim();
+            string first = (firstName ?? "").Trim();
+            string middle = (mi ?? "").Trim().TrimEnd('.').ToUpperInvariant();
+            string mail = (email ?? "").Trim();
+            string type = (requesterType ?? "").Trim();
+
+            if (!QCUCRAM_Programs.IsValidRequesterType(type)) { return 3; }
+            if (!QCUCRAM_Programs.IsValidProgram(program)) { return 3; }
+            if (type == "Student") { number = QCUCRAM_Programs.NormalizeStudentNumber(number); }
+
+            if (type == "Student")
+            {
+                if (!StudentNumberRegex.IsMatch(number)) { return 3; }
+            }
+            else if (!OtherIdRegex.IsMatch(number))
+            {
+                return 3;
+            }
+
+            if (middle.Length > 5) { return 3; }
+            if (last.Length == 0 || first.Length == 0 || last.Length > 60 || first.Length > 60) { return 3; }
+            if (mail.Length == 0 || mail.Length > 120) { return 3; }
+
+            QCUCRAM_Student existing = GetById(studentId);
+            if (existing == null) { return 2; }
+
+            if (!string.Equals(existing.StudentNumber, number, StringComparison.OrdinalIgnoreCase))
+            {
+                bool idTaken = _db.Any(
+                    "SELECT COUNT(*) AS Total FROM Students WHERE StudentNumber = @n AND StudentID <> @id",
+                    QCUCRAM_Db.P("@n", number), QCUCRAM_Db.P("@id", studentId));
+                if (idTaken) { return 4; }
+            }
+
+            if (!string.Equals(existing.Email, mail, StringComparison.OrdinalIgnoreCase))
+            {
+                bool taken = _db.Any(
+                    "SELECT COUNT(*) AS Total FROM Students WHERE Email = @e AND StudentID <> @id",
+                    QCUCRAM_Db.P("@e", mail), QCUCRAM_Db.P("@id", studentId));
+                if (taken) { return 1; }
+            }
+
+            _db.Execute(
+                @"UPDATE Students
+                     SET StudentNumber = @n, LastName = @last, FirstName = @first, MI = @mi,
+                         Email = @e, Program = @prog, RequesterType = @type
+                   WHERE StudentID = @id",
+                QCUCRAM_Db.P("@n", number),
+                QCUCRAM_Db.P("@last", last),
+                QCUCRAM_Db.P("@first", first),
+                QCUCRAM_Db.P("@mi", middle.Length == 0 ? null : middle),
+                QCUCRAM_Db.P("@e", mail),
+                QCUCRAM_Db.P("@prog", program),
+                QCUCRAM_Db.P("@type", type),
+                QCUCRAM_Db.P("@id", studentId));
+
+            return 0;
+        }
+
         public int ChangePassword(int studentId, string currentPassword, string newPassword)
         {
             QCUCRAM_Student row = GetById(studentId);
@@ -436,12 +544,27 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Data
         /// Removes a requester. Returns 0 when the student still has reservations
         /// (FK_R reservations), so the admin page can explain instead of crashing.
         /// </summary>
+        /// <summary>
+        /// Deletes an account only when it has no reservations, removing its
+        /// notifications in the same transaction (source DeleteStudent()).
+        /// 0 = deleted, -1 = FK constraint, -2 = still has reservations.
+        /// </summary>
         public int Delete(int studentId)
         {
             try
             {
-                return _db.Execute("DELETE FROM Students WHERE StudentID = @id",
+                int affected = _db.Execute(
+                    @"SET XACT_ABORT ON;
+                      BEGIN TRAN;
+                      IF NOT EXISTS (SELECT 1 FROM Reservations WHERE StudentID = @id)
+                      BEGIN
+                          DELETE FROM Notifications WHERE StudentID = @id;
+                          DELETE FROM Students WHERE StudentID = @id;
+                      END
+                      COMMIT;",
                     QCUCRAM_Db.P("@id", studentId));
+
+                return affected > 0 ? 0 : -2;
             }
             catch (SqlException ex)
             {

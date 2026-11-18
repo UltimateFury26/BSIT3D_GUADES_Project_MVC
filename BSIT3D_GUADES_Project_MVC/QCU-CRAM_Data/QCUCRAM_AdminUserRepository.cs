@@ -181,6 +181,24 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Data
         }
 
         /// <summary>0 = OK, 1 = wrong current password, 2 = not found, 3 = new password too weak.</summary>
+        /// <summary>
+        /// Full-name-only edit, matching the source SaveEdit() (the username is fixed
+        /// once the account exists). 0 = OK, 2 = not found, 3 = invalid.
+        /// </summary>
+        public int UpdateFullName(int adminId, string fullName)
+        {
+            string name = (fullName ?? "").Trim();
+
+            if (name.Length == 0 || name.Length > 120) { return 3; }
+            if (GetById(adminId) == null) { return 2; }
+
+            _db.Execute("UPDATE AdminUsers SET FullName = @n WHERE AdminID = @id",
+                QCUCRAM_Db.P("@n", name),
+                QCUCRAM_Db.P("@id", adminId));
+
+            return 0;
+        }
+
         public int ChangePassword(int adminId, string currentPassword, string newPassword)
         {
             QCUCRAM_AdminUser row = GetById(adminId);

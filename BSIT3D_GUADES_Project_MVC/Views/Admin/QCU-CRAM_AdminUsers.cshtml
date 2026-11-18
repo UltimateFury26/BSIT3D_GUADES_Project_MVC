@@ -4,7 +4,20 @@
     /* =====================================================================
        QCU-CRAM  |  Views/Admin/QCU-CRAM_AdminUsers.cshtml
        ---------------------------------------------------------------------
-       Port of Guades_QCUCram_Admin/Guades_QCUCram_AdminUsers.aspx.
+       One-to-one port of Guades_QCUCram_Admin/Guades_QCUCram_AdminUsers.aspx.
+
+       Phase 24 parity points:
+         * same heading / sub-heading and "+ Add Admin Account" button,
+         * same column set and order: Username (with the "(you)" marker),
+           Full Name, Status, Actions,
+         * same empty-state sentence and the same help note under the grid,
+         * Disable / Enable and Reset Password are hidden for your own account
+           (the source does not render them at all),
+         * full name is capped at 120 characters, like the source,
+         * the username field is only shown when adding; on edit the source
+           only lets you change the full name,
+         * pop-up titled "Add Admin Account" / "Edit Admin: {username}" with
+           the source temporary-password preview and button captions.
 
        Two guards kept from the original:
          * you cannot disable your own account (IsSelf);
@@ -17,35 +30,34 @@
 
     bool isNew = Model.Edit == null || Model.Edit.AdminID <= 0;
     bool lastActive = Model.ActiveCount <= 1;
+
+    string modalTitle = isNew
+        ? "Add Admin Account"
+        : "Edit Admin: " + Model.Edit.Username;
 }
 
 <div class="qcu-page-head">
     <div>
         <h1 class="qcu-page-title">Admin Accounts</h1>
-        <p class="qcu-page-sub">@Model.Rows.Count account(s), @Model.ActiveCount active.</p>
+        <p class="qcu-page-sub">Library assistant accounts</p>
     </div>
     <div class="qcu-page-actions">
-        <a class="qcu-btn qcu-btn--primary" href="@Url.Action("AdminUsers", new { edit = 0 })">Add administrator</a>
+        <a class="qcu-btn qcu-btn--primary" href="@Url.Action("AdminUsers", new { edit = 0 })">+ Add Admin Account</a>
     </div>
 </div>
 
 <section class="qcu-panel">
-    <header class="qcu-panel__head">
-        <h2>Library assistants</h2>
-    </header>
-
     @if (Model.Rows.Count == 0)
     {
-        <p class="qcu-empty">No administrator accounts yet.</p>
+        <p class="qcu-empty">No admin accounts found.</p>
     }
     else
     {
         <table class="qcu-table">
             <thead>
                 <tr>
-                    <th>#</th>
                     <th>Username</th>
-                    <th>Full name</th>
+                    <th>Full Name</th>
                     <th>Status</th>
                     <th class="qcu-table__actions">Actions</th>
                 </tr>
@@ -54,12 +66,11 @@
                 @foreach (var row in Model.Rows)
                 {
                     <tr>
-                        <td>@row.AdminID</td>
                         <td>
                             <strong>@row.Username</strong>
                             @if (row.IsSelf)
                             {
-                                <span class="qcu-pill">you</span>
+                                <span class="qcu-pill">(you)</span>
                             }
                         </td>
                         <td>@row.FullName</td>
@@ -74,10 +85,7 @@
 
                                 @if (row.IsSelf)
                                 {
-                                    <button type="button" class="qcu-btn qcu-btn--sm" disabled="disabled"
-                                            title="You cannot disable your own account.">
-                                        Disable
-                                    </button>
+                                    @* The source hides the toggle for your own account. *@
                                 }
                                 else if (row.IsActive && lastActive)
                                 {
@@ -88,7 +96,8 @@
                                 }
                                 else
                                 {
-                                    <form method="post" action="@Url.Action("ToggleAdmin", new { id = row.AdminID })">
+                                    <form method="post" action="@Url.Action("ToggleAdmin", new { id = row.AdminID })"
+                                          onsubmit="return confirm('@(row.IsActive ? "Disable" : "Enable") this account?');">
                                         @Html.AntiForgeryToken()
                                         <button type="submit" class="qcu-btn qcu-btn--sm">
                                             @(row.IsActive ? "Disable" : "Enable")
@@ -96,50 +105,73 @@
                                     </form>
                                 }
 
-                                <form method="post" action="@Url.Action("ResetAdminPassword", new { id = row.AdminID })"
-                                      onsubmit="return confirm('Reset the password of @row.Username to its temporary value?');">
-                                    @Html.AntiForgeryToken()
-                                    <button type="submit" class="qcu-btn qcu-btn--sm">Reset password</button>
-                                </form>
+                                @if (!row.IsSelf)
+                                {
+                                    <form method="post" action="@Url.Action("ResetAdminPassword", new { id = row.AdminID })"
+                                          onsubmit="return confirm('Reset the password of @row.Username to its temporary value?');">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="qcu-btn qcu-btn--sm">Reset Password</button>
+                                    </form>
+                                }
                             </div>
                         </td>
                     </tr>
                 }
             </tbody>
         </table>
+
+        <div class="qcu-panel__body">
+            <p class="qcu-hint">
+                You cannot disable your own account, and at least one active admin must always
+                remain. Accounts are disabled instead of deleted so the history stays intact.
+                To change your own password, use Change Password.
+            </p>
+        </div>
     }
 </section>
 
 @Html.Partial("_QCU-CRAM_SetupModal", new BSIT3D_GUADES_Project_MVC.QCUCRAM_ViewModels.QCUCRAM_SetupModalViewModel
 {
     Open = Model.ModalOpen,
-    Title = isNew ? "Add administrator" : "Edit administrator",
+    Title = modalTitle,
     Action = Url.Action("SaveAdmin"),
     Error = Model.ModalError,
-    SubmitText = isNew ? "Add administrator" : "Save changes",
+    SubmitText = isNew ? "Add Admin" : "Update Admin",
     CancelUrl = Url.Action("AdminUsers"),
     Body = @<text>
         <input type="hidden" name="AdminID" value="@(isNew ? 0 : Model.Edit.AdminID)" />
 
-        <div class="qcu-form__row">
-            <label for="Username">Username</label>
-            <input id="Username" name="Username" class="form-control" maxlength="50"
-                   autocomplete="off"
-                   value="@(isNew ? string.Empty : Model.Edit.Username)" />
-            <span class="qcu-hint">3&ndash;50 letters, numbers, dots, dashes or underscores.</span>
-        </div>
+        @if (isNew)
+        {
+            <div class="qcu-form__row">
+                <label for="Username">Username</label>
+                <input id="Username" name="Username" class="form-control" maxlength="50" required="required"
+                       autocomplete="off" value="" />
+                <span class="qcu-hint">Use 3&ndash;50 letters, numbers, dots, dashes or underscores (no spaces).</span>
+            </div>
+        }
+        else
+        {
+            <input type="hidden" name="Username" value="@Model.Edit.Username" />
+            <div class="qcu-form__row">
+                <label>Username</label>
+                <p class="form-control-static"><strong>@Model.Edit.Username</strong></p>
+                <span class="qcu-hint">The username cannot be changed after the account is created.</span>
+            </div>
+        }
 
         <div class="qcu-form__row">
-            <label for="FullName">Full name</label>
-            <input id="FullName" name="FullName" class="form-control" maxlength="100"
+            <label for="FullName">Full Name</label>
+            <input id="FullName" name="FullName" class="form-control" maxlength="120" required="required"
                    value="@(isNew ? string.Empty : Model.Edit.FullName)" />
+            <span class="qcu-hint">Full name is required (maximum 120 characters).</span>
         </div>
 
         @if (isNew)
         {
             <div class="qcu-alert qcu-alert--info">
-                The temporary password is generated from the account number and shown in the
-                confirmation message after the account is created.
+                Temporary password: <code>@Model.NextTemporaryPassword</code>. It is shown again in
+                the confirmation message after saving, so copy it before closing this page.
             </div>
         }
     </text>

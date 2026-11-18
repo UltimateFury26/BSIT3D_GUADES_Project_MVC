@@ -128,7 +128,7 @@ namespace BSIT3D_GUADES_Project_MVC.Controllers
         public ActionResult Students(string q, string program, int? page, int? edit)
         {
             QCUCRAMStudentsViewModel vm =
-                QCUCRAMSetupService.Students(q, program, page ?? 1, 20);
+                QCUCRAMSetupService.Students(q, program, page ?? 1, 10);
 
             // edit absent -> plain list; edit = 0 -> "Add student"; edit > 0 -> "Edit student"
             if (edit.HasValue)

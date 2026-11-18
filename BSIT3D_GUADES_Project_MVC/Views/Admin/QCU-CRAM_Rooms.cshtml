@@ -1,57 +1,61 @@
-﻿@model BSIT3D_GUADES_Project_MVC.QCUCRAM_ViewModels.QCUCRAMRoomsViewModel
+@model BSIT3D_GUADES_Project_MVC.QCUCRAM_ViewModels.QCUCRAMRoomsViewModel
 @using System
 @{
     /* =====================================================================
        QCU-CRAM  |  Views/Admin/QCU-CRAM_Rooms.cshtml
        ---------------------------------------------------------------------
-       Port of Guades_QCUCram_Admin/Guades_QCUCram_Rooms.aspx.
+       One-to-one port of Guades_QCUCram_Admin/Guades_QCUCram_Rooms.aspx.
 
-       Same list + same pop-up editor:
-         * every room with its capacity range and how many reservations use it,
-         * Active / Inactive pill,
-         * Edit / Deactivate / Delete actions,
-         * "Add room" opens the same modal with an empty form.
+       Phase 21 parity points:
+         * same heading / sub-heading and "+ Add Room" button,
+         * same column set and order: ID, Room Name, Min Capacity,
+           Max Capacity, Status, Reservations, Actions,
+         * Active / Disabled badge wording (the source says "Disabled"),
+         * Disable / Enable action with the source confirmation text,
+         * Delete only when the room has no reservations, with the source
+           confirmation text,
+         * same empty-state sentence and the same help note under the grid,
+         * pop-up titled "Add Room" / "Edit Room #id" with the source
+           labels and button captions.
 
-       Business rule kept from the original: a room that still has reservations
-       cannot be deleted - the Delete button is disabled and the server refuses
-       the call anyway (FK 547 -> result -1).
+       Business rule kept from the original: a room that still has
+       reservations cannot be deleted - the Delete button is disabled and the
+       server refuses the call anyway (FK 547 -> result -1).
        ===================================================================== */
 
     ViewBag.Title = "Rooms";
     Layout = "~/Views/Shared/_QCU-CRAM_Layout.cshtml";
 
     bool isNew = Model.Edit == null || Model.Edit.RoomID <= 0;
+    string modalTitle = isNew ? "Add Room" : "Edit Room #" + Model.Edit.RoomID;
 }
 
 <div class="qcu-page-head">
     <div>
         <h1 class="qcu-page-title">Rooms</h1>
-        <p class="qcu-page-sub">Collaboration rooms that can be reserved.</p>
+        <p class="qcu-page-sub">Collaboration rooms available for booking</p>
     </div>
     <div class="qcu-page-actions">
-        <a class="qcu-btn qcu-btn--primary" href="@Url.Action("Rooms", new { edit = 0 })">Add room</a>
+        <a class="qcu-btn qcu-btn--primary" href="@Url.Action("Rooms", new { edit = 0 })">+ Add Room</a>
     </div>
 </div>
 
 <section class="qcu-panel">
-    <header class="qcu-panel__head">
-        <h2>@Model.Rows.Count room(s)</h2>
-    </header>
-
     @if (Model.Rows.Count == 0)
     {
-        <p class="qcu-empty">No rooms yet. Add the first one.</p>
+        <p class="qcu-empty">No rooms yet. Click &quot;+ Add Room&quot; to create one.</p>
     }
     else
     {
         <table class="qcu-table">
             <thead>
                 <tr>
-                    <th>#</th>
-                    <th>Room</th>
-                    <th>Capacity</th>
-                    <th>Reservations</th>
+                    <th>ID</th>
+                    <th>Room Name</th>
+                    <th>Min Capacity</th>
+                    <th>Max Capacity</th>
                     <th>Status</th>
+                    <th>Reservations</th>
                     <th class="qcu-table__actions">Actions</th>
                 </tr>
             </thead>
@@ -61,28 +65,30 @@
                     <tr>
                         <td>@row.RoomID</td>
                         <td><strong>@row.RoomName</strong></td>
-                        <td>@row.MinCapacity &ndash; @row.MaxCapacity pax</td>
-                        <td>@row.ReservationCount</td>
+                        <td>@row.MinCapacity</td>
+                        <td>@row.MaxCapacity</td>
                         <td>
                             <span class="qcu-badge @(row.IsActive ? "is-approved" : "is-cancelled")">
-                                @(row.IsActive ? "Active" : "Inactive")
+                                @(row.IsActive ? "Active" : "Disabled")
                             </span>
                         </td>
+                        <td>@row.ReservationCount</td>
                         <td class="qcu-table__actions">
                             <div class="qcu-btn-row">
                                 <a class="qcu-btn qcu-btn--sm" href="@Url.Action("Rooms", new { edit = row.RoomID })">Edit</a>
 
-                                <form method="post" action="@Url.Action("ToggleRoom", new { id = row.RoomID })">
+                                <form method="post" action="@Url.Action("ToggleRoom", new { id = row.RoomID })"
+                                      onsubmit="return confirm('@(row.IsActive ? "Disable" : "Enable") this room? A disabled room cannot be booked. You can change this again at any time.');">
                                     @Html.AntiForgeryToken()
                                     <button type="submit" class="qcu-btn qcu-btn--sm">
-                                        @(row.IsActive ? "Deactivate" : "Activate")
+                                        @(row.IsActive ? "Disable" : "Enable")
                                     </button>
                                 </form>
 
                                 @if (row.CanDelete)
                                 {
                                     <form method="post" action="@Url.Action("DeleteRoom", new { id = row.RoomID })"
-                                          onsubmit="return confirm('Delete @row.RoomName? This cannot be undone.');">
+                                          onsubmit="return confirm('Delete this room? The room is removed permanently. This cannot be undone.');">
                                         @Html.AntiForgeryToken()
                                         <button type="submit" class="qcu-btn qcu-btn--sm qcu-btn--danger">Delete</button>
                                     </form>
@@ -100,38 +106,48 @@
                 }
             </tbody>
         </table>
+
+        <div class="qcu-panel__body">
+            <p class="qcu-hint">
+                A room that has reservations cannot be deleted. Disable it instead: it disappears
+                from new bookings, but existing reservations still display.
+            </p>
+        </div>
     }
 </section>
 
 @Html.Partial("_QCU-CRAM_SetupModal", new BSIT3D_GUADES_Project_MVC.QCUCRAM_ViewModels.QCUCRAM_SetupModalViewModel
 {
     Open = Model.ModalOpen,
-    Title = isNew ? "Add room" : "Edit room",
+    Title = modalTitle,
     Action = Url.Action("SaveRoom"),
     Error = Model.ModalError,
-    SubmitText = isNew ? "Add room" : "Save changes",
+    SubmitText = isNew ? "Add Room" : "Update Room",
     CancelUrl = Url.Action("Rooms"),
     Body = @<text>
         <input type="hidden" name="RoomID" value="@(isNew ? 0 : Model.Edit.RoomID)" />
 
         <div class="qcu-form__row">
-            <label for="RoomName">Room name</label>
-            <input id="RoomName" name="RoomName" class="form-control" maxlength="50"
+            <label for="RoomName">Room Name</label>
+            <input id="RoomName" name="RoomName" class="form-control" maxlength="50" required="required"
                    value="@(isNew ? string.Empty : Model.Edit.RoomName)" autofocus="autofocus" />
+            <span class="qcu-hint">Room name is required (maximum 50 characters).</span>
         </div>
 
         <div class="qcu-form__row qcu-form__row--split">
             <div>
-                <label for="MinCapacity">Min capacity</label>
-                <input id="MinCapacity" name="MinCapacity" type="number" min="1" max="100"
+                <label for="MinCapacity">Min Capacity</label>
+                <input id="MinCapacity" name="MinCapacity" type="number" min="1" max="100" required="required"
                        class="form-control qcu-input--num"
                        value="@(isNew ? 5 : Model.Edit.MinCapacity)" />
+                <span class="qcu-hint">Whole number from 1 to 100.</span>
             </div>
             <div>
-                <label for="MaxCapacity">Max capacity</label>
-                <input id="MaxCapacity" name="MaxCapacity" type="number" min="1" max="100"
+                <label for="MaxCapacity">Max Capacity</label>
+                <input id="MaxCapacity" name="MaxCapacity" type="number" min="1" max="100" required="required"
                        class="form-control qcu-input--num"
                        value="@(isNew ? 10 : Model.Edit.MaxCapacity)" />
+                <span class="qcu-hint">Whole number from 1 to 100, at least the min capacity.</span>
             </div>
         </div>
 
@@ -140,7 +156,7 @@
            and fails. *@
         <label class="qcu-switch">
             <input type="checkbox" name="IsActive" value="true" @Html.Raw(isNew || Model.Edit.IsActive ? "checked=\"checked\"" : string.Empty) />
-            <span>Active (students can reserve this room)</span>
+            <span>Active (available for booking)</span>
         </label>
     </text>
 })
