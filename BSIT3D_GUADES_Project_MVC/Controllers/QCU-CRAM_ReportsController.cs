@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.Globalization;
 using System.Web.Mvc;
 using BSIT3D_GUADES_Project_MVC.QCUCRAM_Helpers;
 using BSIT3D_GUADES_Project_MVC.QCUCRAM_Security;
@@ -60,7 +61,7 @@ namespace BSIT3D_GUADES_Project_MVC.Controllers
         [Route("analytics")]
         [QCUCRAM_RequireAdmin]
         [QCUCRAM_RequireLogin]
-        public ActionResult Analytics(DateTime? from, DateTime? to, string range)
+        public ActionResult Analytics(string from, string to, string range)
         {
             DateTime start;
             DateTime end;
@@ -111,7 +112,7 @@ namespace BSIT3D_GUADES_Project_MVC.Controllers
         /// Returns false (with a message) for an inverted range or one longer than
         /// ten years, so the caller can render the form again without the cards.
         /// </summary>
-        private bool TryResolveRange(DateTime? from, DateTime? to, string range,
+        private bool TryResolveRange(string from, string to, string range,
                                      out DateTime start, out DateTime end,
                                      out string preset, out string error)
         {
@@ -120,11 +121,27 @@ namespace BSIT3D_GUADES_Project_MVC.Controllers
             preset = "last30";
             error = null;
 
-            if (from.HasValue && to.HasValue)
+            if (from != null || to != null)
             {
-                start = from.Value.Date;
-                end = to.Value.Date;
+                // Phase 17: Analytics.aspx.cs TryReadRange - both dates, yyyy-MM-dd exactly.
+                DateTime f, t;
+                bool okFrom = DateTime.TryParseExact((from ?? string.Empty).Trim(), "yyyy-MM-dd",
+                                  CultureInfo.InvariantCulture, DateTimeStyles.None, out f);
+                bool okTo = DateTime.TryParseExact((to ?? string.Empty).Trim(), "yyyy-MM-dd",
+                                  CultureInfo.InvariantCulture, DateTimeStyles.None, out t);
+
                 preset = "custom";
+
+                if (!okFrom || !okTo)
+                {
+                    start = okFrom ? f.Date : today.AddDays(-29);
+                    end = okTo ? t.Date : today;
+                    error = "Please enter both a valid From date and To date.";
+                    return false;
+                }
+
+                start = f.Date;
+                end = t.Date;
             }
             else if (string.Equals(range, "month", StringComparison.OrdinalIgnoreCase))
             {
@@ -191,6 +208,16 @@ namespace BSIT3D_GUADES_Project_MVC.Controllers
         [QCUCRAM_RequireLogin]
         public ActionResult DailySchedule(DateTime? date)
         {
+            // Phase 17: pressing Show with the box emptied gave "Please choose a valid date."
+            // and hid the results (btnShow_Click -> TryReadDate -> ShowError).
+            string raw = Request.QueryString["date"];
+            if (raw != null && raw.Trim().Length == 0)
+            {
+                QCUCRAMDailyScheduleViewModel blank = _reports.DailySchedule(QCUCRAM_Clock.Today);
+                blank.ErrorMessage = "Please choose a valid date.";
+                return View("QCU-CRAM_DailySchedule", blank);
+            }
+
             DateTime day = date.HasValue ? date.Value.Date : QCUCRAM_Clock.Today;
 
             QCUCRAMDailyScheduleViewModel model = _reports.DailySchedule(day);
@@ -213,9 +240,12 @@ namespace BSIT3D_GUADES_Project_MVC.Controllers
         public ActionResult PrintBooking(string id)
         {
             int reservationId;
-            if (!int.TryParse(id, out reservationId) || reservationId <= 0)
+            // Phase 17: PrintBooking.aspx.cs NotFound() - digits only; a bad id shows the sheet
+            // with "That reservation could not be found." and the Back button, not a 404.
+            if (!int.TryParse(id, NumberStyles.None, CultureInfo.InvariantCulture, out reservationId)
+                || reservationId <= 0)
             {
-                return HttpNotFound();
+                return View("QCU-CRAM_PrintBooking", _reports.PrintBooking(0, IsAdmin, CurrentUserId));
             }
 
             QCUCRAMPrintBookingViewModel model =

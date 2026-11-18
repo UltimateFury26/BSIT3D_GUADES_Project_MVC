@@ -161,7 +161,7 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
             vm.Email = data.Email;
 
             string name = (data.LastName ?? string.Empty) + ", " + (data.FirstName ?? string.Empty);
-            if (!string.IsNullOrWhiteSpace(data.MI)) { name += " " + data.MI.Trim() + "."; }
+            if (!string.IsNullOrWhiteSpace(data.MI)) { name += " " + data.MI.Trim().TrimEnd('.') + "."; }
             vm.RequesterName = name.Trim().TrimEnd(',');
 
             // ---- group members, in the order they were entered ----

@@ -66,6 +66,8 @@
     <div class="qcu-alert qcu-alert--error">@Model.ErrorMessage</div>
 }
 
+@if (string.IsNullOrEmpty(Model.ErrorMessage))
+{
 <div class="qcu-print-header qcu-print-only">
     <img src="@Url.Content("~/Content/images/QCU-CRAM_qcu-logo.png")" alt="Quezon City University" />
     <div>
@@ -131,6 +133,7 @@
     <div>Library Assistant</div>
 </div>
 
-<p class="qcu-muted qcu-small">
+<p class="qcu-muted qcu-small qcu-print-only">
     Printed @Model.PrintedAt.ToString("MMM d, yyyy h:mm tt", inv) by @Model.PrintedBy
 </p>
+}

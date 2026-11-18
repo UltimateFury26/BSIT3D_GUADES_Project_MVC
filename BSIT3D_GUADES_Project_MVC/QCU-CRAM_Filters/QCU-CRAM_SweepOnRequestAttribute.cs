@@ -40,6 +40,15 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Filters
 
                 if (!IsOn("QCU-CRAM_SweepOnRequest", true)) { return; }
 
+                // Phase 17: DevTools.aspx.cs RunSweepOnLoad = false - that page must not sweep
+                // by itself, so "Run sweep now" reports real counts.
+                if (filterContext.ActionDescriptor != null &&
+                    string.Equals(filterContext.ActionDescriptor.ActionName, "DevTools",
+                                  StringComparison.OrdinalIgnoreCase))
+                {
+                    return;
+                }
+
                 int seconds = ReadInt("QCU-CRAM_SweepIntervalSeconds", 30, 5);
 
                 QCUCRAM_MaintenanceService.SweepResult result = QCUCRAM_MaintenanceService.RunIfDue(seconds);

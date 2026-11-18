@@ -206,7 +206,7 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_ViewModels
             get
             {
                 string name = (LastName ?? string.Empty) + ", " + (FirstName ?? string.Empty);
-                if (!string.IsNullOrWhiteSpace(MI)) { name += " " + MI.Trim() + "."; }
+                if (!string.IsNullOrWhiteSpace(MI)) { name += " " + MI.Trim().TrimEnd('.') + "."; }
                 return name.Trim().TrimEnd(',');
             }
         }

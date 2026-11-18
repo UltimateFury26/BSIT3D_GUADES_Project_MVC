@@ -117,16 +117,17 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
 
             // ---- room utilisation: first row is most booked, last is least ----
             List<QCUCRAM_RoomUtilizationRow> rooms = _reports.RoomUtilization(from, to);
-            List<QCUCRAM_RoomUtilizationRow> bookedRooms = rooms.Where(r => r.Booked > 0).ToList();
-
-            if (bookedRooms.Count > 0)
+            // Phase 17: Analytics.aspx.cs took Rows[0] as most booked and the LAST row as
+            // least booked (even with 0 bookings), and only when Rows[0] had bookings.
+            if (rooms.Count > 0 && rooms[0].Booked > 0)
             {
-                // The Web Forms page printed "Room (N)" - name plus the booking
-                // count - and only when the room had at least one booking.
-                vm.MostRoom = bookedRooms[0].RoomName
-                            + " (" + bookedRooms[0].Booked.ToString("N0", CultureInfo.InvariantCulture) + ")";
-                vm.LeastRoom = bookedRooms[bookedRooms.Count - 1].RoomName
-                             + " (" + bookedRooms[bookedRooms.Count - 1].Booked.ToString("N0", CultureInfo.InvariantCulture) + ")";
+                QCUCRAM_RoomUtilizationRow most = rooms[0];
+                QCUCRAM_RoomUtilizationRow least = rooms[rooms.Count - 1];
+
+                vm.MostRoom = most.RoomName
+                            + " (" + most.Booked.ToString(CultureInfo.InvariantCulture) + ")";
+                vm.LeastRoom = least.RoomName
+                             + " (" + least.Booked.ToString(CultureInfo.InvariantCulture) + ")";
             }
 
             vm.RoomUtilization = new QCUCRAMBarTable();

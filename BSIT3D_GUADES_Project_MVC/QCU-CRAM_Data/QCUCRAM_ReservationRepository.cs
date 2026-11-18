@@ -1020,9 +1020,10 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Data
                     JOIN Rooms     rm ON rm.RoomID    = r.RoomID
                     JOIN TimeSlots ts ON ts.TimeSlotID = r.TimeSlotID
                    WHERE r.Status IN ('Approved','Reassigned')
+                     AND r.CheckedInAt IS NULL
                      AND DATEADD(MINUTE, @grace,
                                  DATEADD(SECOND, DATEDIFF(SECOND, CAST('00:00:00' AS TIME), ts.StartTime),
-                                         CAST(r.ReservationDate AS DATETIME))) <= @now
+                                         CAST(r.ReservationDate AS DATETIME))) < @now
                    ORDER BY r.ReservationDate, ts.StartTime",
                 QCUCRAM_Db.P("@grace", graceMinutes),
                 QCUCRAM_Db.P("@now", now));
