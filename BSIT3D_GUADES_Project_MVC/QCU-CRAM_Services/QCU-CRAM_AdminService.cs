@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -57,6 +57,7 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
         private readonly QCUCRAM_StudentRepository _students;
         private readonly QCUCRAM_NotificationRepository _notifications;
         private readonly QCUCRAM_ReportRepository _reports;
+        private readonly QCUCRAM_AdminUserRepository _admins = new QCUCRAM_AdminUserRepository();
 
         public QCUCRAMAdminService()
             : this(new QCUCRAM_ReservationRepository(), new QCUCRAM_ContentRepository(),
@@ -99,85 +100,131 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
             {
                 Today = today,
                 Now = now,
-                PendingCount = counts.PendingToday,
+                ClockText = now.ToString("ddd, MMM d, yyyy h:mm tt", Inv),
+                PendingCount = counts.Pending,
                 RestrictedCount = counts.RestrictedStudents
             };
 
+            int offset = QCUCRAM_Clock.OffsetMinutes;
+            if (offset != 0)
+            {
+                vm.ClockNote = "Dev Tools clock is shifted by " + offset.ToString(Inv) + " minute(s).";
+            }
+
+            string day = today.ToString("yyyy-MM-dd", Inv);
+
+            // Six cards, same order, same wording, same destinations as Dashboard.aspx.cs.
             vm.Cards.Add(new QCUCRAMStatCard
             {
-                Label = "Pending today",
-                Value = counts.PendingToday.ToString(Inv),
-                Hint = counts.PendingToday == 1 ? "request needs a decision" : "requests need a decision",
-                Tone = counts.PendingToday > 0 ? "is-warn" : string.Empty,
+                Label = "Pending requests",
+                Value = counts.Pending.ToString(Inv),
+                Hint = "Waiting for approval or decline",
+                Accent = counts.Pending > 0 ? "warning" : "secondary",
                 Url = "/admin/queue"
             });
 
             vm.Cards.Add(new QCUCRAMStatCard
             {
-                Label = "Approved today",
+                Label = "Awaiting check-in today",
                 Value = counts.ApprovedToday.ToString(Inv),
-                Hint = "bookings expected on site",
-                Tone = string.Empty,
+                Hint = "Approved or reassigned for today",
+                Accent = "primary",
                 Url = "/admin/check-in"
             });
 
             vm.Cards.Add(new QCUCRAMStatCard
             {
-                Label = "Checked in today",
+                Label = "Checked in now",
                 Value = counts.CheckedInToday.ToString(Inv),
-                Hint = "groups already at the desk",
-                Tone = string.Empty,
+                Hint = "Today's groups currently in a room",
+                Accent = "success",
                 Url = "/admin/check-in"
             });
 
             vm.Cards.Add(new QCUCRAMStatCard
             {
-                Label = "Registered requesters",
-                Value = counts.TotalStudents.ToString(Inv),
-                Hint = "students, faculty and visitors",
-                Tone = string.Empty,
-                Url = "/admin/records"
+                Label = "Forfeited today",
+                Value = counts.ForfeitedToday.ToString(Inv),
+                Hint = "No-shows from today's slots",
+                Accent = counts.ForfeitedToday > 0 ? "danger" : "secondary",
+                Url = "/admin/records?status=Forfeited&from=" + day + "&to=" + day
             });
 
             vm.Cards.Add(new QCUCRAMStatCard
             {
-                Label = "Restricted",
+                Label = "Currently restricted",
                 Value = counts.RestrictedStudents.ToString(Inv),
-                Hint = counts.RestrictedStudents == 1 ? "requester cannot book" : "requesters cannot book",
-                Tone = counts.RestrictedStudents > 0 ? "is-bad" : string.Empty,
+                Hint = "Students barred from booking",
+                Accent = counts.RestrictedStudents > 0 ? "danger" : "secondary",
                 Url = "/admin/restrictions"
             });
 
-            // Today's confirmed bookings, in slot order.
-            Dictionary<int, QCUCRAM_Student> map = LoadStudents();
-
-            foreach (QCUCRAM_ReservationListItem row in _reservations.GetByDate(today))
+            vm.Cards.Add(new QCUCRAMStatCard
             {
-                if (row.Status != QCUCRAM_Status.Approved &&
-                    row.Status != QCUCRAM_Status.Reassigned &&
-                    row.Status != QCUCRAM_Status.CheckedIn)
+                Label = "Total reservations",
+                Value = counts.TotalReservations.ToString(Inv),
+                Hint = "All records, any status",
+                Accent = "secondary",
+                Url = "/admin/records"
+            });
+
+            // Next five bookings that still hold a slot that has not ended yet.
+            foreach (QCUCRAM_ReservationListItem row in _reservations.Upcoming(now, 5))
+            {
+                DateTime date = row.ReservationDate.Date;
+
+                string badge = null;
+                string badgeCss = null;
+                if (date == today)
                 {
-                    continue;
+                    badge = "Today";
+                    badgeCss = "text-bg-primary";
+                }
+                else if (date == today.AddDays(1))
+                {
+                    badge = "Tomorrow";
+                    badgeCss = "text-bg-secondary";
                 }
 
-                DateTime start = row.ReservationDate.Date.Add(row.StartTime);
-                DateTime end = row.ReservationDate.Date.Add(row.EndTime);
+                string mi = row.MI;
+                string name = row.StudentName +
+                              (string.IsNullOrWhiteSpace(mi) ? "" : " " + mi.TrimEnd('.') + ".");
 
                 vm.Upcoming.Add(new QCUCRAMUpcomingRow
                 {
                     ReservationID = row.ReservationId,
-                    Requester = DisplayName(map, row.StudentId),
+                    ReservationDate = date,
+                    DateBadge = badge,
+                    DateBadgeCss = badgeCss,
+                    Requester = name,
+                    StudentNumber = row.StudentNumber,
                     RoomName = row.RoomName,
                     SlotLabel = row.SlotLabel,
-                    Status = row.Status,
-                    StatusCss = QCUCRAM_Status.CssClass(row.Status),
+                    Status = row.Status == QCUCRAM_Status.CheckedIn ? "Checked In" : row.Status,
+                    StatusCss = DashboardBadge(row.Status),
                     NumberOfMembers = row.NumberOfMembers,
-                    StartTime = row.StartTime,
-                    IsNow = now >= start && now < end
+                    StartTime = row.StartTime
                 });
             }
 
             return vm;
+        }
+
+        /// <summary>Dashboard.aspx.cs StatusBadge - the exact Bootstrap 5 classes it emitted.</summary>
+        private static string DashboardBadge(string status)
+        {
+            switch (status)
+            {
+                case QCUCRAM_Status.Pending: return "bg-warning text-dark";
+                case QCUCRAM_Status.Approved: return "bg-success";
+                case QCUCRAM_Status.Reassigned: return "bg-info text-dark";
+                case QCUCRAM_Status.Declined: return "bg-danger";
+                case QCUCRAM_Status.Cancelled: return "bg-secondary";
+                case QCUCRAM_Status.CheckedIn: return "bg-primary";
+                case QCUCRAM_Status.Completed: return "bg-dark";
+                case QCUCRAM_Status.Forfeited: return "bg-danger";
+                default: return "bg-light text-dark";
+            }
         }
 
         // ==================================================================
@@ -193,42 +240,21 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
 
             QCUCRAMQueueViewModel vm = new QCUCRAMQueueViewModel
             {
+                Now = now,
                 ReviewID = reviewId,
                 ReassignID = reassignId
             };
 
-            foreach (QCUCRAM_ReservationListItem row in _reservations.GetQueue())
+            // Pending grid: every Pending row, oldest first (Queue.aspx.cs BindPending).
+            foreach (QCUCRAM_ReservationListItem row in _reservations.GetPending())
             {
-                DateTime start = row.ReservationDate.Date.Add(row.StartTime);
+                vm.Pending.Add(QueueRow(row, map, now));
+            }
 
-                QCUCRAMQueueRow item = new QCUCRAMQueueRow
-                {
-                    ReservationID = row.ReservationId,
-                    Requester = DisplayName(map, row.StudentId),
-                    StudentNumber = row.StudentNumber,
-                    Program = ProgramOf(map, row.StudentId),
-                    RoomName = row.RoomName,
-                    ReservationDate = row.ReservationDate,
-                    SlotLabel = row.SlotLabel,
-                    NumberOfMembers = row.NumberOfMembers,
-                    Status = row.Status,
-                    StatusCss = QCUCRAM_Status.CssClass(row.Status),
-                    CreatedAt = row.CreatedAt,
-                    IsToday = row.ReservationDate.Date == today
-                };
-
-                if (row.Status == QCUCRAM_Status.Pending)
-                {
-                    item.CanApprove = start > now;
-                    item.CanDecline = true;
-                    item.CanReassign = start > now;
-                    vm.Pending.Add(item);
-                }
-                else
-                {
-                    item.CanReassign = start > now;
-                    vm.Upcoming.Add(item);
-                }
+            // Upcoming grid: Approved/Reassigned that have not started yet.
+            foreach (QCUCRAM_ReservationListItem row in _reservations.GetUpcomingApproved(now))
+            {
+                vm.Upcoming.Add(QueueRow(row, map, now));
             }
 
             if (reviewId > 0)
@@ -244,6 +270,57 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
             return vm;
         }
 
+        /// <summary>Queue.aspx.cs StatusBadge - the exact Bootstrap classes it emitted.</summary>
+        private static string QueueBadge(string status)
+        {
+            switch (status)
+            {
+                case QCUCRAM_Status.Pending: return "text-bg-warning";
+                case QCUCRAM_Status.Approved: return "text-bg-success";
+                case QCUCRAM_Status.Reassigned: return "text-bg-info";
+                default: return "text-bg-secondary";
+            }
+        }
+
+        /// <summary>One grid row, with the same display values Queue.aspx.cs built.</summary>
+        private static QCUCRAMQueueRow QueueRow(QCUCRAM_ReservationListItem row,
+                                                 Dictionary<int, QCUCRAM_Student> map,
+                                                 DateTime now)
+        {
+            QCUCRAM_Student student;
+            map.TryGetValue(row.StudentId, out student);
+
+            string mi = student == null ? null : student.MI;
+            string name = row.StudentName +
+                          (string.IsNullOrWhiteSpace(mi) ? "" : " " + mi);
+
+            bool overdue = row.ReservationDate.Date.Add(row.StartTime) <= now;
+
+            return new QCUCRAMQueueRow
+            {
+                ReservationID = row.ReservationId,
+                Requester = name,
+                StudentNumber = row.StudentNumber,
+                RequesterType = student == null ? string.Empty : student.RequesterType,
+                Program = student == null ? string.Empty : student.Program,
+                NoShowCount = student == null ? 0 : student.NoShowCount,
+                Purpose = row.Purpose,
+                RoomName = row.RoomName,
+                ReservationDate = row.ReservationDate,
+                SlotLabel = row.SlotLabel,
+                NumberOfMembers = row.NumberOfMembers,
+                Status = row.Status,
+                StatusCss = QCUCRAM_Status.CssClass(row.Status),
+                StatusBadge = QueueBadge(row.Status),
+                CreatedAt = row.CreatedAt,
+                IsToday = row.ReservationDate.Date == now.Date,
+                Overdue = overdue,
+                CanApprove = row.Status == QCUCRAM_Status.Pending && !overdue,
+                CanDecline = true,
+                CanReassign = !overdue
+            };
+        }
+
         /// <summary>
         /// The "move to another room and time" panel. Only rooms that fit the group
         /// and slots that are still free are offered, which is what the original
@@ -251,40 +328,70 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
         /// </summary>
         public QCUCRAMReassignViewModel BuildReassign(int reservationId)
         {
+            QCUCRAMReassignViewModel vm = new QCUCRAMReassignViewModel
+            {
+                ReservationID = reservationId
+            };
+
             QCUCRAM_ReservationInfo info = _reservations.GetInfo(reservationId);
-            if (info == null) { return null; }
+            if (info == null)
+            {
+                vm.Error = "Reservation #" + reservationId + " was not found.";
+                return vm;
+            }
+
+            if (!QCUCRAM_ReservationRepository.CanTransition(info.Status, QCUCRAM_Status.Reassigned))
+            {
+                vm.Error = "Reservation #" + reservationId + " is " + info.Status +
+                           " and can't be reassigned.";
+                return vm;
+            }
+
+            if (info.SlotStart <= QCUCRAM_Clock.Now)
+            {
+                vm.Error = "Reservation #" + reservationId +
+                           " has already started and can't be reassigned.";
+                return vm;
+            }
+
+            vm.CurrentRoomName = info.RoomName;
+            vm.CurrentSlotLabel = info.SlotLabel;
+            vm.ReservationDate = info.Date;
+            vm.Status = info.Status;
 
             QCUCRAM_ReservationListItem row = _reservations.GetByDate(info.Date)
                 .FirstOrDefault(x => x.ReservationId == reservationId);
 
             int members = row == null ? 1 : row.NumberOfMembers;
+            DateTime now = QCUCRAM_Clock.Now;
 
-            QCUCRAMReassignViewModel vm = new QCUCRAMReassignViewModel
+            // FillTargets(): slots outer, rooms inner, started slots and rooms that
+            // do not fit the group skipped, and any held pair (including this
+            // booking's own slot) left out.
+            foreach (QCUCRAM_TimeSlot slot in _content.GetTimeSlots(true))
             {
-                ReservationID = info.ReservationId,
-                CurrentRoomName = info.RoomName,
-                CurrentSlotLabel = info.SlotLabel,
-                ReservationDate = info.Date
-            };
+                if (info.Date.Date.Add(slot.StartTime) <= now) { continue; }
 
-            foreach (QCUCRAM_Room room in _content.GetRooms(true))
-            {
-                if (room.MaxCapacity < members) { continue; }
+                string slotLabel = QCUCRAM_ReservationInfo.FormatSlot(slot.StartTime, slot.EndTime);
 
-                foreach (QCUCRAM_TimeSlot slot in _content.GetTimeSlots(true))
+                foreach (QCUCRAM_Room room in _content.GetRooms(true))
                 {
-                    bool isCurrent = room.RoomID == info.RoomId && slot.TimeSlotID == info.TimeSlotId;
-                    if (isCurrent) { continue; }
+                    if (members < room.MinCapacity || members > room.MaxCapacity) { continue; }
 
                     if (_reservations.IsSlotHeld(room.RoomID, info.Date, slot.TimeSlotID)) { continue; }
 
                     vm.Targets.Add(new QCUCRAMReassignTarget
                     {
                         Value = room.RoomID.ToString(Inv) + "|" + slot.TimeSlotID.ToString(Inv),
-                        Label = room.RoomName + " \u00b7 " +
-                                QCUCRAM_ReservationInfo.FormatSlot(slot.StartTime, slot.EndTime)
+                        Label = slotLabel + "  |  " + room.RoomName
                     });
                 }
+            }
+
+            if (vm.Targets.Count == 0)
+            {
+                vm.Error = "No other open room or time slot fits this booking on " +
+                           info.Date.ToString("MMM d, yyyy", Inv) + ", so it can't be reassigned.";
             }
 
             return vm;
@@ -336,9 +443,9 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
             {
                 return QCUCRAMOperationResult.Failure("Please enter a reason before declining.");
             }
-            if (why.Length > 200)
+            if (why.Length > 250)
             {
-                return QCUCRAMOperationResult.Failure("The reason must be 200 characters or fewer.");
+                return QCUCRAMOperationResult.Failure("The reason must be 250 characters or fewer.");
             }
 
             QCUCRAM_ReservationInfo info = _reservations.GetInfo(reservationId);
@@ -346,12 +453,6 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
             {
                 return QCUCRAMOperationResult.Failure("Reservation #" + reservationId + " was not found.");
             }
-            if (!QCUCRAM_ReservationRepository.CanTransition(info.Status, QCUCRAM_Status.Declined))
-            {
-                return QCUCRAMOperationResult.Failure(
-                    "Reservation #" + reservationId + " is " + info.Status + " and cannot be declined.");
-            }
-
             try
             {
                 _reservations.ChangeStatus(reservationId, QCUCRAM_Status.Declined,
@@ -408,7 +509,8 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
                 QCUCRAM_ReservationInfo info = _reservations.GetInfo(reservationId);
                 result.Retry = info != null &&
                                QCUCRAM_ReservationRepository.CanTransition(info.Status, QCUCRAM_Status.Reassigned) &&
-                               info.SlotStart > QCUCRAM_Clock.Now;
+                               info.SlotStart > QCUCRAM_Clock.Now &&
+                               BuildReassign(reservationId).Error == null;
 
                 return result;
             }
@@ -423,6 +525,9 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
         //  Check-in desk
         // ==================================================================
 
+        /// <summary>Shown as "Grace expiring" when this many minutes (or fewer) are left.</summary>
+        private const int ExpiringMinutes = 5;
+
         public QCUCRAMCheckInViewModel CheckInBoard(string search)
         {
             DateTime now = QCUCRAM_Clock.Now;
@@ -433,11 +538,33 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
 
             Dictionary<int, QCUCRAM_Student> map = LoadStudents();
 
+            // Member names for today's bookings, one query for all rows (LoadMembers).
+            Dictionary<int, List<string>> memberMap = new Dictionary<int, List<string>>();
+
+            foreach (QCUCRAM_ReservationMember m in _reservations.GetMembersForDate(today))
+            {
+                string mi = m.MI;
+                string memberName = m.LastName + ", " + m.FirstName +
+                                    (string.IsNullOrWhiteSpace(mi) ? "" : " " + mi);
+
+                List<string> list;
+                if (!memberMap.TryGetValue(m.ReservationID, out list))
+                {
+                    list = new List<string>();
+                    memberMap[m.ReservationID] = list;
+                }
+
+                list.Add(memberName);
+            }
+
             QCUCRAMCheckInViewModel vm = new QCUCRAMCheckInViewModel
             {
                 Now = now,
                 GraceMinutes = grace,
-                Search = q
+                Search = q,
+                NowText = "System time: <strong>" +
+                          now.ToString("ddd, MMM d, yyyy h:mm:ss tt", Inv) +
+                          "</strong> \u00b7 Grace period: <strong>" + grace + " minutes</strong>"
             };
 
             foreach (QCUCRAM_ReservationListItem row in _reservations.GetByDate(today))
@@ -449,7 +576,13 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
                     continue;
                 }
 
-                string name = DisplayName(map, row.StudentId);
+                QCUCRAM_Student student;
+                map.TryGetValue(row.StudentId, out student);
+
+                // CheckIn.aspx.cs RequesterHtml: MI appended exactly as stored.
+                string mi = student == null ? null : student.MI;
+                string name = row.StudentName +
+                              (string.IsNullOrWhiteSpace(mi) ? "" : " " + mi);
 
                 if (q.Length > 0 && !Matches(q, row, name))
                 {
@@ -459,18 +592,23 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
                 DateTime start = row.ReservationDate.Date.Add(row.StartTime);
                 DateTime closes = start.AddMinutes(grace);
 
+                List<string> names;
+                memberMap.TryGetValue(row.ReservationId, out names);
+
                 QCUCRAMCheckInRow item = new QCUCRAMCheckInRow
                 {
                     ReservationID = row.ReservationId,
                     Requester = name,
                     StudentNumber = row.StudentNumber,
-                    Program = ProgramOf(map, row.StudentId),
+                    RequesterType = student == null ? string.Empty : student.RequesterType,
+                    Program = student == null ? string.Empty : student.Program,
                     RoomName = row.RoomName,
                     SlotLabel = row.SlotLabel,
                     ReservationDate = row.ReservationDate,
                     NumberOfMembers = row.NumberOfMembers,
                     Status = row.Status,
                     StatusCss = QCUCRAM_Status.CssClass(row.Status),
+                    Members = names ?? new List<string>(),
                     SlotStart = start,
                     GraceEndsAt = closes,
                     CheckedInAt = row.CheckedInAt
@@ -478,26 +616,42 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
 
                 if (row.Status == QCUCRAM_Status.CheckedIn)
                 {
+                    item.CheckedText = row.CheckedInAt.HasValue
+                        ? row.CheckedInAt.Value.ToString("h:mm tt", Inv)
+                        : string.Empty;
+
                     vm.CheckedIn.Add(item);
                     continue;
                 }
 
+                // State relative to the check-in window [start, start + grace].
                 if (now < start)
                 {
+                    item.StateBadgeCss = "text-bg-secondary";
+                    item.StateText = "Not yet open";
+                    item.StateDetail = "Opens at " + start.ToString("h:mm tt", Inv);
                     item.CanCheckIn = false;
-                    item.BlockedReason = "Opens at " + start.ToString("h:mm tt", Inv);
                 }
                 else if (now <= closes)
                 {
+                    int left = (int)Math.Ceiling((closes - now).TotalMinutes);
+                    bool expiring = left <= ExpiringMinutes;
+
+                    item.StateBadgeCss = expiring ? "text-bg-warning" : "text-bg-success";
+                    item.StateText = expiring ? "Grace expiring" : "Open for check-in";
+                    item.StateDetail = "Closes in " + left + " min (" + closes.ToString("h:mm tt", Inv) + ")";
+                    item.MinutesLeft = left;
                     item.CanCheckIn = true;
-                    item.MinutesLeft = (int)Math.Ceiling((closes - now).TotalMinutes);
-                    item.BlockedReason = string.Empty;
                 }
                 else
                 {
+                    item.StateBadgeCss = "text-bg-danger";
+                    item.StateText = "Past grace";
+                    item.StateDetail = "Closed at " + closes.ToString("h:mm tt", Inv) + " - will be forfeited";
                     item.CanCheckIn = false;
-                    item.BlockedReason = "Closed at " + closes.ToString("h:mm tt", Inv) + " - will be forfeited";
                 }
+
+                item.BlockedReason = item.CanCheckIn ? string.Empty : item.StateDetail;
 
                 vm.Waiting.Add(item);
             }
@@ -560,7 +714,12 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
         //  Restrictions (no-show strikes)
         // ==================================================================
 
-        public QCUCRAMRestrictionsViewModel Restrictions()
+        /// <summary>
+        /// The Restrictions screen. When <paramref name="liftId"/> is greater than
+        /// zero the "Lift restriction" panel is rendered open for that student,
+        /// which is what gvRestricted_RowCommand did before re-binding the grids.
+        /// </summary>
+        public QCUCRAMRestrictionsViewModel Restrictions(int liftId = 0)
         {
             DateTime now = QCUCRAM_Clock.Now;
 
@@ -570,52 +729,112 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
             QCUCRAMRestrictionsViewModel vm = new QCUCRAMRestrictionsViewModel
             {
                 Threshold = threshold,
-                RestrictionDays = days
+                RestrictionDays = days,
+                PrintedAtText = now.ToString("MMMM d, yyyy h:mm tt", Inv)
             };
 
-            foreach (QCUCRAM_Student student in _students.Search())
+            vm.RuleText = "Rule: <strong>" + threshold + "</strong> forfeited booking(s) restrict a student " +
+                          "from booking for <strong>" + days + "</strong> day(s). Restrictions end " +
+                          "automatically; you can also lift one early.";
+
+            // ---- currently restricted, soonest lift first ------------------
+            // Restrictions.aspx.cs: ORDER BY CASE WHEN RestrictionLiftDate IS NULL
+            // THEN 1 ELSE 0 END, RestrictionLiftDate
+            List<QCUCRAM_Student> students = _students.Search();
+
+            foreach (QCUCRAM_Student student in students
+                .Where(s => s.IsRestricted)
+                .OrderBy(s => s.RestrictionLiftDate.HasValue ? 0 : 1)
+                .ThenBy(s => s.RestrictionLiftDate ?? DateTime.MaxValue)
+                .ThenBy(s => s.LastName, StringComparer.OrdinalIgnoreCase)
+                .ThenBy(s => s.FirstName, StringComparer.OrdinalIgnoreCase))
             {
-                if (student.IsRestricted)
+                string until;
+                string remaining;
+
+                if (!student.RestrictionLiftDate.HasValue)
                 {
-                    string until;
-                    string remaining;
-
-                    if (!student.RestrictionLiftDate.HasValue)
-                    {
-                        until = "Until lifted manually";
-                        remaining = "-";
-                    }
-                    else
-                    {
-                        DateTime lift = student.RestrictionLiftDate.Value;
-                        until = lift.ToString("MMM d, yyyy h:mm tt", Inv);
-                        remaining = lift <= now ? "Ending at the next sweep" : RemainingText(lift - now);
-                    }
-
-                    vm.Restricted.Add(new QCUCRAMRestrictedRow
-                    {
-                        StudentID = student.StudentID,
-                        FullName = FullName(student),
-                        StudentNumber = student.StudentNumber,
-                        Program = student.Program,
-                        RequesterType = student.RequesterType,
-                        NoShowCount = student.NoShowCount,
-                        RestrictionLiftDate = student.RestrictionLiftDate,
-                        UntilText = until,
-                        RemainingText = remaining
-                    });
+                    until = "Until lifted manually";
+                    remaining = "-";
                 }
-                else if (student.NoShowCount == threshold - 1 && threshold > 1)
+                else
                 {
-                    vm.Warnings.Add(new QCUCRAMStrikeWarningRow
-                    {
-                        StudentID = student.StudentID,
-                        FullName = FullName(student),
-                        StudentNumber = student.StudentNumber,
-                        Program = student.Program,
-                        NoShowCount = student.NoShowCount,
-                        StrikesRemaining = threshold - student.NoShowCount
-                    });
+                    DateTime lift = student.RestrictionLiftDate.Value;
+                    until = lift.ToString("MMM d, yyyy h:mm tt", Inv);
+                    remaining = lift <= now ? "Ending at the next sweep" : RemainingText(lift - now);
+                }
+
+                vm.Restricted.Add(new QCUCRAMRestrictedRow
+                {
+                    StudentID = student.StudentID,
+                    FullName = FullName(student),
+                    StudentNumber = student.StudentNumber,
+                    Program = student.Program,
+                    RequesterType = student.RequesterType,
+                    NoShowCount = student.NoShowCount,
+                    RestrictionLiftDate = student.RestrictionLiftDate,
+                    StudentHtml = StudentHtml(student),
+                    UntilText = until,
+                    RemainingText = remaining
+                });
+            }
+
+            // ---- one strike away -------------------------------------------
+            // "One strike away" only makes sense when the threshold is 2 or more;
+            // target -1 matches nobody, exactly as BindWarning did.
+            int oneAway = threshold - 1;
+            int target = oneAway >= 1 ? oneAway : -1;
+
+            Dictionary<int, DateTime> lastForfeited = _reservations.GetLastForfeitedDates();
+
+            foreach (QCUCRAM_Student student in students
+                .Where(s => !s.IsRestricted && s.NoShowCount == target)
+                .OrderBy(s => s.LastName, StringComparer.OrdinalIgnoreCase)
+                .ThenBy(s => s.FirstName, StringComparer.OrdinalIgnoreCase))
+            {
+                DateTime forfeited;
+
+                vm.Warnings.Add(new QCUCRAMStrikeWarningRow
+                {
+                    StudentID = student.StudentID,
+                    FullName = FullName(student),
+                    StudentNumber = student.StudentNumber,
+                    Program = student.Program,
+                    RequesterType = student.RequesterType,
+                    NoShowCount = student.NoShowCount,
+                    StrikesRemaining = threshold - student.NoShowCount,
+                    StudentHtml = StudentHtml(student),
+                    StrikesText = student.NoShowCount + " of " + threshold,
+                    LastText = lastForfeited.TryGetValue(student.StudentID, out forfeited)
+                        ? forfeited.ToString("MMM d, yyyy", Inv)
+                        : "-"
+                });
+            }
+
+            // ---- the lift panel --------------------------------------------
+            if (liftId > 0)
+            {
+                QCUCRAM_Student student = _students.GetById(liftId);
+
+                if (student == null || !student.IsRestricted)
+                {
+                    // gvRestricted_RowCommand: stale row, close the panel and say so.
+                    vm.Message = "That student is no longer restricted. The list has been refreshed.";
+                    vm.MessageIsError = true;
+                }
+                else
+                {
+                    string until = student.RestrictionLiftDate.HasValue
+                        ? "until " + student.RestrictionLiftDate.Value.ToString("MMM d, yyyy h:mm tt", Inv)
+                        : "until lifted manually";
+
+                    vm.LiftId = liftId;
+                    vm.LiftOpen = true;
+                    vm.LiftInfo = "<p class=\"mb-0\">You are about to lift the restriction of <strong>" +
+                                  HttpUtility.HtmlEncode(StudentName(student)) + "</strong> (" +
+                                  HttpUtility.HtmlEncode(student.StudentNumber ?? string.Empty) + "), who has " +
+                                  student.NoShowCount + " strike(s) and is restricted " +
+                                  HttpUtility.HtmlEncode(until) + ".</p>";
                 }
             }
 
@@ -632,11 +851,11 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
 
             if (student == null)
             {
-                return QCUCRAMOperationResult.Failure("That requester was not found.");
+                return QCUCRAMOperationResult.Failure("That student was no longer restricted.");
             }
             if (!student.IsRestricted)
             {
-                return QCUCRAMOperationResult.Failure("That requester is no longer restricted.");
+                return QCUCRAMOperationResult.Failure("That student was no longer restricted.");
             }
 
             string trimmed = (note ?? string.Empty).Trim();
@@ -656,8 +875,14 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
 
                     if (affected != 1) { return; }
 
-                    string message = "Your booking restriction was lifted. Your strike count was reset " +
-                                     "and you can reserve rooms again." +
+                    // Restrictions.aspx.cs named the assistant who lifted it.
+                    QCUCRAM_AdminUser admin = _admins.GetById(adminId);
+                    string who = admin == null || string.IsNullOrWhiteSpace(admin.FullName)
+                        ? "a library assistant"
+                        : admin.FullName.Trim();
+
+                    string message = "Your booking restriction was lifted by " + who +
+                                     ". Your strike count was reset and you can reserve rooms again." +
                                      (trimmed.Length == 0 ? string.Empty : " Note: " + trimmed);
 
                     if (message.Length > 400) { message = message.Substring(0, 397) + "..."; }
@@ -667,16 +892,19 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
 
                 if (affected != 1)
                 {
-                    return QCUCRAMOperationResult.Failure("That requester is no longer restricted.");
+                    return QCUCRAMOperationResult.Failure("That student was no longer restricted.");
                 }
 
                 return QCUCRAMOperationResult.Success(
-                    "The restriction was lifted, the strikes were reset and the requester was notified.");
+                    "Restriction lifted. The student has been notified and their strikes were reset.");
             }
             catch (Exception)
             {
-                return QCUCRAMOperationResult.Failure(
-                    "Something went wrong while lifting the restriction. Please try again.");
+                // The original kept the panel open on an exception.
+                QCUCRAMOperationResult failure =
+                    QCUCRAMOperationResult.Failure("Something went wrong while lifting the restriction. Please try again.");
+                failure.Retry = true;
+                return failure;
             }
         }
 
@@ -695,7 +923,7 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
 
             vm.TotalRows = rows.Count;
 
-            int pageSize = filter.PageSize < 1 ? 25 : filter.PageSize;
+            int pageSize = filter.PageSize < 1 ? 20 : filter.PageSize;
             int totalPages = (int)Math.Ceiling(rows.Count / (double)pageSize);
             if (totalPages < 1) { totalPages = 1; }
 
@@ -716,14 +944,18 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
             vm.StatusOptions.Add(new KeyValuePair<string, string>(string.Empty, "All statuses"));
             foreach (string status in QCUCRAM_Status.All)
             {
-                vm.StatusOptions.Add(new KeyValuePair<string, string>(status, status));
+                // Records.aspx.cs labelled the CheckedIn row "Checked In".
+                string label = status == QCUCRAM_Status.CheckedIn ? "Checked In" : status;
+                vm.StatusOptions.Add(new KeyValuePair<string, string>(status, label));
             }
 
             vm.RoomOptions.Add(new KeyValuePair<string, string>(string.Empty, "All rooms"));
             foreach (QCUCRAM_Room room in _content.GetRooms())
             {
+                // Records.aspx.cs marked retired rooms so they are not mistaken for open ones.
+                string label = room.RoomName + (room.IsActive ? string.Empty : " (inactive)");
                 vm.RoomOptions.Add(new KeyValuePair<string, string>(
-                    room.RoomID.ToString(Inv), room.RoomName));
+                    room.RoomID.ToString(Inv), label));
             }
 
             foreach (string program in QCUCRAM_Programs.All)
@@ -747,8 +979,9 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
 
             StringBuilder sb = new StringBuilder();
 
-            sb.AppendLine("ReservationID,Date,Start,End,Room,StudentNumber,Requester,RequesterType," +
-                          "Program,Email,Members,Purpose,Status,CreatedAt");
+            // Same heading, same order, same CRLF line ending as Records.aspx.cs.
+            sb.Append("Reservation No.,Date,Start Time,End Time,Room,ID / Student No.,Requester,Requester Type,")
+              .Append("Program,Email,Members,Purpose,Status,Submitted,Checked In\r\n");
 
             foreach (QCUCRAMRecordsRow row in rows)
             {
@@ -766,6 +999,8 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
                     end = slot.Substring(dash + 3).Trim();
                 }
 
+                string status = row.Status == QCUCRAM_Status.CheckedIn ? "Checked In" : row.Status;
+
                 sb.Append(Csv(row.ReservationID.ToString(Inv))).Append(',')
                   .Append(Csv(row.ReservationDate.ToString("yyyy-MM-dd", Inv))).Append(',')
                   .Append(Csv(start)).Append(',')
@@ -778,9 +1013,12 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
                   .Append(Csv(owner == null ? string.Empty : owner.Email)).Append(',')
                   .Append(Csv(row.NumberOfMembers.ToString(Inv))).Append(',')
                   .Append(Csv(row.Purpose)).Append(',')
-                  .Append(Csv(row.Status)).Append(',')
-                  .Append(Csv(row.CreatedAt.ToString("yyyy-MM-dd HH:mm", Inv)))
-                  .AppendLine();
+                  .Append(Csv(status)).Append(',')
+                  .Append(Csv(row.CreatedAt.ToString("yyyy-MM-dd HH:mm", Inv))).Append(',')
+                  .Append(Csv(row.CheckedInAt.HasValue
+                                  ? row.CheckedInAt.Value.ToString("yyyy-MM-dd HH:mm", Inv)
+                                  : string.Empty))
+                  .Append("\r\n");
             }
 
             return sb.ToString();
@@ -810,6 +1048,7 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
                 Program = student == null ? string.Empty : student.Program,
                 RequesterType = student == null ? string.Empty : student.RequesterType,
                 Email = student == null ? string.Empty : student.Email,
+                NoShowCount = student == null ? 0 : student.NoShowCount,
                 RoomName = info.RoomName,
                 ReservationDate = info.Date,
                 SlotLabel = info.SlotLabel,
@@ -817,21 +1056,13 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
                 SlotEnd = info.SlotEnd,
                 NumberOfMembers = row == null ? 0 : row.NumberOfMembers,
                 Purpose = row == null ? string.Empty : row.Purpose,
-                CreatedAt = row == null ? info.Date : row.CreatedAt
+                CreatedAt = row == null ? info.Date : row.CreatedAt,
+                CheckedInAt = row == null ? (DateTime?)null : row.CheckedInAt
             };
 
             // ---- members ----
-            if (student != null)
-            {
-                vm.Members.Add(new QCUCRAMMemberRow
-                {
-                    FullName = FullName(student),
-                    StudentNumber = student.StudentNumber,
-                    Program = student.Program,
-                    IsRequester = true
-                });
-            }
-
+            // ReservationMembers already contains the requester (row 1 is prefilled on
+            // the Reserve page), so adding the student again would duplicate them.
             foreach (QCUCRAM_ReservationMember member in _reservations.GetMembers(reservationId))
             {
                 vm.Members.Add(new QCUCRAMMemberRow
@@ -852,7 +1083,7 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
                     FromStatus = item.OldStatus,
                     ToStatus = item.NewStatus,
                     ActorRole = item.ChangedByRole,
-                    ActorName = item.ChangedBy.HasValue ? "#" + item.ChangedBy.Value.ToString(Inv) : string.Empty,
+                    ActorName = HistoryActor(item),
                     Note = item.Notes
                 });
             }
@@ -873,6 +1104,33 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
             }
 
             return vm;
+        }
+
+        /// <summary>
+        /// Records.aspx.cs ActorText: "Admin: FullName" / "Student: Last, First" /
+        /// "System", with "(account removed)" when the id no longer resolves.
+        /// </summary>
+        private string HistoryActor(QCUCRAM_HistoryItem item)
+        {
+            if (!item.ChangedBy.HasValue) { return string.Empty; }
+
+            int id = item.ChangedBy.Value;
+
+            if (string.Equals(item.ChangedByRole, QCUCRAM_ReservationRepository.ActorAdmin,
+                              StringComparison.OrdinalIgnoreCase))
+            {
+                QCUCRAM_AdminUser admin = _admins.GetById(id);
+                return admin == null ? "(account removed)" : admin.FullName;
+            }
+
+            if (string.Equals(item.ChangedByRole, QCUCRAM_ReservationRepository.ActorStudent,
+                              StringComparison.OrdinalIgnoreCase))
+            {
+                QCUCRAM_Student student = _students.GetById(id);
+                return student == null ? "(account removed)" : FullName(student);
+            }
+
+            return string.Empty;
         }
 
         // ==================================================================
@@ -912,7 +1170,8 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
                 Purpose = x.Purpose,
                 Status = x.Status,
                 StatusCss = QCUCRAM_Status.CssClass(x.Status),
-                CreatedAt = x.CreatedAt
+                CreatedAt = x.CreatedAt,
+                CheckedInAt = x.CheckedInAt
             }).ToList();
 
             bool asc = string.Equals(filter.Dir, "asc", StringComparison.OrdinalIgnoreCase);
@@ -1021,6 +1280,29 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
             return JoinName(student.LastName, student.FirstName, student.MI);
         }
 
+        /// <summary>
+        /// Restrictions.aspx.cs: LastName + ", " + FirstName + (MI ? " " + mi : "").
+        /// The MI is appended exactly as stored - no trim, no trailing period.
+        /// </summary>
+        private static string StudentName(QCUCRAM_Student student)
+        {
+            string name = (student.LastName ?? string.Empty) + ", " + (student.FirstName ?? string.Empty);
+
+            return string.IsNullOrWhiteSpace(student.MI) ? name : name + " " + student.MI;
+        }
+
+        /// <summary>
+        /// Restrictions.aspx.cs StudentHtml: the bold name plus a small line with
+        /// "Number | RequesterType | Program".
+        /// </summary>
+        private static string StudentHtml(QCUCRAM_Student student)
+        {
+            return "<strong>" + HttpUtility.HtmlEncode(StudentName(student)) + "</strong><br /><small>" +
+                   HttpUtility.HtmlEncode((student.StudentNumber ?? string.Empty) + " | " +
+                                          (student.RequesterType ?? string.Empty) + " | " +
+                                          (student.Program ?? string.Empty)) + "</small>";
+        }
+
         /// <summary>"Dela Cruz, Juan P." - the same order the original grids used.</summary>
         private static string JoinName(string lastName, string firstName, string mi)
         {
@@ -1039,12 +1321,17 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
             return name;
         }
 
+        /// <summary>
+        /// CheckIn.aspx.cs search: reservation # matched exactly, student number and
+        /// last name matched with LIKE '%q%'. Nothing else was searched.
+        /// </summary>
         private static bool Matches(string q, QCUCRAM_ReservationListItem row, string name)
         {
-            if (row.ReservationId.ToString(Inv).IndexOf(q, StringComparison.OrdinalIgnoreCase) >= 0) { return true; }
+            if (string.Equals(row.ReservationId.ToString(Inv), q, StringComparison.OrdinalIgnoreCase)) { return true; }
             if ((row.StudentNumber ?? string.Empty).IndexOf(q, StringComparison.OrdinalIgnoreCase) >= 0) { return true; }
-            if ((name ?? string.Empty).IndexOf(q, StringComparison.OrdinalIgnoreCase) >= 0) { return true; }
-            if ((row.RoomName ?? string.Empty).IndexOf(q, StringComparison.OrdinalIgnoreCase) >= 0) { return true; }
+
+            string lastName = (row.StudentName ?? string.Empty).Split(',')[0];
+            if (lastName.IndexOf(q, StringComparison.OrdinalIgnoreCase) >= 0) { return true; }
 
             return false;
         }
@@ -1057,19 +1344,18 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
             return (int)span.TotalDays + " day(s) " + span.Hours + " hr";
         }
 
+        /// <summary>
+        /// Quotes one CSV cell exactly like Records.aspx.cs: newlines become spaces,
+        /// a leading = + - @ is prefixed with an apostrophe so Excel does not run it
+        /// as a formula, and every cell is wrapped in double quotes.
+        /// </summary>
         private static string Csv(string value)
         {
-            string text = value ?? string.Empty;
+            string text = (value ?? string.Empty).Replace("\r", " ").Replace("\n", " ");
 
-            if (text.IndexOf('"') >= 0) { text = text.Replace("\"", "\"\""); }
+            if (text.Length > 0 && "=+-@".IndexOf(text[0]) >= 0) { text = "'" + text; }
 
-            if (text.IndexOf(',') >= 0 || text.IndexOf('"') >= 0 ||
-                text.IndexOf('\n') >= 0 || text.IndexOf('\r') >= 0)
-            {
-                return "\"" + text + "\"";
-            }
-
-            return text;
+            return "\"" + text.Replace("\"", "\"\"") + "\"";
         }
     }
 }

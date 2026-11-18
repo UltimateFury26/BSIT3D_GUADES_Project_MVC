@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 
 namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_ViewModels
@@ -16,6 +16,9 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_ViewModels
         public int NumberOfMembers { get; set; }
         public string Status { get; set; }
         public string StatusCss { get; set; }
+
+        /// <summary>Bootstrap badge class - Queue.aspx.cs StatusBadge used text-bg-*.</summary>
+        public string StatusBadge { get; set; }
         public DateTime CreatedAt { get; set; }
         public bool IsToday { get; set; }
 
@@ -40,7 +43,11 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_ViewModels
         public string CurrentRoomName { get; set; }
         public string CurrentSlotLabel { get; set; }
         public DateTime ReservationDate { get; set; }
+        public string Status { get; set; }
         public IList<QCUCRAMReassignTarget> Targets { get; set; }
+
+        /// <summary>Set when the request can no longer be reassigned; the controller flashes it.</summary>
+        public string Error { get; set; }
 
         public QCUCRAMReassignViewModel()
         {
@@ -50,6 +57,9 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_ViewModels
 
     public class QCUCRAMQueueViewModel
     {
+        /// <summary>The clock the rows were judged against (Dev Tools aware).</summary>
+        public DateTime Now { get; set; }
+
         public IList<QCUCRAMQueueRow> Pending { get; set; }
         public IList<QCUCRAMQueueRow> Upcoming { get; set; }
 

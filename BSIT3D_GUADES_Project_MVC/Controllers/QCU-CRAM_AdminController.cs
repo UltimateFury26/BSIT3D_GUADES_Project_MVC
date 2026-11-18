@@ -1,5 +1,6 @@
 using System;
 using System.Web.Mvc;
+using BSIT3D_GUADES_Project_MVC.QCUCRAM_Helpers;
 using BSIT3D_GUADES_Project_MVC.QCUCRAM_Security;
 using BSIT3D_GUADES_Project_MVC.QCUCRAM_Services;
 using BSIT3D_GUADES_Project_MVC.QCUCRAM_ViewModels;
@@ -68,13 +69,26 @@ namespace BSIT3D_GUADES_Project_MVC.Controllers
             // A stale link (deleted reservation) should still land on a working board.
             if (reviewId > 0 && model.Detail == null)
             {
-                FlashError("That request could not be found. It may have been deleted.");
+                FlashError("Reservation #" + reviewId + " was not found.");
+                return RedirectToAction("Queue");
+            }
+
+            // ShowDetails(): only a Pending request may open the review panel.
+            if (reviewId > 0 && model.Detail != null && model.Detail.Status != QCUCRAM_Status.Pending)
+            {
+                FlashError("Reservation #" + reviewId + " is no longer pending. The list has been refreshed.");
+                return RedirectToAction("Queue");
+            }
+
+            if (reassignId > 0 && model.Reassign != null && !string.IsNullOrEmpty(model.Reassign.Error))
+            {
+                FlashError(model.Reassign.Error);
                 return RedirectToAction("Queue");
             }
 
             if (reassignId > 0 && model.Reassign == null)
             {
-                FlashError("That request cannot be reassigned any more.");
+                FlashError("Reservation #" + reassignId + " was not found.");
                 return RedirectToAction("Queue");
             }
 
@@ -163,11 +177,16 @@ namespace BSIT3D_GUADES_Project_MVC.Controllers
         //  Restrictions
         // ==================================================================
 
+        /// <summary>
+        /// lift = the student whose "Lift restriction" panel should be open. The Web
+        /// Forms page held that in ViewState; a query string is the MVC equivalent
+        /// and it keeps the panel open across the failed-lift round trip.
+        /// </summary>
         [HttpGet]
         [Route("restrictions")]
-        public ActionResult Restrictions()
+        public ActionResult Restrictions(int? lift)
         {
-            return View("QCU-CRAM_Restrictions", _service.Restrictions());
+            return View("QCU-CRAM_Restrictions", _service.Restrictions(lift ?? 0));
         }
 
         [HttpPost]
@@ -177,6 +196,13 @@ namespace BSIT3D_GUADES_Project_MVC.Controllers
         {
             QCUCRAMOperationResult result = _service.LiftRestriction(id, note, CurrentUserId);
             Report(result);
+
+            // btnConfirmLift_Click kept the panel open when the write threw.
+            if (result != null && !result.Ok && result.Retry)
+            {
+                return RedirectToAction("Restrictions", new { lift = id });
+            }
+
             return RedirectToAction("Restrictions");
         }
 

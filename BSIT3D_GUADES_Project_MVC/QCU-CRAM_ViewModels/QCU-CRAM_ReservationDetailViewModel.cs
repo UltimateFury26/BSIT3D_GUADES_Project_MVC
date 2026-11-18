@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 
 namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_ViewModels
@@ -43,6 +43,9 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_ViewModels
         public string RequesterType { get; set; }
         public string Email { get; set; }
 
+        /// <summary>Strikes shown in the review panel (Students.NoShowCount).</summary>
+        public int NoShowCount { get; set; }
+
         public string RoomName { get; set; }
         public DateTime ReservationDate { get; set; }
         public string SlotLabel { get; set; }
@@ -52,6 +55,9 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_ViewModels
         public int NumberOfMembers { get; set; }
         public string Purpose { get; set; }
         public DateTime CreatedAt { get; set; }
+
+        /// <summary>Reservations.CheckedInAt; null until the group arrives.</summary>
+        public DateTime? CheckedInAt { get; set; }
 
         /// <summary>Filled from the newest admin entry in the status history, if there is one.</summary>
         public string DecidedByName { get; set; }

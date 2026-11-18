@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
@@ -765,7 +765,7 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Data
 
         private const string SelectList =
             @"SELECT r.ReservationID, r.StudentID, s.StudentNumber,
-                     s.LastName + ', ' + s.FirstName AS StudentName,
+                     s.LastName + ', ' + s.FirstName AS StudentName, s.MI,
                      rm.RoomName, r.TimeSlotID, ts.StartTime, ts.EndTime,
                      r.ReservationDate, r.Purpose, r.NumberOfMembers, r.Status,
                      r.CreatedAt, r.CheckedInAt
@@ -800,6 +800,34 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Data
                 QCUCRAM_Db.P("@today", SqlDbType.Date, QCUCRAM_Clock.Today));
         }
 
+        /// <summary>
+        /// Review Queue, first grid: every Pending request, oldest first. The Web
+        /// Forms page used ORDER BY CreatedAt, ReservationID and did not filter by
+        /// date, so a request whose slot has already started still appears (it can
+        /// only be declined).
+        /// </summary>
+        public List<QCUCRAM_ReservationListItem> GetPending()
+        {
+            return _db.Query<QCUCRAM_ReservationListItem>(
+                SelectList + @" WHERE r.Status = 'Pending'
+                   ORDER BY r.CreatedAt, r.ReservationID");
+        }
+
+        /// <summary>
+        /// Review Queue, second grid: Approved/Reassigned bookings that have not
+        /// started yet. Same predicate and order as Queue.aspx.cs BindUpcoming().
+        /// </summary>
+        public List<QCUCRAM_ReservationListItem> GetUpcomingApproved(DateTime now)
+        {
+            return _db.Query<QCUCRAM_ReservationListItem>(
+                SelectList + @" WHERE r.Status IN ('Approved','Reassigned')
+                     AND (r.ReservationDate > CAST(@today AS DATE)
+                          OR (r.ReservationDate = CAST(@today AS DATE) AND ts.StartTime > @nowTime))
+                   ORDER BY r.ReservationDate, ts.StartTime, rm.RoomName",
+                QCUCRAM_Db.P("@today", SqlDbType.Date, now.Date),
+                QCUCRAM_Db.P("@nowTime", SqlDbType.Time, now.TimeOfDay));
+        }
+
         /// <summary>Everything booked on one date (Daily Schedule and Print Booking).</summary>
         public List<QCUCRAM_ReservationListItem> GetByDate(DateTime date)
         {
@@ -807,6 +835,32 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Data
                 SelectList + @" WHERE r.ReservationDate = CAST(@d AS DATE)
                    ORDER BY ts.StartTime, rm.RoomName",
                 QCUCRAM_Db.P("@d", SqlDbType.Date, date.Date));
+        }
+
+        /// <summary>
+        /// Admin Dashboard: the next five bookings that still hold a slot whose end
+        /// time has not passed. Pending requests count too because they hold the
+        /// slot; the status badge tells them apart. Same query as Dashboard.aspx.cs.
+        /// </summary>
+        public List<QCUCRAM_ReservationListItem> Upcoming(DateTime now, int top)
+        {
+            if (top <= 0) { top = 5; }
+
+            return _db.Query<QCUCRAM_ReservationListItem>(
+                @"SELECT TOP (@top) r.ReservationID, r.StudentID, s.StudentNumber,
+                         s.LastName + ', ' + s.FirstName AS StudentName, s.MI,
+                         rm.RoomName, r.TimeSlotID, ts.StartTime, ts.EndTime,
+                         r.ReservationDate, r.Purpose, r.NumberOfMembers, r.Status,
+                         r.CreatedAt, r.CheckedInAt
+                    FROM Reservations r
+                    JOIN Students  s  ON s.StudentID  = r.StudentID
+                    JOIN Rooms     rm ON rm.RoomID    = r.RoomID
+                    JOIN TimeSlots ts ON ts.TimeSlotID = r.TimeSlotID
+                   WHERE r.Status IN ('Pending','Approved','Reassigned')
+                     AND CAST(r.ReservationDate AS DATETIME) + CAST(ts.EndTime AS DATETIME) > @now
+                   ORDER BY r.ReservationDate, ts.StartTime, r.ReservationID",
+                QCUCRAM_Db.P("@top", top),
+                QCUCRAM_Db.P("@now", now));
         }
 
         /// <summary>Admin Records page: filter by date range, status, room and requester.</summary>
@@ -839,9 +893,17 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Data
             }
             if (!string.IsNullOrWhiteSpace(search))
             {
-                sql += @" AND (s.StudentNumber LIKE @q OR s.LastName LIKE @q
-                          OR s.FirstName LIKE @q OR r.Purpose LIKE @q)";
-                p.Add(QCUCRAM_Db.P("@q", "%" + search.Trim() + "%"));
+                // Records.aspx.cs: wildcards typed by the admin are searched literally.
+                string term = search.Trim()
+                    .Replace("\\", "\\\\").Replace("%", "\\%")
+                    .Replace("_", "\\_").Replace("[", "\\[");
+
+                sql += @" AND (s.StudentNumber LIKE @q ESCAPE '\'
+                          OR s.LastName LIKE @q ESCAPE '\'
+                          OR s.FirstName LIKE @q ESCAPE '\'
+                          OR (s.FirstName + ' ' + s.LastName) LIKE @q ESCAPE '\'
+                          OR (s.LastName + ', ' + s.FirstName) LIKE @q ESCAPE '\')";
+                p.Add(QCUCRAM_Db.P("@q", "%" + term + "%"));
             }
 
             sql += " ORDER BY r.ReservationDate DESC, ts.StartTime DESC";
@@ -855,7 +917,7 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Data
                 @"SELECT HistoryID, OldStatus, NewStatus, ChangedByRole, ChangedBy, ChangedAt, Notes
                     FROM ReservationStatusHistory
                    WHERE ReservationID = @id
-                   ORDER BY ChangedAt, HistoryID",
+                   ORDER BY HistoryID",
                 QCUCRAM_Db.P("@id", reservationId));
         }
 
@@ -868,6 +930,43 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Data
                    WHERE ReservationID = @id
                    ORDER BY MemberID",
                 QCUCRAM_Db.P("@id", reservationId));
+        }
+
+        /// <summary>
+        /// Member names for every booking waiting for check-in on a date, in one query
+        /// (CheckIn.aspx.cs LoadMembers). Grouped by ReservationID, MemberID order.
+        /// </summary>
+        public List<QCUCRAM_ReservationMember> GetMembersForDate(DateTime date)
+        {
+            return _db.Query<QCUCRAM_ReservationMember>(
+                @"SELECT m.MemberID, m.ReservationID, m.LastName, m.FirstName, m.MI
+                    FROM ReservationMembers m
+                    JOIN Reservations r ON r.ReservationID = m.ReservationID
+                   WHERE r.ReservationDate = CAST(@today AS DATE)
+                     AND r.Status IN ('Approved','Reassigned')
+                   ORDER BY m.ReservationID, m.MemberID",
+                QCUCRAM_Db.P("@today", SqlDbType.Date, date));
+        }
+
+        /// <summary>
+        /// The most recent Forfeited reservation date per student, for the
+        /// "One strike away" grid (Restrictions.aspx.cs BindWarning ran this as a
+        /// correlated sub-select). Students with no forfeit are absent from the map.
+        /// </summary>
+        public Dictionary<int, DateTime> GetLastForfeitedDates()
+        {
+            Dictionary<int, DateTime> map = new Dictionary<int, DateTime>();
+
+            foreach (QCUCRAM_ReservationListItem row in _db.Query<QCUCRAM_ReservationListItem>(
+                @"SELECT r.StudentID, MAX(r.ReservationDate) AS ReservationDate
+                    FROM Reservations r
+                   WHERE r.Status = 'Forfeited'
+                   GROUP BY r.StudentID"))
+            {
+                map[row.StudentId] = row.ReservationDate;
+            }
+
+            return map;
         }
 
         /// <summary>Public non-locking check, for the availability grid and the Reserve page.</summary>

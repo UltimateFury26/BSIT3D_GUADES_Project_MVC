@@ -1,23 +1,18 @@
 @model BSIT3D_GUADES_Project_MVC.QCUCRAM_ViewModels.QCUCRAMRestrictionsViewModel
-@using System
 @using System.Globalization
 @{
     /* =====================================================================
        QCU-CRAM  |  Views/Admin/QCU-CRAM_Restrictions.cshtml
        ---------------------------------------------------------------------
-       Port of Guades_QCUCram_Admin/Guades_QCUCram_Restrictions.aspx.
+       One-to-one port of Guades_QCUCram_Admin/Guades_QCUCram_Restrictions.aspx.
 
-       Same pieces:
-         threshold sentence   (NoShowThreshold setting, default 3)
-         warning GridView     (gvWarning - NoShowCount = threshold - 1, not restricted)
-         restricted GridView  (gvRestricted - IsRestricted = 1, soonest lift first)
-         "Lift" button        (btnLift - resets strikes, clears the lift date,
-                               writes a Notification, all in one transaction)
-
-       The Students table has no YearLevel and no ContactNumber column, so the
-       "Year" and "Contact" columns the Web Forms grid showed are replaced by
-       RequesterType and by the two values that actually matter here: when the
-       restriction lifts, and how long that is from now.
+       Kept exactly as the Web Forms page had it:
+         print stylesheet + print-only header and signature line
+         "Restrictions" head with the "Print list" button
+         lblMessage, then the litRule sentence
+         gvRestricted  - Student / Strikes / Restricted until / Time remaining / Action
+         lift modal    - litLiftInfo, 150-char note, Cancel + "Confirm - lift restriction"
+         gvWarning     - Student / Strikes ("N of 3") / Last forfeited booking
        ===================================================================== */
 
     ViewBag.Title = "Restrictions";
@@ -26,85 +21,141 @@
     CultureInfo inv = CultureInfo.InvariantCulture;
 }
 
-<div class="qcu-page-head">
-    <div>
-        <h1 class="qcu-page-title">Booking restrictions</h1>
-        <p class="qcu-page-sub">
-            A requester is restricted after @Model.Threshold no-show strike(s),
-            for @Model.RestrictionDays day(s).
-        </p>
-    </div>
-    <div class="qcu-page-actions">
-        <a class="qcu-btn qcu-btn--ghost" href="@Url.Action("Dashboard", "Admin")">Dashboard</a>
-    </div>
+<style>
+    .print-only { display: none; }
+
+    @@media print {
+        nav.navbar, footer, hr, .no-print, form > .alert { display: none !important; }
+        .print-only { display: block !important; }
+        body { font-size: 11pt; background: #fff; }
+        .container, .body-content { max-width: 100% !important; width: 100% !important; padding: 0 !important; margin: 0 !important; }
+        table tr { page-break-inside: avoid; }
+        @@page { margin: 14mm; }
+    }
+</style>
+
+@* Header that only appears on paper *@
+<div class="print-only text-center mb-3">
+    <h4 class="mb-0">QCU Library &mdash; Collaboration Room Reservation</h4>
+    <div>Restricted Students List</div>
+    <div class="small">Printed @Model.PrintedAtText</div>
 </div>
 
-@if (Model.Warnings.Count > 0)
+<div class="d-flex justify-content-between align-items-start flex-wrap gap-2 no-print">
+    <div class="qcu-page-head">
+        <h2>Restrictions</h2>
+        <p>Students barred from booking, and those one strike away</p>
+    </div>
+    <button type="button" class="btn btn-outline-primary" onclick="window.print();">Print list</button>
+</div>
+
+@if (!string.IsNullOrEmpty(Model.Message))
 {
-    <section class="qcu-panel qcu-panel--warn">
-        <header class="qcu-panel__head"><h2>Close to the limit (@Model.Warnings.Count)</h2></header>
-        <table class="qcu-table">
-            <thead>
-                <tr><th>Requester</th><th>Number</th><th>Program</th><th>Strikes</th><th>Remaining</th></tr>
-            </thead>
-            <tbody>
-                @foreach (var w in Model.Warnings)
-                {
-                    <tr>
-                        <td>@w.FullName</td>
-                        <td>@w.StudentNumber</td>
-                        <td>@w.Program</td>
-                        <td>@w.NoShowCount</td>
-                        <td><span class="qcu-badge is-warn">@w.StrikesRemaining</span></td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-    </section>
+    <div class="alert @(Model.MessageIsError ? "alert-danger" : "alert-success")">@Model.Message</div>
 }
 
-<section class="qcu-panel">
-    <header class="qcu-panel__head"><h2>Currently restricted (@Model.Restricted.Count)</h2></header>
+<p class="text-muted">@Html.Raw(Model.RuleText)</p>
 
-    @if (Model.Restricted.Count == 0)
-    {
-        <p class="qcu-empty">No requester is currently restricted.</p>
-    }
-    else
-    {
-        <table class="qcu-table">
-            <thead>
-                <tr>
-                    <th>Requester</th><th>Number</th><th>Program</th><th>Type</th>
-                    <th>Strikes</th><th>Lifts on</th><th>Remaining</th><th></th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var s in Model.Restricted)
+<h5 class="qcu-subhead">Currently restricted students</h5>
+<div class="table-responsive">
+    <table class="table table-bordered table-striped align-middle qcu-admin-table">
+        <thead>
+            <tr>
+                <th>Student</th>
+                <th>Strikes</th>
+                <th>Restricted until</th>
+                <th>Time remaining</th>
+                <th class="no-print">Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model.Restricted.Count == 0)
+            {
+                <tr><td colspan="5" class="text-muted">No students are currently restricted.</td></tr>
+            }
+            else
+            {
+                foreach (var s in Model.Restricted)
                 {
                     <tr>
-                        <td>@s.FullName</td>
-                        <td>@s.StudentNumber</td>
-                        <td>@s.Program</td>
-                        <td>@s.RequesterType</td>
-                        <td><span class="qcu-badge is-bad">@s.NoShowCount</span></td>
+                        <td>@Html.Raw(s.StudentHtml)</td>
+                        <td>@s.NoShowCount</td>
                         <td>@s.UntilText</td>
-                        <td class="qcu-muted">@s.RemainingText</td>
-                        <td class="qcu-table__actions">
-                            <form method="post" action="@Url.Action("Lift", "Admin")" class="qcu-inline-form">
-                                @Html.AntiForgeryToken()
-                                <input type="hidden" name="id" value="@s.StudentID" />
-                                <input type="text" name="note" maxlength="150" class="qcu-input"
-                                       placeholder="Optional note to the requester" />
-                                <button type="submit" class="qcu-btn qcu-btn--sm qcu-btn--primary"
-                                        onclick="return confirm('Lift the restriction for @s.FullName?');">
-                                    Lift
-                                </button>
-                            </form>
+                        <td>@s.RemainingText</td>
+                        <td class="no-print qcu-actions-cell">
+                            <div class="qcu-actions">
+                                <a class="btn btn-sm btn-outline-danger"
+                                   href="@Url.Action("Restrictions", "Admin", new { lift = s.StudentID })">Lift now</a>
+                            </div>
                         </td>
                     </tr>
                 }
-            </tbody>
-        </table>
-    }
-</section>
+            }
+        </tbody>
+    </table>
+</div>
+
+<div class="qcu-form-overlay@(Model.LiftModalCss)">
+    <form method="post" action="@Url.Action("Lift", "Admin")" class="qcu-form-modal"
+          role="dialog" aria-modal="true" aria-labelledby="liftModalTitle" tabindex="-1">
+
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="id" value="@Model.LiftId" />
+
+        <div class="qcu-form-head">
+            <div class="qcu-form-title" id="liftModalTitle">Lift restriction</div>
+            <a class="qcu-form-close" data-qcu-close aria-label="Close"
+               href="@Url.Action("Restrictions", "Admin")">&times;</a>
+        </div>
+
+        <div class="qcu-form-body">
+            @Html.Raw(Model.LiftInfo ?? string.Empty)
+            <div class="mb-3 mt-3">
+                <label class="form-label" for="txtNote">Note for the student (optional)</label>
+                <input type="text" id="txtNote" name="note" maxlength="150" class="form-control" value="" />
+                <div class="form-text">Lifting resets the student's strike count to 0 and sends them a notification.</div>
+            </div>
+        </div>
+
+        <div class="qcu-form-foot">
+            <a class="btn btn-outline-secondary" href="@Url.Action("Restrictions", "Admin")">Cancel</a>
+            <button type="submit" class="btn btn-danger"
+                    onclick="return qcuConfirm(this, { tone: 'warning', title: 'Lift this restriction?', message: 'The student strike count resets to 0 and they are notified that they can book again.', confirmText: 'Lift restriction' });">
+                Confirm - lift restriction
+            </button>
+        </div>
+    </form>
+</div>
+
+<h5 class="qcu-subhead mt-5">One strike away</h5>
+<p class="text-muted small">Students who are not restricted but will be after their next forfeited booking.</p>
+<div class="table-responsive">
+    <table class="table table-bordered table-striped align-middle qcu-admin-table">
+        <thead>
+            <tr>
+                <th>Student</th>
+                <th>Strikes</th>
+                <th>Last forfeited booking</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model.Warnings.Count == 0)
+            {
+                <tr><td colspan="3" class="text-muted">Nobody is one strike away from a restriction.</td></tr>
+            }
+            else
+            {
+                foreach (var w in Model.Warnings)
+                {
+                    <tr>
+                        <td>@Html.Raw(w.StudentHtml)</td>
+                        <td>@w.StrikesText</td>
+                        <td>@w.LastText</td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+</div>
+
+<div class="print-only" style="margin-top:40px;">Library Assistant: ______________________________</div>

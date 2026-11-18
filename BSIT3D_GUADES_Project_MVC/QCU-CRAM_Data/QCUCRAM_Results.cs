@@ -218,6 +218,15 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Data
     /// <summary>The cards at the top of the admin dashboard.</summary>
     public class QCUCRAM_DashboardCounts
     {
+        /// <summary>Dashboard.aspx.cs CntPending: every Pending row, not just today's.</summary>
+        public int Pending { get; set; }
+
+        /// <summary>Dashboard.aspx.cs CntForfeited: forfeited rows whose slot day is today.</summary>
+        public int ForfeitedToday { get; set; }
+
+        /// <summary>Dashboard.aspx.cs CntTotal: every reservation, any status.</summary>
+        public int TotalReservations { get; set; }
+
         public int PendingToday { get; set; }
         public int ApprovedToday { get; set; }
         public int CheckedInToday { get; set; }
@@ -237,6 +246,10 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Data
         public int StudentId { get; set; }
         public string StudentNumber { get; set; }
         public string StudentName { get; set; }
+
+        /// <summary>Middle initial, exactly as stored (Dashboard.aspx.cs appended it untrimmed).</summary>
+        public string MI { get; set; }
+
         public string RoomName { get; set; }
         public int TimeSlotId { get; set; }
         public TimeSpan StartTime { get; set; }

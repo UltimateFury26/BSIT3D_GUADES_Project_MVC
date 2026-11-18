@@ -5,117 +5,92 @@
     /* =====================================================================
        QCU-CRAM  |  Views/Admin/_QCU-CRAM_ReservationDetail.cshtml
        ---------------------------------------------------------------------
-       The read-only body shared by the queue's review panel and the records
-       slide-over. Port of the DetailsView block inside Guades_QCUCram_Queue.aspx
-       plus the members and status-history sections of
-       Guades_QCUCram_Records.aspx.
+       The read-only body of the Records detail pop-up. Port of the block
+       Records.aspx.cs ShowDetail() built:
 
-       Two schema notes, because the conversion guide's sketch assumed columns
-       this database does not have:
-         * Students has no YearLevel and no ContactNumber, so the "Year" and
-           "Contact" rows are gone. RequesterType (Student / Faculty) takes the
-           place of the year, and Email stands alone as the contact.
-         * Reservations stores no DecisionNote / DecidedByAdminID / DecidedAt.
-           The decision is recovered from the newest admin-role row in
-           ReservationHistory, which is where the Web Forms pages wrote it too.
+         summary table   Requester / ID / Email / Program / Room / Date / Time /
+                         Members / Purpose / Status / Submitted / Checked in
+         Group members   No. + Name
+         Status history  When / Change / By / Notes, in HistoryID order
        ===================================================================== */
 
     CultureInfo inv = CultureInfo.InvariantCulture;
+
+    string requester = Model.RequesterName +
+                       (string.IsNullOrWhiteSpace(Model.RequesterType)
+                            ? string.Empty
+                            : " (" + Model.RequesterType + ")");
+
+    string checkedIn = Model.CheckedInAt.HasValue
+        ? Model.CheckedInAt.Value.ToString("MMM d, yyyy h:mm tt", inv)
+        : "-";
 }
 
-<div class="qcu-detail">
-    <dl class="qcu-detail__grid">
-        <dt>Status</dt>
-        <dd><span class="qcu-badge @Model.StatusCss">@Model.Status</span></dd>
+<table class="table table-sm table-bordered w-auto mb-0">
+    <tbody>
+        <tr><th>Requester</th><td>@requester</td></tr>
+        <tr><th>ID / Student No.</th><td>@Model.StudentNumber</td></tr>
+        <tr><th>Email</th><td>@Model.Email</td></tr>
+        <tr><th>Program</th><td>@Model.Program</td></tr>
+        <tr><th>Room</th><td>@Model.RoomName</td></tr>
+        <tr><th>Date</th><td>@Model.ReservationDate.ToString("dddd, MMM d, yyyy", inv)</td></tr>
+        <tr><th>Time</th><td>@Model.SlotLabel</td></tr>
+        <tr><th>Members</th><td>@Model.NumberOfMembers</td></tr>
+        <tr><th>Purpose</th><td>@Model.Purpose</td></tr>
+        <tr><th>Status</th><td><span class="badge @Model.StatusCss">@Model.Status</span></td></tr>
+        <tr><th>Submitted</th><td>@Model.CreatedAt.ToString("MMM d, yyyy h:mm tt", inv)</td></tr>
+        <tr><th>Checked in</th><td>@checkedIn</td></tr>
+    </tbody>
+</table>
 
-        <dt>Requester</dt>
-        <dd>@Model.RequesterName <span class="qcu-muted">(@Model.StudentNumber)</span></dd>
-
-        <dt>Program</dt>
-        <dd>@Model.Program &middot; @Model.RequesterType</dd>
-
-        <dt>Contact</dt>
-        <dd>@Model.Email</dd>
-
-        <dt>Room</dt>
-        <dd>@Model.RoomName</dd>
-
-        <dt>Schedule</dt>
-        <dd>@Model.ReservationDate.ToString("dddd, MMMM d, yyyy", inv) &middot; @Model.SlotLabel</dd>
-
-        <dt>Group size</dt>
-        <dd>@Model.NumberOfMembers</dd>
-
-        <dt>Filed</dt>
-        <dd>@Model.CreatedAt.ToString("MMM d, yyyy h:mm tt", inv)</dd>
-
-        @if (!string.IsNullOrEmpty(Model.DecidedByName))
+<h6 class="mt-4">Group members</h6>
+<table class="table table-sm table-bordered table-striped w-auto">
+    <thead>
+        <tr><th>No.</th><th>Name</th></tr>
+    </thead>
+    <tbody>
+        @if (Model.Members.Count == 0)
         {
-            <dt>Decided by</dt>
-            <dd>
-                @Model.DecidedByName
-                @if (Model.DecidedAt.HasValue)
-                {
-                    <span class="qcu-muted">on @Model.DecidedAt.Value.ToString("MMM d, h:mm tt", inv)</span>
-                }
-            </dd>
+            <tr><td colspan="2" class="text-muted">No members recorded.</td></tr>
         }
-
-        @if (!string.IsNullOrEmpty(Model.DecisionNote))
+        else
         {
-            <dt>Note</dt>
-            <dd>@Model.DecisionNote</dd>
+            int n = 0;
+            foreach (var m in Model.Members)
+            {
+                n++;
+                <tr><td>@n</td><td>@m.FullName</td></tr>
+            }
         }
-    </dl>
+    </tbody>
+</table>
 
-    <h3 class="qcu-subhead">Purpose</h3>
-    <p class="qcu-purpose">@Model.Purpose</p>
-
-    <h3 class="qcu-subhead">Members (@Model.Members.Count)</h3>
-    @if (Model.Members.Count == 0)
-    {
-        <p class="qcu-empty">No members were listed on this request.</p>
-    }
-    else
-    {
-        <ul class="qcu-member-list">
-            @foreach (var m in Model.Members)
+<h6 class="mt-4">Status history</h6>
+<table class="table table-sm table-bordered table-striped">
+    <thead>
+        <tr><th>When</th><th>Change</th><th>By</th><th>Notes</th></tr>
+    </thead>
+    <tbody>
+        @if (Model.History.Count == 0)
+        {
+            <tr><td colspan="4" class="text-muted">No history recorded.</td></tr>
+        }
+        else
+        {
+            foreach (var h in Model.History)
             {
-                <li>
-                    <span class="qcu-member-list__name">@m.FullName</span>
-                    <span class="qcu-muted">@m.StudentNumber &middot; @m.Program</span>
-                    @if (m.IsRequester)
-                    {
-                        <span class="qcu-tag">requester</span>
-                    }
-                </li>
-            }
-        </ul>
-    }
+                string from = string.IsNullOrEmpty(h.FromStatus) ? "(new)" : h.FromStatus;
+                string by = string.IsNullOrEmpty(h.ActorName)
+                    ? (string.IsNullOrEmpty(h.ActorRole) ? "System" : h.ActorRole)
+                    : h.ActorRole + ": " + h.ActorName;
 
-    <h3 class="qcu-subhead">Status history</h3>
-    @if (Model.History.Count == 0)
-    {
-        <p class="qcu-empty">No status changes recorded yet.</p>
-    }
-    else
-    {
-        <ol class="qcu-timeline">
-            @foreach (var h in Model.History)
-            {
-                <li>
-                    <span class="qcu-timeline__when">@h.ChangedAt.ToString("MMM d, h:mm tt", inv)</span>
-                    <span class="qcu-timeline__what">
-                        @(string.IsNullOrEmpty(h.FromStatus) ? "created" : h.FromStatus)
-                        &rarr; <strong>@h.ToStatus</strong>
-                    </span>
-                    <span class="qcu-muted">@h.ActorRole @h.ActorName</span>
-                    @if (!string.IsNullOrEmpty(h.Note))
-                    {
-                        <span class="qcu-timeline__note">@h.Note</span>
-                    }
-                </li>
+                <tr>
+                    <td>@h.ChangedAt.ToString("MMM d, yyyy h:mm:ss tt", inv)</td>
+                    <td>@from &rarr; @h.ToStatus</td>
+                    <td>@by</td>
+                    <td>@(string.IsNullOrEmpty(h.Note) ? "-" : h.Note)</td>
+                </tr>
             }
-        </ol>
-    }
-</div>
+        }
+    </tbody>
+</table>

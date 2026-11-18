@@ -1,7 +1,8 @@
-using System;
+﻿using System;
 using System.Globalization;
 using System.Text;
 using System.Web.Mvc;
+using BSIT3D_GUADES_Project_MVC.QCUCRAM_Helpers;
 using BSIT3D_GUADES_Project_MVC.QCUCRAM_Security;
 using BSIT3D_GUADES_Project_MVC.QCUCRAM_Services;
 using BSIT3D_GUADES_Project_MVC.QCUCRAM_ViewModels;
@@ -86,7 +87,7 @@ namespace BSIT3D_GUADES_Project_MVC.Controllers
             byte[] bytes = new UTF8Encoding(true).GetBytes(csv);
 
             string name = "CRAM_Reservations_" +
-                          DateTime.Now.ToString("yyyyMMdd_HHmm", Inv) + ".csv";
+                          QCUCRAM_Clock.Now.ToString("yyyyMMdd_HHmm", Inv) + ".csv";
 
             return File(bytes, "text/csv", name);
         }

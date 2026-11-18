@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 
 namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_ViewModels
@@ -30,7 +30,7 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_ViewModels
             Sort = "ReservationDate";
             Dir = "desc";
             Page = 1;
-            PageSize = 25;
+            PageSize = 20;
         }
 
         public bool HasFilters
@@ -78,6 +78,9 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_ViewModels
         public string Status { get; set; }
         public string StatusCss { get; set; }
         public DateTime CreatedAt { get; set; }
+
+        /// <summary>Null until the group is checked in; the CSV writes it as "Checked In".</summary>
+        public DateTime? CheckedInAt { get; set; }
     }
 
     public class QCUCRAMRecordsViewModel
