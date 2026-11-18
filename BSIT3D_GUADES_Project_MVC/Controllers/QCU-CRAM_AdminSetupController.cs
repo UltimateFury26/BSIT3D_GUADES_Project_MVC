@@ -139,7 +139,7 @@ namespace BSIT3D_GUADES_Project_MVC.Controllers
         public ActionResult Students(string q, string program, int? page, int? edit)
         {
             QCUCRAMStudentsViewModel vm =
-                QCUCRAMSetupService.Students(q, program, page ?? 1, 20);
+                QCUCRAMSetupService.Students(q, program, page ?? 1, 10);   // GridView PageSize="10"
 
             // edit absent -> plain list; edit = 0 -> "Add student"; edit > 0 -> "Edit student"
             if (edit.HasValue)
@@ -171,27 +171,47 @@ namespace BSIT3D_GUADES_Project_MVC.Controllers
                 TempData[ModalErrorKey] = result.Message;
                 TempData[ModalEditKey] = model;
                 return RedirectToAction("Students",
-                    new { edit = model != null && model.StudentID > 0 ? model.StudentID : (int?)null });
+                    StudentListRoute(model != null && model.StudentID > 0 ? model.StudentID : (int?)null));
             }
 
             Toast(result);
-            return RedirectToAction("Students");
+            return RedirectToAction("Students", StudentListRoute(null));
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         public ActionResult ResetStudentPassword(int id)
         {
-            Toast(QCUCRAMSetupService.ResetStudentPassword(id));
-            return RedirectToAction("Students");
+            // gvStudents_RowCommand wrapped every row action in one try/catch
+            try { Toast(QCUCRAMSetupService.ResetStudentPassword(id)); }
+            catch (System.Exception) { FlashError("Sorry, that action could not be completed. Please try again."); }
+            return RedirectToAction("Students", StudentListRoute(null));
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         public ActionResult DeleteStudent(int id)
         {
-            Toast(QCUCRAMSetupService.DeleteStudent(id));
-            return RedirectToAction("Students");
+            try { Toast(QCUCRAMSetupService.DeleteStudent(id)); }
+            catch (System.Exception) { FlashError("Sorry, that action could not be completed. Please try again."); }
+            return RedirectToAction("Students", StudentListRoute(null));
+        }
+
+        // R04: the Web Forms grid kept its search text and page number in the UpdatePanel across
+        // Save / Reset / Delete. The Students forms post them back as hidden "q" and "page" fields,
+        // and the redirect puts them in the URL again (the service clamps a page that no longer exists).
+        private System.Web.Routing.RouteValueDictionary StudentListRoute(int? edit)
+        {
+            System.Web.Routing.RouteValueDictionary route = new System.Web.Routing.RouteValueDictionary();
+
+            string q = (Request.Form["q"] ?? string.Empty).Trim();
+            if (q.Length > 0) { route["q"] = q; }
+
+            int page;
+            if (int.TryParse(Request.Form["page"], out page) && page > 1) { route["page"] = page; }
+
+            if (edit.HasValue) { route["edit"] = edit.Value; }
+            return route;
         }
 
         // =================================================================

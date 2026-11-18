@@ -33,8 +33,9 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
         private static readonly Regex LooseNumberPattern =
             new Regex(@"^[A-Za-z0-9\-]{3,20}$", RegexOptions.Compiled);
 
+        // R04: the exact expression Students.aspx / Students.aspx.cs use for the e-mail box.
         private static readonly Regex EmailPattern =
-            new Regex(@"^[^@\s]+@[^@\s]+\.[^@\s]+$", RegexOptions.Compiled);
+            new Regex(@"^\w+([-+.']\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*$", RegexOptions.Compiled);
 
         private static readonly Regex UsernamePattern =
             new Regex(@"^[A-Za-z0-9._\-]{3,50}$", RegexOptions.Compiled);
@@ -502,7 +503,7 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
             QCUCRAMStudentsViewModel vm = new QCUCRAMStudentsViewModel();
             vm.Search = (search ?? "").Trim();
             vm.Program = (program ?? "").Trim();
-            vm.PageSize = pageSize < 1 ? 20 : pageSize;
+            vm.PageSize = pageSize < 1 ? 10 : pageSize;   // GridView PageSize="10"
 
             foreach (string p in QCUCRAM_Programs.All) { vm.ProgramOptions.Add(p); }
             foreach (string t in QCUCRAM_Programs.RequesterTypes) { vm.RequesterTypes.Add(t); }
@@ -591,89 +592,199 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
             }
         }
 
+        // ----------------------------------------------------------------
+        //  R04: Save / Reset / Delete are re-derived from Guades_QCUCram_Students.aspx.cs
+        //  (SaveNew, SaveEdit, ResetPassword, DeleteStudent): same checks, same order,
+        //  same wording. Problems are collected and joined with a space, like the source.
+        // ----------------------------------------------------------------
+        private const string StudentUniqueMessage =
+            "That ID / Student Number or email is already used by another account.";
+        private const string StudentSaveFailedMessage =
+            "Sorry, the student could not be saved. Please try again.";
+        private const string StudentGoneMessage = "That student no longer exists.";
+        private const string StudentHasReservationsMessage =
+            "This student has reservations and cannot be deleted. Their history must be kept.";
+
         public static QCUCRAMOperationResult SaveStudent(QCUCRAMStudentEditModel model)
         {
             if (model == null) { return Retry("Account details are missing."); }
 
+            return model.StudentID > 0 ? SaveStudentEdit(model) : SaveStudentNew(model);
+        }
+
+        // SaveNew(): registration rules + an automatic temporary password.
+        private static QCUCRAMOperationResult SaveStudentNew(QCUCRAMStudentEditModel model)
+        {
+            string type = (model.RequesterType ?? "").Trim();
             string number = (model.StudentNumber ?? "").Trim();
             string last = (model.LastName ?? "").Trim();
             string first = (model.FirstName ?? "").Trim();
             string mi = (model.MI ?? "").Trim().TrimEnd('.').ToUpperInvariant();
+            if (mi.Length > 2) { mi = mi.Substring(0, 2); }
             string email = (model.Email ?? "").Trim();
             string program = (model.Program ?? "").Trim();
-            string type = (model.RequesterType ?? "").Trim();
 
+            // A student typed as 230001 means 23-0001
+            if (type == "Student") { number = QCUCRAM_Programs.NormalizeStudentNumber(number); }
+
+            List<string> errors = new List<string>();
             if (!QCUCRAM_Programs.IsValidRequesterType(type))
             {
-                return Retry("Choose a requester type of Student, Faculty or Visitor.");
+                errors.Add("Please select a valid requester type.");
             }
-
             if (!QCUCRAM_Programs.IsValidProgram(program))
             {
-                return Retry("Choose a program from the list.");
+                errors.Add("Please select a valid program.");
             }
-
+            if (type == "Student")
+            {
+                if (!StudentNumberPattern.IsMatch(number))
+                {
+                    errors.Add("Student number must look like 23-0001.");
+                }
+            }
+            else if (!LooseNumberPattern.IsMatch(number))
+            {
+                errors.Add("ID number must be 3-20 letters, numbers, or dashes only.");
+            }
             if (last.Length == 0 || first.Length == 0 || last.Length > 60 || first.Length > 60)
             {
-                return Retry("Last name and first name are required (maximum 60 characters each).");
+                errors.Add("Last name and first name are required (maximum 60 characters each).");
+            }
+            if (email.Length == 0 || email.Length > 120 || !EmailPattern.IsMatch(email))
+            {
+                errors.Add("Please enter a valid email address.");
             }
 
-            if (!EmailPattern.IsMatch(email) || email.Length > 120)
+            if (errors.Count > 0) { return Retry(string.Join(" ", errors)); }
+
+            try
             {
-                return Retry("Enter a valid e-mail address (maximum 120 characters).");
-            }
-
-            using (QCUCRAM_Db db = new QCUCRAM_Db())
-            {
-                QCUCRAM_StudentRepository students = new QCUCRAM_StudentRepository(db);
-
-                if (model.StudentID > 0)
+                using (QCUCRAM_Db db = new QCUCRAM_Db())
                 {
-                    int code = students.UpdateProfile(model.StudentID, last, first, mi, email, program);
+                    QCUCRAM_StudentRepository students = new QCUCRAM_StudentRepository(db);
 
-                    if (code == 0) { return QCUCRAMOperationResult.Success("Account updated."); }
-                    if (code == 1) { return Retry("That e-mail address is already registered."); }
-                    if (code == 2) { return QCUCRAMOperationResult.Failure("That account no longer exists."); }
-
-                    return Retry("Sorry, the account could not be saved. Please try again.");
-                }
-
-                if (type == "Student")
-                {
-                    if (!StudentNumberPattern.IsMatch(number))
+                    if (students.GetByStudentNumber(number) != null)
                     {
-                        return Retry("A student number must look like 23-0001.");
+                        errors.Add("Another account already uses that ID / Student Number.");
                     }
-                }
-                else if (!LooseNumberPattern.IsMatch(number))
-                {
-                    return Retry("An ID must be 3-20 letters, numbers or dashes.");
-                }
+                    if (students.GetByEmail(email) != null)
+                    {
+                        errors.Add("Another account already uses that email address.");
+                    }
+                    if (errors.Count > 0) { return Retry(string.Join(" ", errors)); }
 
-                string temporary = QCUCRAM_PasswordHash.StudentTemporaryPassword(number);
+                    // "student" + the last 4 digits of the ID. The password strength rules are for
+                    // passwords people choose, so they are not applied here.
+                    string temporary = QCUCRAM_PasswordHash.StudentTemporaryPassword(number);
 
-                QCUCRAM_RegisterResult result = students.Register(
-                    number, last, first, mi, email, program, type, temporary);
+                    QCUCRAM_RegisterResult result = students.Register(
+                        number, last, first, mi, email, program, type, temporary, false);
 
-                if (result.Success)
-                {
-                    return QCUCRAMOperationResult.Success(
-                        "Account " + number + " added. Temporary password: " + temporary + ".");
+                    if (result.Success)
+                    {
+                        return QCUCRAMOperationResult.Success(
+                            "Account " + number + " added. Temporary password: " + temporary + ".");
+                    }
+
+                    // 1 / 2 = the unique index was hit by a simultaneous save
+                    if (result.ResultCode == 1 || result.ResultCode == 2)
+                    {
+                        return Retry(StudentUniqueMessage);
+                    }
+
+                    return Retry(StudentSaveFailedMessage);
                 }
-
-                if (result.ResultCode == 1)
-                {
-                    return Retry("That ID / student number is already registered.");
-                }
-                if (result.ResultCode == 2)
-                {
-                    return Retry("That e-mail address is already registered.");
-                }
-
-                return Retry("Sorry, the account could not be saved. Please check the details and try again.");
+            }
+            catch (SqlException)
+            {
+                return Retry(StudentSaveFailedMessage);
             }
         }
 
+        // SaveEdit(): the ID / student number and the requester type are saved too.
+        private static QCUCRAMOperationResult SaveStudentEdit(QCUCRAMStudentEditModel model)
+        {
+            int id = model.StudentID;
+            string type = (model.RequesterType ?? "").Trim();
+            string number = (model.StudentNumber ?? "").Trim();
+            string last = (model.LastName ?? "").Trim();
+            string first = (model.FirstName ?? "").Trim();
+            string mi = (model.MI ?? "").Trim().TrimEnd('.');
+            string email = (model.Email ?? "").Trim();
+            string program = (model.Program ?? "").Trim();
+
+            try
+            {
+                using (QCUCRAM_Db db = new QCUCRAM_Db())
+                {
+                    QCUCRAM_StudentRepository students = new QCUCRAM_StudentRepository(db);
+
+                    QCUCRAM_Student current = students.GetById(id);
+                    if (current == null)
+                    {
+                        return QCUCRAMOperationResult.Failure(StudentGoneMessage);
+                    }
+
+                    List<string> errors = new List<string>();
+                    if (!QCUCRAM_Programs.IsValidRequesterType(type))
+                    {
+                        errors.Add("Please select a valid requester type.");
+                    }
+                    if (!QCUCRAM_Programs.IsValidProgram(program) && program != current.Program)
+                    {
+                        errors.Add("Please select a valid program.");
+                    }
+                    if (!LooseNumberPattern.IsMatch(number))
+                    {
+                        errors.Add("ID / Student Number must be 3-20 letters, numbers, or dashes.");
+                    }
+                    if (last.Length == 0 || first.Length == 0 || last.Length > 60 || first.Length > 60)
+                    {
+                        errors.Add("Last name and first name are required (maximum 60 characters each).");
+                    }
+                    if (mi.Length > 5)
+                    {
+                        errors.Add("Middle initial is too long.");
+                    }
+                    if (email.Length == 0 || email.Length > 120 || !EmailPattern.IsMatch(email))
+                    {
+                        errors.Add("Please enter a valid email address.");
+                    }
+
+                    if (errors.Count > 0) { return Retry(string.Join(" ", errors)); }
+
+                    // Unique checks (ignoring this student)
+                    QCUCRAM_Student numberOwner = students.GetByStudentNumber(number);
+                    if (numberOwner != null && numberOwner.StudentID != id)
+                    {
+                        errors.Add("Another account already uses that ID / Student Number.");
+                    }
+                    QCUCRAM_Student emailOwner = students.GetByEmail(email);
+                    if (emailOwner != null && emailOwner.StudentID != id)
+                    {
+                        errors.Add("Another account already uses that email address.");
+                    }
+                    if (errors.Count > 0) { return Retry(string.Join(" ", errors)); }
+
+                    int code = students.UpdateAdminProfile(id, number, last, first, mi, email, program, type);
+
+                    if (code == 0) { return QCUCRAMOperationResult.Success("Student updated."); }
+                    if (code == 2) { return QCUCRAMOperationResult.Failure(StudentGoneMessage); }
+                    if (code == 1 || code == 4) { return Retry(StudentUniqueMessage); }
+
+                    return Retry(StudentSaveFailedMessage);
+                }
+            }
+            catch (SqlException ex)
+            {
+                // 2601 / 2627 = unique constraint hit (two people saving at the same moment)
+                if (ex.Number == 2601 || ex.Number == 2627) { return Retry(StudentUniqueMessage); }
+                return Retry(StudentSaveFailedMessage);
+            }
+        }
+
+        // ResetPassword(): "student" + the last digits of the ID, no strength policy.
         public static QCUCRAMOperationResult ResetStudentPassword(int studentId)
         {
             using (QCUCRAM_Db db = new QCUCRAM_Db())
@@ -683,11 +794,18 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
                 QCUCRAM_Student student = students.GetById(studentId);
                 if (student == null)
                 {
-                    return QCUCRAMOperationResult.Failure("That account no longer exists.");
+                    return QCUCRAMOperationResult.Failure(StudentGoneMessage);
                 }
 
                 string temporary = QCUCRAM_PasswordHash.StudentTemporaryPassword(student.StudentNumber);
-                students.ResetPassword(studentId, temporary);
+
+                int code = students.ResetPassword(studentId, temporary);
+                if (code == 2) { return QCUCRAMOperationResult.Failure(StudentGoneMessage); }
+                if (code != 0)
+                {
+                    return QCUCRAMOperationResult.Failure(
+                        "Sorry, that action could not be completed. Please try again.");
+                }
 
                 return QCUCRAMOperationResult.Success(
                     "Password reset for " + student.StudentNumber +
@@ -695,26 +813,35 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
             }
         }
 
+        // DeleteStudent(): reservations block the delete; notifications go with the account.
         public static QCUCRAMOperationResult DeleteStudent(int studentId)
         {
             using (QCUCRAM_Db db = new QCUCRAM_Db())
             {
                 QCUCRAM_StudentRepository students = new QCUCRAM_StudentRepository(db);
 
-                QCUCRAM_Student student = students.GetById(studentId);
-                if (student == null)
+                int reservations = db.Count(
+                    "SELECT COUNT(*) AS Total FROM Reservations WHERE StudentID = @id",
+                    QCUCRAM_Db.P("@id", studentId));
+                if (reservations > 0)
                 {
-                    return QCUCRAMOperationResult.Failure("That account no longer exists.");
+                    return QCUCRAMOperationResult.Failure(StudentHasReservationsMessage);
                 }
 
-                int code = students.Delete(studentId);
-                if (code == -1)
+                // -1 = FK constraint (SqlException 547); anything else bubbles up to the controller,
+                // which shows "Sorry, that action could not be completed. Please try again."
+                if (students.Delete(studentId) == -1)
                 {
                     return QCUCRAMOperationResult.Failure(
-                        "This account has reservations and cannot be deleted.");
+                        "This student is still in use and cannot be deleted.");
                 }
 
-                return QCUCRAMOperationResult.Success("Account " + student.StudentNumber + " deleted.");
+                if (students.GetById(studentId) != null)
+                {
+                    return QCUCRAMOperationResult.Failure(StudentHasReservationsMessage);
+                }
+
+                return QCUCRAMOperationResult.Success("Student account deleted.");
             }
         }
 

@@ -36,10 +36,14 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Data
         /// <summary>
         /// 0 = OK, 1 = ID / student number taken, 2 = email taken, 3 = invalid input.
         /// The password is hashed here; the plain text never reaches the database.
+        /// R04: the Register page enforces the password policy (default). The admin Students
+        /// page passes enforcePasswordPolicy = false because the source never applied the
+        /// policy to the temporary password (student0001 would always fail it).
         /// </summary>
         public QCUCRAM_RegisterResult Register(string studentNumber, string lastName, string firstName,
                                                string mi, string email, string program,
-                                               string requesterType, string password)
+                                               string requesterType, string password,
+                                               bool enforcePasswordPolicy = true)
         {
             QCUCRAM_RegisterResult result = new QCUCRAM_RegisterResult { ResultCode = 3 };
 
@@ -68,7 +72,7 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Data
             if (last.Length == 0 || first.Length == 0) { return result; }
             if (last.Length > 60 || first.Length > 60) { return result; }
             if (mail.Length == 0 || mail.Length > 120) { return result; }
-            if (QCUCRAM_PasswordHash.GetStrengthMessage(password) != null) { return result; }
+            if (enforcePasswordPolicy && QCUCRAM_PasswordHash.GetStrengthMessage(password) != null) { return result; }
 
             // ---- friendly duplicate checks ----
             if (_db.Any("SELECT COUNT(*) AS Total FROM Students WHERE StudentNumber = @n",
@@ -377,32 +381,27 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Data
                                       string firstName, string mi, string email,
                                       string program, string requesterType)
         {
+            // R04: Students.aspx.cs SaveEdit() - no 23-0001 rule and no number normalisation on
+            // edit (older IDs such as SAMPLE-001 stay editable), middle initial is not upper-cased.
             string number = (studentNumber ?? "").Trim();
             string last = (lastName ?? "").Trim();
             string first = (firstName ?? "").Trim();
-            string middle = (mi ?? "").Trim().TrimEnd('.').ToUpperInvariant();
+            string middle = (mi ?? "").Trim().TrimEnd('.');
             string mail = (email ?? "").Trim();
             string type = (requesterType ?? "").Trim();
+            string prog = (program ?? "").Trim();
 
             if (!QCUCRAM_Programs.IsValidRequesterType(type)) { return 3; }
-            if (!QCUCRAM_Programs.IsValidProgram(program)) { return 3; }
-            if (type == "Student") { number = QCUCRAM_Programs.NormalizeStudentNumber(number); }
-
-            if (type == "Student")
-            {
-                if (!StudentNumberRegex.IsMatch(number)) { return 3; }
-            }
-            else if (!OtherIdRegex.IsMatch(number))
-            {
-                return 3;
-            }
-
+            if (!OtherIdRegex.IsMatch(number)) { return 3; }
             if (middle.Length > 5) { return 3; }
             if (last.Length == 0 || first.Length == 0 || last.Length > 60 || first.Length > 60) { return 3; }
             if (mail.Length == 0 || mail.Length > 120) { return 3; }
 
             QCUCRAM_Student existing = GetById(studentId);
             if (existing == null) { return 2; }
+
+            // the stored program stays valid even if it is no longer in the list
+            if (!QCUCRAM_Programs.IsValidProgram(prog) && prog != existing.Program) { return 3; }
 
             if (!string.Equals(existing.StudentNumber, number, StringComparison.OrdinalIgnoreCase))
             {
@@ -430,7 +429,7 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Data
                 QCUCRAM_Db.P("@first", first),
                 QCUCRAM_Db.P("@mi", middle.Length == 0 ? null : middle),
                 QCUCRAM_Db.P("@e", mail),
-                QCUCRAM_Db.P("@prog", program),
+                QCUCRAM_Db.P("@prog", prog),
                 QCUCRAM_Db.P("@type", type),
                 QCUCRAM_Db.P("@id", studentId));
 
@@ -454,7 +453,9 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Data
         /// <summary>Admin reset: sets a temporary password without asking for the old one.</summary>
         public int ResetPassword(int studentId, string temporaryPassword)
         {
-            if (QCUCRAM_PasswordHash.GetStrengthMessage(temporaryPassword) != null) { return 3; }
+            // R04: Students.aspx.cs ResetPassword never applied the strength policy to the
+            // temporary password ("student0001" is deliberately simple), so it is not applied here.
+            if (string.IsNullOrEmpty(temporaryPassword)) { return 3; }
 
             int rows = _db.Execute("UPDATE Students SET PasswordHash = @h WHERE StudentID = @id",
                 QCUCRAM_Db.P("@h", QCUCRAM_PasswordHash.Hash(temporaryPassword)),

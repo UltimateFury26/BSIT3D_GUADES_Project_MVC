@@ -317,6 +317,12 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_ViewModels
         /// </summary>
         public string Needs { get; set; }
 
+        /// <summary>
+        /// R04: extra class on the pop-up frame. The Students pop-up is "qcu-form-modal-lg"
+        /// (Students.aspx: CssClass="qcu-form-modal qcu-form-modal-lg"); the others stay plain.
+        /// </summary>
+        public string SizeClass { get; set; }
+
         /// <summary>The form fields, supplied by the calling view as an @&lt;text&gt; block.</summary>
         public Func<object, System.Web.WebPages.HelperResult> Body { get; set; }
 

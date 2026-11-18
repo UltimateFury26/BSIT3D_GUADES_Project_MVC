@@ -1,35 +1,26 @@
 @model BSIT3D_GUADES_Project_MVC.QCUCRAM_ViewModels.QCUCRAMStudentsViewModel
 @using System
-@using System.Linq
+@using System.Collections.Generic
 @{
     /* =====================================================================
        QCU-CRAM  |  Views/Admin/QCU-CRAM_Students.cshtml
-       ---------------------------------------------------------------------
-       One-to-one port of Guades_QCUCram_Admin/Guades_QCUCram_Students.aspx.
-
-       Phase 23 parity points:
-         * same heading / sub-heading, search box (number, name, e-mail or
-           program), Search + Clear and "+ Add Student" button,
-         * same count line: N student(s) match "q". / N student(s) registered.
-         * same column set and order: ID / Student No., Name, Email, Program,
-           Type, No-Shows, Restricted, Reservations, Actions,
-         * same paging size (10 rows per page),
-         * same empty-state sentence ("No students found."),
-         * the ID / Student Number stays editable on edit (the source only
-           switches the strict-format flag off), and the server re-checks it,
-         * pop-up titled "Add Student" / "Edit Student #id" with the source
-           labels, placeholders and temporary-password note.
-
-       Business rule kept: a requester who still has reservations cannot be
-       deleted - the button is disabled and the server refuses as well.
+       One-to-one port of Guades_QCUCram_Admin/Guades_QCUCram_Students.aspx:
+       same page head, search bar (Search / Clear / + Add Student), count line,
+       GridView table classes and columns, row actions with qcuConfirm pop-ups,
+       help note and the Add / Edit pop-up (qcu-form-modal-lg, row/col-md-*
+       fields, qcu-temp-note).
        ===================================================================== */
-
     ViewBag.Title = "Students";
     Layout = "~/Views/Shared/_QCU-CRAM_Layout.cshtml";
 
     bool isNew = Model.Edit == null || Model.Edit.StudentID <= 0;
     string modalTitle = isNew ? "Add Student" : "Edit Student #" + Model.Edit.StudentID;
 
+    // Search text and page number travel in the URL (the UpdatePanel kept them in ViewState).
+    string qParam = string.IsNullOrWhiteSpace(Model.Search) ? null : Model.Search;
+    object pageParam = Model.Page > 1 ? (object)Model.Page : null;
+
+    // lblCount: the search text is HTML-encoded by Razor
     string countLine = string.IsNullOrWhiteSpace(Model.Search)
         ? Model.TotalRows + " student(s) registered."
         : Model.TotalRows + " student(s) match \"" + Model.Search + "\".";
@@ -37,54 +28,47 @@
     var pager = BSIT3D_GUADES_Project_MVC.QCUCRAM_ViewModels.QCUCRAMPagerViewModel
         .FromRequest(Request, Model.Page, Model.PageSize, Model.TotalRows);
 
-    var programChoices = new System.Collections.Generic.List<string>(Model.ProgramOptions);
-    if (!programChoices.Contains("Not applicable (Faculty / Visitor)"))
-    {
-        programChoices.Add("Not applicable (Faculty / Visitor)");
-    }
+    // Add: "-- Select ... --" first choice, Student pre-selected.
+    // Edit: no placeholder; a stored value that is no longer in the list is kept (SelectOrAdd).
+    string curType = Model.Edit == null ? "Student" : (Model.Edit.RequesterType ?? string.Empty);
+    var typeChoices = new List<string>(Model.RequesterTypes);
+    if (!isNew && curType.Length > 0 && !typeChoices.Contains(curType)) { typeChoices.Insert(0, curType); }
+
+    string curProgram = Model.Edit == null ? string.Empty : (Model.Edit.Program ?? string.Empty);
+    var programChoices = new List<string>(Model.ProgramOptions);
+    if (!isNew && curProgram.Length > 0 && !programChoices.Contains(curProgram)) { programChoices.Insert(0, curProgram); }
 }
 
 <div class="qcu-page-head">
-    <div>
-        <h1 class="qcu-page-title">Students</h1>
-        <p class="qcu-page-sub">Manage student accounts</p>
-    </div>
-    <div class="qcu-page-actions">
-        <a class="qcu-btn qcu-btn--primary" href="@Url.Action("Students", new { edit = 0 })">+ Add Student</a>
-    </div>
+    <h2>Students</h2>
+    <p>Manage student accounts</p>
 </div>
 
-<section class="qcu-panel">
-    <header class="qcu-panel__head">
-        <h2>Search</h2>
-    </header>
+@* Search box on the left, "+ Add Student" on the right *@
+<div class="qcu-page-bar qcu-page-bar-search">
+    <form method="get" action="@Url.Action("Students")" class="qcu-toolbar">
+        <div class="input-group">
+            <input type="text" id="txtSearch" name="q" class="form-control" maxlength="100" data-live-btn="btnSearch" autocomplete="off"
+                   placeholder="Search by number, name, email, or program" value="@Model.Search" />
+            <button type="submit" id="btnSearch" class="btn btn-primary">Search</button>
+            <a id="btnClearSearch" class="btn btn-outline-secondary" href="@Url.Action("Students")">Clear</a>
+        </div>
+    </form>
+    <a class="btn btn-primary qcu-add-btn" href="@Url.Action("Students", new { edit = 0, q = qParam, page = pageParam })">+ Add Student</a>
+</div>
+<p class="text-muted">@countLine</p>
 
-    <div class="qcu-panel__body">
-        <form method="get" action="@Url.Action("Students")" class="qcu-filter">
-            <input type="search" name="q" value="@Model.Search" class="form-control" maxlength="100"
-                   placeholder="Search by number, name, email, or program" aria-label="Search" />
-
-            <button type="submit" class="qcu-btn qcu-btn--primary">Search</button>
-            @if (!string.IsNullOrWhiteSpace(Model.Search))
-            {
-                <a class="qcu-btn qcu-btn--ghost" href="@Url.Action("Students")">Clear</a>
-            }
-        </form>
-    </div>
-</section>
-
-<section class="qcu-panel">
-    <header class="qcu-panel__head">
-        <h2>@countLine</h2>
-    </header>
-
+<div class="table-responsive">
     @if (Model.Rows.Count == 0)
     {
-        <p class="qcu-empty">No students found.</p>
+        @* GridView EmptyDataText: just the message, no header row *@
+        <table class="table table-bordered table-striped qcu-admin-table qcu-compact">
+            <tr><td>No students found.</td></tr>
+        </table>
     }
     else
     {
-        <table class="qcu-table">
+        <table class="table table-bordered table-striped qcu-admin-table qcu-compact">
             <thead>
                 <tr>
                     <th>ID / Student No.</th>
@@ -95,7 +79,7 @@
                     <th>No-Shows</th>
                     <th>Restricted</th>
                     <th>Reservations</th>
-                    <th class="qcu-table__actions">Actions</th>
+                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -103,41 +87,35 @@
                 {
                     <tr>
                         <td>@row.StudentNumber</td>
-                        <td><strong>@row.FullName</strong></td>
+                        <td>@row.FullName</td>
                         <td>@row.Email</td>
                         <td>@row.Program</td>
                         <td>@row.RequesterType</td>
                         <td>@row.NoShowCount</td>
-                        <td>
-                            <span class="qcu-badge @(row.IsRestricted ? "is-rejected" : "is-approved")">
-                                @row.RestrictionText
-                            </span>
-                        </td>
+                        <td>@row.RestrictionText</td>
                         <td>@row.ReservationCount</td>
-                        <td class="qcu-table__actions">
-                            <div class="qcu-btn-row">
-                                <a class="qcu-btn qcu-btn--sm" href="@Url.Action("Students", new { edit = row.StudentID, q = Model.Search, page = Model.Page })">Edit</a>
+                        <td class="qcu-actions-cell qcu-actions-narrow">
+                            <div class="qcu-actions qcu-actions-stack">
+                                <a class="btn btn-sm btn-outline-primary" href="@Url.Action("Students", new { edit = row.StudentID, q = qParam, page = pageParam })">Edit</a>
 
-                                <form method="post" action="@Url.Action("ResetStudentPassword", new { id = row.StudentID })"
-                                      onsubmit="return confirm('Reset the password of @row.StudentNumber to its temporary value?');">
+                                <form method="post" action="@Url.Action("ResetStudentPassword", new { id = row.StudentID })" class="d-inline">
                                     @Html.AntiForgeryToken()
-                                    <button type="submit" class="qcu-btn qcu-btn--sm">Reset Password</button>
+                                    <input type="hidden" name="q" value="@Model.Search" />
+                                    <input type="hidden" name="page" value="@Model.Page" />
+                                    <button type="submit" class="btn btn-sm btn-outline-warning"
+                                            onclick="return qcuConfirm(this, { tone: 'warning', title: 'Reset this password?', message: 'A new temporary password will be generated and shown on this page. The student uses it to sign in.', confirmText: 'Reset password' });">Reset Password</button>
                                 </form>
 
+                                @* Delete is only shown for an account with no reservations *@
                                 @if (row.CanDelete)
                                 {
-                                    <form method="post" action="@Url.Action("DeleteStudent", new { id = row.StudentID })"
-                                          onsubmit="return confirm('Delete this student account? The account is removed permanently. This cannot be undone.');">
+                                    <form method="post" action="@Url.Action("DeleteStudent", new { id = row.StudentID })" class="d-inline">
                                         @Html.AntiForgeryToken()
-                                        <button type="submit" class="qcu-btn qcu-btn--sm qcu-btn--danger">Delete</button>
+                                        <input type="hidden" name="q" value="@Model.Search" />
+                                        <input type="hidden" name="page" value="@Model.Page" />
+                                        <button type="submit" class="btn btn-sm btn-outline-danger"
+                                                onclick="return qcuConfirm(this, { tone: 'danger', title: 'Delete this student?', message: 'The account is removed permanently. This cannot be undone.', confirmText: 'Delete' });">Delete</button>
                                     </form>
-                                }
-                                else
-                                {
-                                    <button type="button" class="qcu-btn qcu-btn--sm" disabled="disabled"
-                                            title="This account still has @row.ReservationCount reservation(s).">
-                                        Delete
-                                    </button>
                                 }
                             </div>
                         </td>
@@ -145,13 +123,18 @@
                 }
             </tbody>
         </table>
-
-        <div class="qcu-panel__body">
-            @Html.Partial("_QCU-CRAM_Pager", pager)
-        </div>
     }
-</section>
+</div>
 
+@Html.Partial("_QCU-CRAM_Pager", pager)
+
+<p class="text-muted">
+    Students can sign themselves up on the Register page, or you can add an account here (a temporary password is created for you).
+    Use this page to correct details, reset a forgotten password, or remove an account.
+    An account that has reservations cannot be deleted. Restrictions are lifted on the Restrictions page.
+</p>
+
+@* ============ Add / Edit Student pop-up ============ *@
 @Html.Partial("~/Views/Admin/_QCU-CRAM_SetupModal.cshtml", new BSIT3D_GUADES_Project_MVC.QCUCRAM_ViewModels.QCUCRAM_SetupModalViewModel
 {
     Open = Model.ModalOpen,
@@ -159,77 +142,78 @@
     Action = Url.Action("SaveStudent"),
     Error = Model.ModalError,
     SubmitText = isNew ? "Add Student" : "Update Student",
-    CancelUrl = Url.Action("Students", new { q = Model.Search, page = Model.Page }),
+    SizeClass = "qcu-form-modal-lg",
+    Needs = "#RequesterType|#StudentNumber|#LastName|#FirstName|#Email|#Program",
+    CancelUrl = Url.Action("Students", new { q = qParam, page = pageParam }),
     Body = @<text>
         <input type="hidden" name="StudentID" value="@(isNew ? 0 : Model.Edit.StudentID)" />
+        <input type="hidden" name="q" value="@Model.Search" />
+        <input type="hidden" name="page" value="@Model.Page" />
 
-        <div class="qcu-form__row">
-            <label for="RequesterType">Requester Type</label>
-            <select id="RequesterType" name="RequesterType" class="form-select" required="required">
-                <option value="">-- Select type --</option>
-                @foreach (var t in Model.RequesterTypes)
-                {
-                    <option value="@t" @Html.Raw(string.Equals(t, isNew ? string.Empty : Model.Edit.RequesterType, StringComparison.OrdinalIgnoreCase) ? "selected=\"selected\"" : string.Empty)>@t</option>
-                }
-            </select>
-            <span class="qcu-hint">Please select a requester type.</span>
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label" for="RequesterType">Requester Type</label>
+                <select id="RequesterType" name="RequesterType" class="form-select">
+                    @if (isNew) { <option value="">-- Select type --</option> }
+                    @foreach (string t in typeChoices)
+                    {
+                        <option value="@t" selected="@(t == curType ? "selected" : null)">@t</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label id="lblNumberCaption" class="form-label" for="StudentNumber">ID / Student Number</label>
+                <input id="StudentNumber" name="StudentNumber" class="form-control" maxlength="20" autocomplete="off"
+                       data-qcu-idstrict="@(isNew ? "1" : "0")"
+                       data-qcu-idtype="RequesterType" data-qcu-idlabel="lblNumberCaption" data-qcu-idhint="hintStudentNumber"
+                       value="@(Model.Edit == null ? string.Empty : Model.Edit.StudentNumber)" />
+                <div class="form-text" id="hintStudentNumber"></div>
+            </div>
         </div>
 
-        <div class="qcu-form__row">
-            <label for="StudentNumber">ID / Student Number</label>
-            <input id="StudentNumber" name="StudentNumber" class="form-control" maxlength="20" required="required"
-                   data-qcu-idstrict="@(isNew ? "1" : "0")"
-                   value="@(isNew ? string.Empty : Model.Edit.StudentNumber)" />
-            <span class="qcu-hint">
-                Students use 23-0001. Faculty and visitors may use any 3&ndash;20 character ID.
-                Changing the ID does not change the password.
-            </span>
-        </div>
-
-        <div class="qcu-form__row qcu-form__row--split">
-            <div>
-                <label for="LastName">Last Name</label>
-                <input id="LastName" name="LastName" class="form-control" maxlength="60" required="required"
-                       value="@(isNew ? string.Empty : Model.Edit.LastName)" />
+        <div class="row">
+            <div class="col-md-5 mb-3">
+                <label class="form-label" for="LastName">Last Name</label>
+                <input id="LastName" name="LastName" class="form-control" maxlength="60"
+                       value="@(Model.Edit == null ? string.Empty : Model.Edit.LastName)" />
             </div>
-            <div>
-                <label for="FirstName">First Name</label>
-                <input id="FirstName" name="FirstName" class="form-control" maxlength="60" required="required"
-                       value="@(isNew ? string.Empty : Model.Edit.FirstName)" />
+            <div class="col-md-5 mb-3">
+                <label class="form-label" for="FirstName">First Name</label>
+                <input id="FirstName" name="FirstName" class="form-control" maxlength="60"
+                       value="@(Model.Edit == null ? string.Empty : Model.Edit.FirstName)" />
             </div>
-            <div class="qcu-form__row--narrow">
-                <label for="MI">M.I.</label>
-                <input id="MI" name="MI" class="form-control" maxlength="2" placeholder="optional"
+            <div class="col-md-2 mb-3">
+                <label class="form-label" for="MI">M.I.</label>
+                <input id="MI" name="MI" class="form-control" maxlength="2" placeholder="optional" autocomplete="off"
                        data-qcu-mi="1"
-                       value="@(isNew ? string.Empty : Model.Edit.MI)" />
+                       value="@(Model.Edit == null ? string.Empty : Model.Edit.MI)" />
             </div>
         </div>
 
-        <div class="qcu-form__row">
-            <label for="Email">Email</label>
-            <input id="Email" name="Email" type="email" class="form-control" maxlength="120" required="required"
-                   value="@(isNew ? string.Empty : Model.Edit.Email)" />
-            <span class="qcu-hint">Email is required and must be a valid address.</span>
+        <div class="mb-3">
+            <label class="form-label" for="Email">Email</label>
+            <input id="Email" name="Email" type="email" class="form-control" maxlength="120"
+                   value="@(Model.Edit == null ? string.Empty : Model.Edit.Email)" />
         </div>
 
-        <div class="qcu-form__row">
-            <label for="Program">Program</label>
-            <select id="Program" name="Program" class="form-select" required="required">
-                <option value="">-- Select program --</option>
-                @foreach (var p in programChoices)
+        <div class="mb-3">
+            <label class="form-label" for="Program">Program</label>
+            <select id="Program" name="Program" class="form-select">
+                @if (isNew) { <option value="">-- Select program --</option> }
+                @foreach (string p in programChoices)
                 {
-                    <option value="@p" @Html.Raw(string.Equals(p, isNew ? string.Empty : Model.Edit.Program, StringComparison.OrdinalIgnoreCase) ? "selected=\"selected\"" : string.Empty)>@p</option>
+                    <option value="@p" selected="@(p == curProgram ? "selected" : null)">@p</option>
                 }
             </select>
-            <span class="qcu-hint">Please select a program.</span>
         </div>
 
+        @* Only shown when ADDING a student. The temporary password is generated automatically. *@
         @if (isNew)
         {
-            <div class="qcu-alert qcu-alert--info">
-                Temporary password: created automatically as <code>student</code> + the last 4 digits
-                of the ID (for <code>23-0001</code> it is <code>student0001</code>). You will see it
-                after saving, so copy it before closing this page.
+            <div class="qcu-temp-note">
+                <strong>Temporary password:</strong> created automatically as <code>student</code> + the last 4 digits of the ID
+                (for <code>23-0001</code> it is <code>student0001</code>).
+                <div class="form-text mb-0">You will see it after saving. Give it to the student and ask them to change it after logging in.</div>
             </div>
         }
     </text>
