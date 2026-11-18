@@ -331,7 +331,11 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
 
             if (requester != null)
             {
-                vm.IsRestricted = requester.IsRestricted;
+                // IsRestrictedNow(): the flag only counts while the cooldown is still running.
+                bool expired = requester.RestrictionLiftDate.HasValue &&
+                               requester.RestrictionLiftDate.Value <= QCUCRAM_Clock.Now;
+
+                vm.IsRestricted = requester.IsRestricted && !expired;
                 vm.NoShowCount = requester.NoShowCount;
                 vm.RestrictionLiftDate = requester.RestrictionLiftDate;
             }
@@ -532,7 +536,10 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
                 MI = student.MI,
                 Email = student.Email,
                 Program = student.Program,
-                IsRestricted = student.IsRestricted,
+                // ShowStanding() hid a restriction whose cooldown had already passed.
+                IsRestricted = student.IsRestricted &&
+                               !(student.RestrictionLiftDate.HasValue &&
+                                 student.RestrictionLiftDate.Value <= QCUCRAM_Clock.Now),
                 NoShowCount = student.NoShowCount,
                 RestrictionLiftDate = student.RestrictionLiftDate,
                 NoShowThreshold = Math.Max(1, _content.GetSettingInt("NoShowThreshold", 3)),

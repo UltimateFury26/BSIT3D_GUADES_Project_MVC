@@ -35,13 +35,13 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_ViewModels
             get { return Items.Count == 0; }
         }
 
-        /// <summary>"You have 3 unread notifications out of 12 total."</summary>
+        /// <summary>"You have <b>3</b> unread notification(s) out of 12 total." (litSummary)</summary>
         public string SummaryLine
         {
             get
             {
-                return "You have " + UnreadCount + " unread notification" + (UnreadCount == 1 ? "" : "s") +
-                       " out of " + TotalCount + " total.";
+                return "You have <strong>" + UnreadCount + "</strong> unread notification(s) out of " +
+                       TotalCount + " total.";
             }
         }
     }

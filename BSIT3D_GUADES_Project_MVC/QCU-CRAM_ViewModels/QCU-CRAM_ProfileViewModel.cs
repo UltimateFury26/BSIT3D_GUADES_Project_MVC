@@ -86,7 +86,7 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_ViewModels
             get
             {
                 return RestrictionLiftDate.HasValue
-                    ? RestrictionLiftDate.Value.ToString("MMM d, yyyy h:mm tt")
+                    ? RestrictionLiftDate.Value.ToString("MMM d, yyyy h:mm tt", System.Globalization.CultureInfo.InvariantCulture)
                     : "not set";
             }
         }

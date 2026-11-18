@@ -15,7 +15,7 @@
                                     rather than in the top navigation)
        ===================================================================== */
 
-    ViewBag.Title = "My Profile";
+    ViewBag.Title = "Profile";
 
     var stats = Model.Stats ?? new BSIT3D_GUADES_Project_MVC.QCUCRAM_ViewModels.QCUCRAMReservationStats();
     var standingClass = Model.Standing == "restricted" ? "alert-danger"
@@ -30,37 +30,25 @@
 
 @Html.Partial("_QCU-CRAM_ValidationSummary")
 
-@* ---- Booking standing ---- *@
+@* ---- Booking standing (litStanding) ---- *@
 <div class="alert @standingClass">
     @if (Model.Standing == "restricted")
     {
-        <strong>Your account is restricted.</strong>
-        <text>
-            You cannot file new reservations
-            @if (Model.RestrictionLiftDate.HasValue)
-            {
-                <text>until @Model.RestrictionLiftLabel.</text>
-            }
-            else
-            {
-                <text>until a library assistant lifts the restriction.</text>
-            }
-            You have @Model.NoShowCount no-show @(Model.NoShowCount == 1 ? "strike" : "strikes").
-        </text>
+        <strong>You are restricted from booking until @Model.RestrictionLiftLabel.</strong>
+        <text>Strikes: @Model.NoShowCount of @Model.NoShowThreshold (forfeited reservations).</text>
     }
     else if (Model.Standing == "warning")
     {
-        <strong>Careful.</strong>
+        <strong>Strikes: @Model.NoShowCount of @Model.NoShowThreshold.</strong>
         <text>
-            You have @Model.NoShowCount no-show @(Model.NoShowCount == 1 ? "strike" : "strikes")
-            out of @Model.NoShowThreshold. @Model.StrikesLeft more and your account is restricted
-            for a week.
+            Each forfeited reservation (not checking in within the grace period) adds a strike.
+            Reaching @Model.NoShowThreshold temporarily restricts booking.
         </text>
     }
     else
     {
         <strong>Good standing.</strong>
-        <text>You have no no-show strikes. Keep showing up for your bookings.</text>
+        <text>No strikes, and you can book rooms.</text>
     }
 </div>
 
@@ -108,7 +96,7 @@
 
                     <div class="mb-3">
                         <label class="form-label" for="MI">Middle Initial (optional)</label>
-                        @Html.TextBoxFor(m => m.MI, new { @class = "form-control", maxlength = "2", style = "max-width:100px" })
+                        @Html.TextBoxFor(m => m.MI, new { @class = "form-control", maxlength = "5", style = "max-width:100px" })
                         @Html.ValidationMessageFor(m => m.MI, null, new { @class = "text-danger small" })
                     </div>
 
@@ -121,7 +109,7 @@
                     <div class="mb-3">
                         <label class="form-label" for="Program">Program</label>
                         <select id="Program" name="Program" class="form-select">
-                            <option value="">-- choose your program --</option>
+                            <option value="">-- Select program --</option>
                             @foreach (var program in Model.ProgramChoices)
                             {
                                 <option value="@program" selected="@(program == Model.Program ? "selected" : null)">@program</option>
@@ -147,25 +135,22 @@
             <div class="card-body">
                 @if (stats.Total == 0)
                 {
-                    <p class="text-muted mb-0">
-                        You have not submitted a reservation yet.
-                        <a href="@Url.Action("Reserve", "Student")">Reserve a room</a>.
-                    </p>
+                    <p class="text-muted mb-0">You have not made any reservations yet.</p>
                 }
                 else
                 {
                     <table class="table table-sm table-bordered align-middle mb-0">
                         <tbody>
                             <tr>
-                                <th scope="row">Total requests</th>
-                                <td class="text-end">@stats.Total</td>
+                                <th scope="row"><strong>Total reservations</strong></th>
+                                <td class="text-end"><strong>@stats.Total</strong></td>
                             </tr>
                             <tr>
                                 <th scope="row">Pending</th>
                                 <td class="text-end">@stats.Pending</td>
                             </tr>
                             <tr>
-                                <th scope="row">Approved</th>
+                                <th scope="row">Approved / Reassigned</th>
                                 <td class="text-end">@stats.Approved</td>
                             </tr>
                             <tr>
@@ -178,7 +163,7 @@
                             </tr>
                             <tr>
                                 <th scope="row">Forfeited (no-show)</th>
-                                <td class="text-end @(stats.Forfeited > 0 ? "text-danger fw-semibold" : null)">@stats.Forfeited</td>
+                                <td class="text-end">@stats.Forfeited</td>
                             </tr>
                             <tr>
                                 <th scope="row">Cancelled</th>
@@ -199,51 +184,21 @@
             <div class="list-group list-group-flush">
                 <a class="list-group-item list-group-item-action" href="@Url.Action("MyReservations", "Student")">My Reservations</a>
                 <a class="list-group-item list-group-item-action" href="@Url.Action("Notifications", "Student")">Notifications</a>
-                <a class="list-group-item list-group-item-action" href="@Url.Action("Index", "Availability")">Room Availability</a>
             </div>
         </div>
 
-        @* ---- Account security: Change Password lives here ---- *@
+        @* ---- Account security: Change Password lives here (not in the top nav) ---- *@
         <div class="card mt-4">
             <div class="card-header"><strong>Account security</strong></div>
-            <div class="card-body">
-                <div class="mb-3">
+            <div class="card-body d-flex flex-wrap align-items-center justify-content-between gap-3">
+                <div>
                     <div class="fw-semibold">Password</div>
                     <div class="text-muted small">Change it regularly and never share it with anyone.</div>
                 </div>
-
-                <form method="post" action="@Url.Action("ChangePassword", "Student")" class="row g-2"
-                      onsubmit="return confirm('Change your password now?');">
-                    @Html.AntiForgeryToken()
-
-                    <div class="col-md-4">
-                        <label class="form-label" for="currentPassword">Current password</label>
-                        <input type="password" id="currentPassword" name="currentPassword"
-                               class="form-control" autocomplete="current-password" required />
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label" for="newPassword">New password</label>
-                        <input type="password" id="newPassword" name="newPassword"
-                               class="form-control" autocomplete="new-password" minlength="8" required />
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label" for="confirmPassword">Confirm new password</label>
-                        <input type="password" id="confirmPassword" name="confirmPassword"
-                               class="form-control" autocomplete="new-password" minlength="8" required />
-                    </div>
-
-                    <div class="col-12">
-                        <div class="form-text">
-                            At least 8 characters, with an uppercase letter, a lowercase letter,
-                            a number and a symbol (for example ! @ # $ %).
-                        </div>
-                    </div>
-
-                    <div class="col-12 mt-3">
-                        <button type="submit" class="btn btn-outline-primary">Change Password</button>
-                        <span class="text-muted small ms-2">At least 8 characters.</span>
-                    </div>
-                </form>
+                <a class="btn btn-outline-primary" href="@Url.Action("ChangePassword", "Account")"
+                   onclick="return confirm('Change your password?\n\nYou will be taken to the Change Password page.');">
+                    Change Password
+                </a>
             </div>
         </div>
     </div>

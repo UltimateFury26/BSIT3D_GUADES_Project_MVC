@@ -110,7 +110,7 @@ namespace BSIT3D_GUADES_Project_MVC.Controllers.Student
 
             if (result.Success)
             {
-                Flash("Your reservation was submitted. It is waiting for the library assistant to approve it.");
+                // Step 18 redirected with ?created=ID; MyReservations shows the confirmation.
                 return RedirectToAction("MyReservations", new { created = result.ReservationId });
             }
 
@@ -230,7 +230,7 @@ namespace BSIT3D_GUADES_Project_MVC.Controllers.Student
                 return RedirectToAction("Logout", "Account");
             }
 
-            ViewBag.Title = "My Profile";
+            ViewBag.Title = "Profile";
             return View("~/Views/Student/QCU-CRAM_Profile.cshtml", model);
         }
 
@@ -248,7 +248,7 @@ namespace BSIT3D_GUADES_Project_MVC.Controllers.Student
             if (!ModelState.IsValid)
             {
                 Rehydrate(model);
-                ViewBag.Title = "My Profile";
+                ViewBag.Title = "Profile";
                 return View("~/Views/Student/QCU-CRAM_Profile.cshtml", model);
             }
 
@@ -263,11 +263,11 @@ namespace BSIT3D_GUADES_Project_MVC.Controllers.Student
             switch (code)
             {
                 case 0:
-                    Flash("Your profile was saved.");
+                    Flash("Your profile has been updated.");
                     return RedirectToAction("Profile");
 
                 case 1:
-                    ModelState.AddModelError("Email", "That e-mail address is already used by another account.");
+                    ModelState.AddModelError("Email", "That email address is already used by another account. Please use a different one.");
                     break;
 
                 case 2:
@@ -280,7 +280,7 @@ namespace BSIT3D_GUADES_Project_MVC.Controllers.Student
             }
 
             Rehydrate(model);
-            ViewBag.Title = "My Profile";
+            ViewBag.Title = "Profile";
             return View("~/Views/Student/QCU-CRAM_Profile.cshtml", model);
         }
 

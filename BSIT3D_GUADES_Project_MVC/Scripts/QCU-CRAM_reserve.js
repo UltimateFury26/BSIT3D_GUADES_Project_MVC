@@ -132,27 +132,7 @@
     }
 
     // ---------------------------------------------------------------
-    //  2. Purpose character counter
-    // ---------------------------------------------------------------
-
-    var purpose = document.getElementById('Purpose');
-    var counter = document.getElementById('qcuPurposeCount');
-
-    if (purpose && counter) {
-        var max = parseInt(purpose.getAttribute('maxlength'), 10) || 300;
-
-        var updateCount = function () {
-            var used = purpose.value.length;
-            counter.textContent = used + ' / ' + max;
-            counter.className = used > max - 20 ? 'text-danger' : 'text-muted';
-        };
-
-        purpose.addEventListener('input', updateCount);
-        updateCount();
-    }
-
-    // ---------------------------------------------------------------
-    //  3. Guard against a double submit
+    //  2. Guard against a double submit
     // ---------------------------------------------------------------
 
     var form = document.getElementById('qcuReserveForm');

@@ -20,12 +20,26 @@
 
     ViewBag.Title = "Reserve a Room";
 
+    // btnSubmit_Click() rendered "<strong>Please fix the following:</strong>" above the list.
+    ViewBag.QCUCRAM_ValidationTitle = "Please fix the following:";
+
     var bookingDayText = Model.BookingDay.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
     var memberRows = Model.Members != null && Model.Members.Count > 0
         ? Model.Members
         : new System.Collections.Generic.List<BSIT3D_GUADES_Project_MVC.QCUCRAM_Data.QCUCRAM_MemberInput>();
 
     var rowCount = memberRows.Count < Model.MinMembers ? Model.MinMembers : memberRows.Count;
+
+    // ShowRequester() rendered "Last, First MI".
+    var requesterName = Model.Requester == null
+        ? ""
+        : Model.Requester.LastName + ", " + Model.Requester.FirstName +
+          (string.IsNullOrWhiteSpace(Model.Requester.MI) ? "" : " " + Model.Requester.MI);
+
+    // ShowRestrictionBanner(): "until further notice" or "MMM d, yyyy h:mm tt".
+    var restrictionUntil = !Model.RestrictionLiftDate.HasValue
+        ? "further notice"
+        : Model.RestrictionLiftDate.Value.ToString("MMM d, yyyy h:mm tt", CultureInfo.InvariantCulture);
 }
 
 <div class="qcu-page-head">
@@ -35,30 +49,12 @@
 
 @Html.Partial("_QCU-CRAM_ValidationSummary")
 
-@* ---- Preview line when the availability grid linked here ---- *@
-@if (Model.HasPreselection)
-{
-    <div class="alert alert-info">
-        You picked <strong>@(Model.Rooms.Find(r => r.RoomID == Model.RoomId) != null ? Model.Rooms.Find(r => r.RoomID == Model.RoomId).RoomName : "a room")</strong>
-        at <strong>@Model.SlotLabel(Model.TimeSlotId)</strong> on
-        <strong>@Model.BookingDayLabel</strong>. Check the details below and submit.
-    </div>
-}
-
-@* ---- Restriction banner ---- *@
+@* ---- Restriction banner (pnlRestricted / litRestricted) ---- *@
 @if (Model.IsRestricted)
 {
     <div class="alert alert-danger">
-        <strong>Your account is restricted, so you cannot file a new reservation.</strong>
-        @if (Model.RestrictionLiftDate.HasValue)
-        {
-            <text>The restriction lifts on @Model.RestrictionLiftDate.Value.ToString("MMM d, yyyy h:mm tt").</text>
-        }
-        else
-        {
-            <text>A library assistant must lift the restriction.</text>
-        }
-        You currently have @Model.NoShowCount no-show @(Model.NoShowCount == 1 ? "strike" : "strikes").
+        <strong>You are restricted from booking until @restrictionUntil.</strong>
+        Reason: @Model.NoShowCount forfeited reservation@(Model.NoShowCount == 1 ? "" : "s").
     </div>
 }
 
@@ -70,33 +66,28 @@
     </div>
 </div>
 
-@if (Model.IsRestricted)
+@using (Html.BeginForm("Reserve", "Student", FormMethod.Post,
+                      new { @class = "qcu-steps", id = "qcuReserveForm", novalidate = "novalidate" }))
 {
-    <a href="@Url.Action("Dashboard", "Student")" class="btn btn-outline-secondary">Back to dashboard</a>
-}
-else
-{
-    using (Html.BeginForm("Reserve", "Student", FormMethod.Post,
-                          new { @class = "qcu-steps", id = "qcuReserveForm", novalidate = "novalidate" }))
-    {
-        @Html.AntiForgeryToken()
+    @Html.AntiForgeryToken()
+
+    @* pnlForm was shown even when restricted, with Enabled = false. *@
+    <fieldset @(Model.IsRestricted ? "disabled" : null) class="border-0 p-0 m-0">
 
         <h5 class="qcu-section">Requester</h5>
         <div class="qcu-soft">
-            <div class="row">
-                <div class="col-sm-6">
-                    <div class="text-muted small">Name</div>
-                    <div class="fw-bold">@Model.RequesterFullName</div>
-                </div>
-                <div class="col-sm-3">
-                    <div class="text-muted small">ID / Student Number</div>
-                    <div class="fw-bold">@(Model.Requester == null ? "" : Model.Requester.StudentNumber)</div>
-                </div>
-                <div class="col-sm-3">
-                    <div class="text-muted small">Program</div>
-                    <div class="fw-bold">@(Model.Requester == null ? "" : Model.Requester.Program)</div>
-                </div>
-            </div>
+            <dl class="row mb-0">
+                <dt class="col-sm-3">Name</dt>
+                <dd class="col-sm-9">@requesterName</dd>
+                <dt class="col-sm-3">ID / Student number</dt>
+                <dd class="col-sm-9">@(Model.Requester == null ? "" : Model.Requester.StudentNumber)</dd>
+                <dt class="col-sm-3">Email</dt>
+                <dd class="col-sm-9">@(Model.Requester == null ? "" : Model.Requester.Email)</dd>
+                <dt class="col-sm-3">Program</dt>
+                <dd class="col-sm-9">@(Model.Requester == null ? "" : Model.Requester.Program)</dd>
+                <dt class="col-sm-3">Requester type</dt>
+                <dd class="col-sm-9">@(Model.Requester == null ? "" : Model.Requester.RequesterType)</dd>
+            </dl>
         </div>
 
         <h5 class="qcu-section mt-4">Reservation details</h5>
@@ -104,18 +95,17 @@ else
             <div class="col-md-4">
                 <label class="form-label" for="Date">Date</label>
                 <input type="date" id="Date" name="Date" class="form-control"
-                       value="@bookingDayText" min="@bookingDayText" max="@bookingDayText" />
-                <div class="form-text">Bookings are only accepted for @Model.BookingDayLabel.</div>
+                       value="@bookingDayText" />
             </div>
 
             <div class="col-md-4">
                 <label class="form-label" for="RoomId">Room</label>
                 <select id="RoomId" name="RoomId" class="form-select">
-                    <option value="0">-- choose a room --</option>
+                    <option value="0">-- Select a room --</option>
                     @foreach (var room in Model.Rooms)
                     {
                         <option value="@room.RoomID" selected="@(room.RoomID == Model.RoomId ? "selected" : null)">
-                            @room.RoomName (@room.MinCapacity-@room.MaxCapacity people)
+                            @room.RoomName (@room.MinCapacity-@room.MaxCapacity persons)
                         </option>
                     }
                 </select>
@@ -124,7 +114,7 @@ else
             <div class="col-md-4">
                 <label class="form-label" for="TimeSlotId">Time slot</label>
                 <select id="TimeSlotId" name="TimeSlotId" class="form-select">
-                    <option value="0">-- choose a time slot --</option>
+                    <option value="0">-- Select a time slot --</option>
                     @foreach (var slot in Model.TimeSlots)
                     {
                         <option value="@slot.TimeSlotID" selected="@(slot.TimeSlotID == Model.TimeSlotId ? "selected" : null)">
@@ -143,11 +133,8 @@ else
         <div class="mb-3">
             <label class="form-label" for="Purpose">Purpose</label>
             <textarea id="Purpose" name="Purpose" rows="3" maxlength="@Model.MaxPurposeLength"
-                      class="form-control" data-qcu-counter="qcuPurposeCount">@Model.Purpose</textarea>
-            <div class="form-text">
-                Maximum @Model.MaxPurposeLength characters.
-                <span id="qcuPurposeCount" class="text-muted"></span>
-            </div>
+                      class="form-control">@Model.Purpose</textarea>
+            <div class="form-text">Maximum @Model.MaxPurposeLength characters.</div>
         </div>
 
         <h5 class="qcu-section mt-4">Group members</h5>
@@ -161,9 +148,6 @@ else
                     <option value="@n" selected="@(n == Model.NumberOfMembers ? "selected" : null)">@n</option>
                 }
             </select>
-            <div class="form-text">
-                Between @Model.MinMembers and @Model.MaxMembers people, and no more than the room holds.
-            </div>
         </div>
 
         <div class="table-responsive">
@@ -207,11 +191,10 @@ else
             </table>
         </div>
 
-        <div class="mt-3">
-            <button type="submit" class="btn btn-cta btn-lg">Submit Request</button>
-            <button type="reset" class="btn btn-outline-secondary btn-lg">Reset form</button>
-        </div>
-    }
+        <button type="submit" class="btn btn-cta btn-lg">Submit Request</button>
+        @* btnReset_Click did Response.Redirect back to a clean Reserve page. *@
+        <a href="@Url.Action("Reserve", "Student")" class="btn btn-outline-secondary btn-lg">Reset form</a>
+    </fieldset>
 }
 
 @section scripts {

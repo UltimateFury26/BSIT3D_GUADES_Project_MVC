@@ -25,7 +25,10 @@
     <p>Updates about your reservations</p>
 </div>
 
-<p class="qcu-soft">@Model.SummaryLine</p>
+@if (Model.TotalItems > 0)
+{
+    <p>@Html.Raw(Model.SummaryLine)</p>
+}
 
 <div class="qcu-toolbar row g-2 align-items-end mb-3">
 
@@ -36,7 +39,6 @@
                 <option value="false" selected="@(Model.UnreadOnly ? null : "selected")">All notifications</option>
                 <option value="true" selected="@(Model.UnreadOnly ? "selected" : null)">Unread only</option>
             </select>
-            <noscript><button type="submit" class="btn btn-outline-secondary">Apply</button></noscript>
         </form>
     </div>
 
@@ -45,32 +47,15 @@
         {
             @Html.AntiForgeryToken()
             <input type="hidden" name="unread" value="@Model.UnreadOnly.ToString().ToLowerInvariant()" />
-            <button type="submit" class="btn btn-outline-primary"
-                    @(Model.UnreadCount == 0 ? "disabled" : null)>
-                Mark all as read
-            </button>
+            <button type="submit" class="btn btn-outline-primary">Mark all as read</button>
         }
-    </div>
-
-    <div class="col-auto ms-md-auto text-muted small">
-        @Model.TotalItems notification@(Model.TotalItems == 1 ? "" : "s")
-        @(Model.UnreadOnly ? "unread" : "in total")
     </div>
 </div>
 
 <div class="table-responsive">
     @if (Model.IsEmpty)
     {
-        <div class="alert alert-info mb-0">
-            @if (Model.UnreadOnly)
-            {
-                <text>You have no unread notifications. <a href="@Url.Action("Notifications", "Student")">Show all</a>.</text>
-            }
-            else
-            {
-                <text>You have no notifications.</text>
-            }
-        </div>
+        <div class="alert alert-info mb-0">You have no notifications.</div>
     }
     else
     {
@@ -86,7 +71,7 @@
             <tbody>
                 @foreach (var item in Model.Items)
                 {
-                    <tr class="@(item.IsRead ? string.Empty : "fw-semibold")">
+                    <tr class="@(item.IsRead ? string.Empty : "fw-bold")">
                         <td>
                             @if (item.IsRead)
                             {

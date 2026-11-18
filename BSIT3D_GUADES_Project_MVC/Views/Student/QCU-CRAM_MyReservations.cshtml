@@ -29,9 +29,7 @@
 @if (Model.CreatedId.HasValue && Model.CreatedId.Value > 0)
 {
     <div class="alert alert-success">
-        <strong>Request #@Model.CreatedId.Value was submitted.</strong>
-        It is now <em>Pending</em> and will be reviewed by a library assistant.
-        You will get a notification when it is approved or declined.
+        Your request #@Model.CreatedId.Value was submitted. You'll be notified once it's reviewed.
     </div>
 }
 
@@ -44,11 +42,9 @@
                 <option value="" selected="@(string.IsNullOrWhiteSpace(Model.StatusFilter) ? "selected" : null)">All statuses</option>
                 @foreach (var status in Model.StatusChoices)
                 {
-                    var label = status == "CheckedIn" ? "Checked in" : status;
-                    <option value="@status" selected="@(status == Model.StatusFilter ? "selected" : null)">@label</option>
+                    <option value="@status" selected="@(status == Model.StatusFilter ? "selected" : null)">@status</option>
                 }
             </select>
-            <noscript><button type="submit" class="btn btn-outline-secondary">Apply</button></noscript>
         </form>
     </div>
 
@@ -56,32 +52,12 @@
         <a class="btn btn-primary" href="@Url.Action("Reserve", "Student")">New reservation</a>
     </div>
 
-    @if (Model.HasFilter)
-    {
-        <div class="col-auto">
-            <a class="btn btn-link" href="@Url.Action("MyReservations", "Student")">Clear filter</a>
-        </div>
-    }
-
-    <div class="col-auto ms-md-auto text-muted small">
-        @Model.TotalItems reservation@(Model.TotalItems == 1 ? "" : "s")
-        @(Model.HasFilter ? "with this status" : "in total")
-    </div>
 </div>
 
 <div class="table-responsive">
     @if (Model.IsEmpty)
     {
-        <div class="alert alert-info mb-0">
-            @if (Model.HasFilter)
-            {
-                <text>You have no reservations with the status <strong>@Model.StatusFilter</strong>.</text>
-            }
-            else
-            {
-                <text>You have no reservations to show.</text>
-            }
-        </div>
+        <div class="alert alert-info mb-0">You have no reservations to show.</div>
     }
     else
     {
@@ -128,14 +104,6 @@
                                     </button>
                                 }
                             }
-                            else
-                            {
-                                <span class="text-muted small"
-                                      title="Started at @row.SlotStart.ToString("MMM d, yyyy h:mm tt", CultureInfo.InvariantCulture)">
-                                    &mdash;
-                                </span>
-                            }
-
                             @* Reports/PrintBooking arrives in Phase 08. Url.Action returns null
                                until then, so the button simply does not render - no dead link. *@
                             string printUrl = Url.Action("PrintBooking", "Reports", new { id = row.ReservationId });
