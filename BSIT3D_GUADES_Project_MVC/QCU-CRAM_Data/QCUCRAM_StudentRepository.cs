@@ -157,8 +157,22 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Data
                 return new QCUCRAM_LoginResult { ResultCode = 1 };
             }
 
-            try { AutoLift(row.StudentID, QCUCRAM_Clock.Now); }
-            catch { /* never block a login because the auto-lift failed */ }
+            // Login.aspx.cs TryAutoLift(): clear an expired restriction and, only when a row was
+            // really lifted, write ONE notification (a second login lifts 0 rows -> no duplicate).
+            try
+            {
+                int lifted = AutoLift(row.StudentID, QCUCRAM_Clock.Now);
+
+                if (lifted > 0)
+                {
+                    _db.Execute(
+                        "INSERT INTO Notifications (StudentID, ReservationID, Message, CreatedAt) VALUES (@id, NULL, @m, @now)",
+                        QCUCRAM_Db.P("@id", row.StudentID),
+                        QCUCRAM_Db.P("@m", "Your booking restriction has ended. You can reserve rooms again."),
+                        QCUCRAM_Db.P("@now", QCUCRAM_Clock.Now));
+                }
+            }
+            catch { /* never block a login because the auto-lift failed; the sweep retries */ }
 
             return new QCUCRAM_LoginResult
             {
@@ -528,7 +542,7 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Data
                 QCUCRAM_Db.P("@now", now));
         }
 
-        /// <summary>Auto-lift for one student (called at login). Returns rows changed.</summary>
+        /// <summary>Auto-lift for one student (called at login, which then writes the notification). Returns rows changed.</summary>
         public int AutoLift(int studentId, DateTime now)
         {
             return _db.Execute(
