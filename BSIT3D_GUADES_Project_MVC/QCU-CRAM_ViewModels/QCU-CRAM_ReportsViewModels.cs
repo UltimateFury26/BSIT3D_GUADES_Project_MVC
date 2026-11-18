@@ -106,6 +106,9 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_ViewModels
         public QCUCRAMBarTable BookingsPerWeekday { get; set; }
         public QCUCRAMBarTable PeakTimeSlots { get; set; }
         public QCUCRAMBarTable RoomUtilization { get; set; }
+
+        /// <summary>R09: the room table has its own columns in the original (Booked / Available / Utilization % + bar).</summary>
+        public List<QCUCRAM_RoomUtilizationRow> RoomRows { get; set; }
         public QCUCRAMBarTable BookingsPerProgram { get; set; }
         public QCUCRAMBarTable AdminDecisions { get; set; }
 
@@ -136,6 +139,7 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_ViewModels
             BookingsPerWeekday = new QCUCRAMBarTable();
             PeakTimeSlots = new QCUCRAMBarTable();
             RoomUtilization = new QCUCRAMBarTable();
+            RoomRows = new List<QCUCRAM_RoomUtilizationRow>();
             BookingsPerProgram = new QCUCRAMBarTable();
             AdminDecisions = new QCUCRAMBarTable();
 

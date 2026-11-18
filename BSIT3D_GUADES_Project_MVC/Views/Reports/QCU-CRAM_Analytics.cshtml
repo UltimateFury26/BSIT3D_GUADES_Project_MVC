@@ -5,195 +5,232 @@
     /* =====================================================================
        QCU-CRAM  |  Views/Reports/QCU-CRAM_Analytics.cshtml
        ---------------------------------------------------------------------
-       Port of Guades_QCUCram_Analytics.aspx.
+       One-to-one port of Guades_QCUCram_Reports/Guades_QCUCram_Analytics.aspx.
 
-       Same pieces:
-         date-range form with three presets   (Last 30 days / This month / All time)
-         seven summary cards
-         seven bar charts
-         two plain tables (no-shows per student, top repeat bookers)
+       Same markup and classes as the .aspx, in the same order:
+         page head                  qcu-page-head  h2 + p
+         date filter                qcu-toolbar mb-3 > row g-3 (From, To, buttons)
+         "Showing reservations..."  p.qcu-range
+         summary cards              qcu-stat qcu-stat-<colour>  (4 + 3)
+         cards                      Status, Month, Weekday, Peak slots (col-lg-6),
+                                    Room utilization (col-12), Program, Decisions,
+                                    No-shows per student, Top repeat bookers (col-lg-6)
 
-       The Web Forms page wrote each bar width into the markup from a
-       Dictionary<string, BarInfo>; here the service has already done the
-       arithmetic, so this file only loops.
+       The five-bar-column tables come from _QCU-CRAM_BarTable.cshtml. Room
+       utilization has its own columns in the original (Booked / Available /
+       Utilization % + bar), so it is written out here.
+
+       Original range errors (lblMessage -> toast) are flashed by the controller.
        ===================================================================== */
 
     ViewBag.Title = "Analytics";
 
     CultureInfo inv = CultureInfo.InvariantCulture;
+    string dash = "\u2014";
 }
 
 <div class="qcu-page-head">
-    <div>
-        <h1 class="qcu-page-title">Analytics</h1>
-        <p class="qcu-page-sub">Booking trends, room utilization and no-show statistics</p>
-    </div>
+    <h2>Analytics</h2>
+    <p>Booking trends, room utilization and no-show statistics</p>
 </div>
 
-<form method="get" action="@Url.Action("Analytics", "Reports")" class="qcu-toolbar">
-    <label>
-        From date
-        <input type="date" name="from" class="qcu-input"
-               value="@Model.From.ToString("yyyy-MM-dd", inv)" />
-    </label>
-    <label>
-        To date
-        <input type="date" name="to" class="qcu-input"
-               value="@Model.To.ToString("yyyy-MM-dd", inv)" />
-    </label>
-    <button type="submit" class="qcu-btn qcu-btn--primary">Apply</button>
-
-    <span class="qcu-btn-row">
-        <a class="qcu-btn qcu-btn--ghost @(Model.Preset == "last30" ? "is-active" : "")"
-           href="@Url.Action("Analytics", "Reports", new { range = "last30" })">Last 30 days</a>
-        <a class="qcu-btn qcu-btn--ghost @(Model.Preset == "month" ? "is-active" : "")"
-           href="@Url.Action("Analytics", "Reports", new { range = "month" })">This month</a>
-        <a class="qcu-btn qcu-btn--ghost @(Model.Preset == "all" ? "is-active" : "")"
-           href="@Url.Action("Analytics", "Reports", new { range = "all" })">All time</a>
-    </span>
+@* ================= Date range filter ================= *@
+<form method="get" action="@Url.Action("Analytics", "Reports")" class="qcu-toolbar mb-3">
+    <div class="row g-3 align-items-end">
+        <div class="col-md-3">
+            <label for="txtFrom" class="form-label">From date</label>
+            <input type="date" id="txtFrom" name="from" class="form-control" data-live-btn="btnApply"
+                   value="@Model.From.ToString("yyyy-MM-dd", inv)" />
+        </div>
+        <div class="col-md-3">
+            <label for="txtTo" class="form-label">To date</label>
+            <input type="date" id="txtTo" name="to" class="form-control" data-live-btn="btnApply"
+                   value="@Model.To.ToString("yyyy-MM-dd", inv)" />
+        </div>
+        <div class="col-md-6">
+            <button type="submit" id="btnApply" class="btn btn-primary me-2">Apply</button>
+            <a id="btnLast30" class="btn btn-outline-secondary me-1" href="@Url.Action("Analytics", "Reports", new { range = "last30" })">Last 30 days</a>
+            <a id="btnThisMonth" class="btn btn-outline-secondary me-1" href="@Url.Action("Analytics", "Reports", new { range = "month" })">This month</a>
+            <a id="btnAllTime" class="btn btn-outline-secondary" href="@Url.Action("Analytics", "Reports", new { range = "all" })">All time</a>
+        </div>
+    </div>
 </form>
-
-@if (!string.IsNullOrEmpty(Model.ErrorMessage))
-{
-    <div class="qcu-alert qcu-alert--error">@Model.ErrorMessage</div>
-}
 
 @if (Model.HasResults)
 {
-    <p class="qcu-range">
-        Showing reservations dated <strong>@Model.RangeText</strong>
-    </p>
+    <p class="qcu-range">Showing reservations dated <strong>@Model.RangeText</strong></p>
 
-    <div class="qcu-card-grid">
-        <div class="qcu-stat">
-            <span class="qcu-stat__label">Total bookings</span>
-            <span class="qcu-stat__value">@Model.TotalBookings.ToString("N0", inv)</span>
+    @* ================= Summary cards ================= *@
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-lg-3">
+            <div class="card card-body qcu-stat qcu-stat-blue h-100">
+                <div class="stat-label">Total bookings</div>
+                <div class="stat-value">@Model.TotalBookings.ToString("N0", inv)</div>
+            </div>
         </div>
-
-        <div class="qcu-stat is-warn">
-            <span class="qcu-stat__label">No-show rate</span>
-            <span class="qcu-stat__value">
-                @(Model.NoShowPct.HasValue
-                      ? Model.NoShowPct.Value.ToString("0.0", inv) + "%"
-                      : "\u2014")
-            </span>
-            <span class="qcu-stat__hint">
-                @Model.Forfeited forfeited of @Model.ApprovedOrLater approved or later
-            </span>
+        <div class="col-6 col-lg-3">
+            <div class="card card-body qcu-stat qcu-stat-orange h-100">
+                <div class="stat-label">No-show rate</div>
+                <div class="stat-value">@(Model.NoShowPct.HasValue ? Model.NoShowPct.Value.ToString("0.0", inv) + "%" : dash)</div>
+                <div class="stat-note">@Model.Forfeited.ToString(inv) forfeited of @Model.ApprovedOrLater.ToString(inv) approved or later</div>
+            </div>
         </div>
-
-        <div class="qcu-stat is-bad">
-            <span class="qcu-stat__label">Currently restricted</span>
-            <span class="qcu-stat__value">@Model.CurrentlyRestricted.ToString("N0", inv)</span>
-            <span class="qcu-stat__hint">Right now (not affected by the date range)</span>
+        <div class="col-6 col-lg-3">
+            <div class="card card-body qcu-stat qcu-stat-red h-100">
+                <div class="stat-label">Currently restricted</div>
+                <div class="stat-value">@Model.CurrentlyRestricted.ToString("N0", inv)</div>
+                <div class="stat-note">Right now (not affected by the date range)</div>
+            </div>
         </div>
-
-        <div class="qcu-stat">
-            <span class="qcu-stat__label">Average group size</span>
-            <span class="qcu-stat__value">
-                @(Model.AverageGroupSize.HasValue
-                      ? Model.AverageGroupSize.Value.ToString("0.0", inv)
-                      : "\u2014")
-            </span>
+        <div class="col-6 col-lg-3">
+            <div class="card card-body qcu-stat qcu-stat-green h-100">
+                <div class="stat-label">Average group size</div>
+                <div class="stat-value">@(Model.AverageGroupSize.HasValue ? Model.AverageGroupSize.Value.ToString("0.0", inv) : dash)</div>
+            </div>
         </div>
-
-        <div class="qcu-stat">
-            <span class="qcu-stat__label">Most booked room</span>
-            <span class="qcu-stat__value qcu-stat__value--sm">@Model.MostRoom</span>
+        <div class="col-md-4">
+            <div class="card card-body qcu-stat qcu-stat-blue h-100">
+                <div class="stat-label">Most booked room</div>
+                <div class="stat-value">@Model.MostRoom</div>
+            </div>
         </div>
-
-        <div class="qcu-stat">
-            <span class="qcu-stat__label">Least booked room</span>
-            <span class="qcu-stat__value qcu-stat__value--sm">@Model.LeastRoom</span>
+        <div class="col-md-4">
+            <div class="card card-body qcu-stat qcu-stat-grey h-100">
+                <div class="stat-label">Least booked room</div>
+                <div class="stat-value">@Model.LeastRoom</div>
+            </div>
         </div>
-
-        <div class="qcu-stat is-warn">
-            <span class="qcu-stat__label">Peak time slot</span>
-            <span class="qcu-stat__value qcu-stat__value--sm">@Model.PeakSlot</span>
+        <div class="col-md-4">
+            <div class="card card-body qcu-stat qcu-stat-orange h-100">
+                <div class="stat-label">Peak time slot</div>
+                <div class="stat-value">@Model.PeakSlot</div>
+            </div>
         </div>
     </div>
 
-    <div class="qcu-report-grid">
-        @Html.Partial("_QCU-CRAM_BarTable", Model.StatusBreakdown)
-        @Html.Partial("_QCU-CRAM_BarTable", Model.BookingsPerMonth)
-        @Html.Partial("_QCU-CRAM_BarTable", Model.BookingsPerWeekday)
-        @Html.Partial("_QCU-CRAM_BarTable", Model.PeakTimeSlots)
-    </div>
+    @* ================= Tables with bars ================= *@
+    <div class="row">
+        <div class="col-lg-6">@Html.Partial("_QCU-CRAM_BarTable", Model.StatusBreakdown)</div>
+        <div class="col-lg-6">@Html.Partial("_QCU-CRAM_BarTable", Model.BookingsPerMonth)</div>
+        <div class="col-lg-6">@Html.Partial("_QCU-CRAM_BarTable", Model.BookingsPerWeekday)</div>
+        <div class="col-lg-6">@Html.Partial("_QCU-CRAM_BarTable", Model.PeakTimeSlots)</div>
 
-    <div class="qcu-report-grid qcu-report-grid--wide">
-        @Html.Partial("_QCU-CRAM_BarTable", Model.RoomUtilization)
-    </div>
+        <div class="col-12">
+            <div class="card mb-3">
+                <div class="card-header">Room utilization (confirmed bookings vs. available slots)</div>
+                <div class="card-body p-2">
+                    <div class="table-responsive">
+                        <table class="table table-sm table-bordered align-middle mb-0">
+                            @if (Model.RoomRows == null || Model.RoomRows.Count == 0)
+                            {
+                                <tbody><tr><td>No rooms found.</td></tr></tbody>
+                            }
+                            else
+                            {
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Room</th>
+                                        <th scope="col" style="width:80px;">Booked</th>
+                                        <th scope="col" style="width:90px;">Available</th>
+                                        <th scope="col" style="width:110px;">Utilization %</th>
+                                        <th scope="col"></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var room in Model.RoomRows)
+                                    {
+                                        double util = room.UtilizationPct.HasValue ? (double)room.UtilizationPct.Value : 0.0;
+                                        double pct = Math.Min(100.0, util);
+                                        <tr>
+                                            <td>@room.RoomName</td>
+                                            <td style="width:80px;">@room.Booked.ToString(inv)</td>
+                                            <td style="width:90px;">@room.Available.ToString(inv)</td>
+                                            <td style="width:110px;">@(room.UtilizationPct.HasValue ? room.UtilizationPct.Value.ToString("0.0", inv) + "%" : dash)</td>
+                                            <td><div class="bar-track"><div class="bar-fill" style="width:@(pct.ToString("0.#", inv))%"></div></div></td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            }
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-    <div class="qcu-report-grid">
-        @Html.Partial("_QCU-CRAM_BarTable", Model.BookingsPerProgram)
-        @Html.Partial("_QCU-CRAM_BarTable", Model.AdminDecisions)
-    </div>
+        <div class="col-lg-6">@Html.Partial("_QCU-CRAM_BarTable", Model.BookingsPerProgram)</div>
+        <div class="col-lg-6">@Html.Partial("_QCU-CRAM_BarTable", Model.AdminDecisions)</div>
 
-    <div class="qcu-report-grid">
-        <section class="qcu-panel">
-            <header class="qcu-panel__head">
-                <h2>No-shows per student</h2>
-            </header>
+        @* ================= Plain tables ================= *@
+        <div class="col-lg-6">
+            <div class="card mb-3">
+                <div class="card-header">No-shows per student</div>
+                <div class="card-body p-2">
+                    <div class="table-responsive">
+                        <table class="table table-sm table-bordered table-striped mb-0">
+                            @if (Model.NoShowsPerStudent == null || Model.NoShowsPerStudent.Count == 0)
+                            {
+                                <tbody><tr><td>No forfeited reservations in this range.</td></tr></tbody>
+                            }
+                            else
+                            {
+                                <thead>
+                                    <tr>
+                                        <th scope="col">ID / Student No.</th>
+                                        <th scope="col">Name</th>
+                                        <th scope="col" style="width:100px;">Forfeitures</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var row in Model.NoShowsPerStudent)
+                                    {
+                                        <tr>
+                                            <td>@row.StudentNumber</td>
+                                            <td>@row.Student</td>
+                                            <td style="width:100px;">@row.Forfeitures.ToString(inv)</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            }
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-            @if (Model.NoShowsPerStudent == null || Model.NoShowsPerStudent.Count == 0)
-            {
-                <p class="qcu-empty">No forfeited reservations in this range.</p>
-            }
-            else
-            {
-                <table class="qcu-table">
-                    <thead>
-                        <tr>
-                            <th>ID / Student No.</th>
-                            <th>Name</th>
-                            <th class="qcu-num">Forfeitures</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var row in Model.NoShowsPerStudent)
-                        {
-                            <tr>
-                                <td class="qcu-nowrap">@row.StudentNumber</td>
-                                <td>@row.Student</td>
-                                <td class="qcu-num">@row.Forfeitures.ToString("N0", inv)</td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            }
-        </section>
-
-        <section class="qcu-panel">
-            <header class="qcu-panel__head">
-                <h2>Top repeat bookers (top 10)</h2>
-            </header>
-
-            @if (Model.TopRepeatBookers == null || Model.TopRepeatBookers.Count == 0)
-            {
-                <p class="qcu-empty">No reservations in this range.</p>
-            }
-            else
-            {
-                <table class="qcu-table">
-                    <thead>
-                        <tr>
-                            <th>ID / Student No.</th>
-                            <th>Name</th>
-                            <th class="qcu-num">Bookings</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var row in Model.TopRepeatBookers)
-                        {
-                            <tr>
-                                <td class="qcu-nowrap">@row.StudentNumber</td>
-                                <td>@row.FullName</td>
-                                <td class="qcu-num">@row.Total.ToString("N0", inv)</td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            }
-        </section>
+        <div class="col-lg-6">
+            <div class="card mb-3">
+                <div class="card-header">Top repeat bookers (top 10)</div>
+                <div class="card-body p-2">
+                    <div class="table-responsive">
+                        <table class="table table-sm table-bordered table-striped mb-0">
+                            @if (Model.TopRepeatBookers == null || Model.TopRepeatBookers.Count == 0)
+                            {
+                                <tbody><tr><td>No reservations in this range.</td></tr></tbody>
+                            }
+                            else
+                            {
+                                <thead>
+                                    <tr>
+                                        <th scope="col">ID / Student No.</th>
+                                        <th scope="col">Name</th>
+                                        <th scope="col" style="width:100px;">Bookings</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var row in Model.TopRepeatBookers)
+                                    {
+                                        <tr>
+                                            <td>@row.StudentNumber</td>
+                                            <td>@row.FullName</td>
+                                            <td style="width:100px;">@row.Total.ToString(inv)</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            }
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 }

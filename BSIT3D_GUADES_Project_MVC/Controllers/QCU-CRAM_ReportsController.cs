@@ -75,7 +75,10 @@ namespace BSIT3D_GUADES_Project_MVC.Controllers
                 invalid.To = end;
                 invalid.Preset = preset;
                 invalid.HasResults = false;
-                invalid.ErrorMessage = error;
+
+                // R09: Analytics.aspx.cs ShowError -> ShowMessage(lblMessage, text, true) is an error toast,
+                // and pnlResults.Visible = false. The view is rendered in this request, so flash it here.
+                FlashError(error);
 
                 return View("QCU-CRAM_Analytics", invalid);
             }
@@ -94,7 +97,7 @@ namespace BSIT3D_GUADES_Project_MVC.Controllers
                 failed.To = end;
                 failed.Preset = preset;
                 failed.HasResults = false;
-                failed.ErrorMessage = LoadFailedMessage;
+                FlashError(LoadFailedMessage);
 
                 return View("QCU-CRAM_Analytics", failed);
             }

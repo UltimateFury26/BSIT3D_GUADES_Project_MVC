@@ -130,29 +130,9 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
                              + " (" + least.Booked.ToString(CultureInfo.InvariantCulture) + ")";
             }
 
-            vm.RoomUtilization = new QCUCRAMBarTable();
-            vm.RoomUtilization.Title = "Room utilization (confirmed bookings vs. available slots)";
-            vm.RoomUtilization.EmptyText = "No rooms found.";
-            vm.RoomUtilization.LabelHeader = "Room";
-            vm.RoomUtilization.ValueHeader = "Booked";
-            vm.RoomUtilization.BarHeader = "Utilization";
-            vm.RoomUtilization.ShowNote = true;
-            foreach (QCUCRAM_RoomUtilizationRow row in rooms)
-            {
-                double pct = row.UtilizationPct.HasValue ? (double)row.UtilizationPct.Value : 0.0;
-                if (pct < 0.0) { pct = 0.0; }
-                if (pct > 100.0) { pct = 100.0; }
-
-                vm.RoomUtilization.Rows.Add(new QCUCRAMBarRow
-                {
-                    Label = row.RoomName,
-                    Total = row.Booked,
-                    Pct = pct,
-                    Note = row.Booked.ToString("N0", CultureInfo.InvariantCulture)
-                         + " / " + row.Available.ToString("N0", CultureInfo.InvariantCulture)
-                         + " slots (" + pct.ToString("0.0", CultureInfo.InvariantCulture) + "%)"
-                });
-            }
+            // R09: gvRoom shows Room | Booked | Available | Utilization % | bar (bar = UtilizationPct, 100 = full).
+            // The view draws it straight from these rows, exactly like BindBars(gvRoom, rooms, "UtilizationPct", 100).
+            vm.RoomRows = rooms;
 
             // ---- peak slot card: the first row that actually has bookings ----
             List<QCUCRAM_SlotTotal> slots = _reports.PeakTimeSlots(from, to);
@@ -167,14 +147,15 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
             vm.StatusBreakdown = Bars("Status breakdown", "Status",
                 _reports.StatusBreakdown(from, to).Select(r => Row(r.Status, r.Total)));
 
+            // R09: bar-column captions from Analytics.aspx - Status/Program/Decisions "Share", Month/Weekday "Trend", slots "Demand".
             vm.BookingsPerMonth = Bars("Bookings per month", "Month",
-                _reports.BookingsPerMonth(from, to).Select(r => Row(r.Month, r.Total)));
+                _reports.BookingsPerMonth(from, to).Select(r => Row(r.Month, r.Total)), barHeader: "Trend");
 
             vm.BookingsPerWeekday = Bars("Bookings per weekday", "Day",
-                _reports.BookingsPerWeekday(from, to).Select(r => Row(r.Day, r.Total)));
+                _reports.BookingsPerWeekday(from, to).Select(r => Row(r.Day, r.Total)), barHeader: "Trend");
 
             vm.PeakTimeSlots = Bars("Peak time slots (booked or forfeited)", "Time slot",
-                slots.Select(r => Row(r.Label, r.Total)), "No time slots found.");
+                slots.Select(r => Row(r.Label, r.Total)), "No time slots found.", "Demand");
 
             vm.BookingsPerProgram = Bars("Bookings per program", "Program",
                 _reports.BookingsPerProgram(from, to).Select(r => Row(r.Program, r.Total)));
@@ -199,7 +180,7 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
         {
             return new QCUCRAMBarRow
             {
-                Label = string.IsNullOrEmpty(label) ? QCUCRAM_ReportDefaults.Dash : label,
+                Label = label,   // R09: a BoundField shows a null value as empty text, not a dash
                 Total = total,
                 Pct = 0.0
             };
@@ -213,14 +194,15 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
         /// doing it once here means the view has no arithmetic in it at all.
         /// </summary>
         private static QCUCRAMBarTable Bars(string title, string labelHeader, IEnumerable<QCUCRAMBarRow> rows,
-                                            string emptyText = "No reservations in this range.")
+                                            string emptyText = "No reservations in this range.",
+                                            string barHeader = "Share")
         {
             QCUCRAMBarTable table = new QCUCRAMBarTable();
             table.Title = title;
             table.EmptyText = emptyText;
             table.LabelHeader = labelHeader;
             table.ValueHeader = "Total";
-            table.BarHeader = "Share";
+            table.BarHeader = barHeader;
 
             List<QCUCRAMBarRow> list = rows.ToList();
             int max = 0;

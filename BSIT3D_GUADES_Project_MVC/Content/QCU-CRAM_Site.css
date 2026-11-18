@@ -3490,3 +3490,66 @@ input[type="date"][readonly] {
 .qcu-badge.is-forfeited  { background: #dc3545; color: #fff; }
 .qcu-badge.is-warn       { background: #ffc107; color: #000; }
 .qcu-badge.is-bad        { background: #dc3545; color: #fff; }
+
+/* =====================================================================
+   R09 - Analytics page: restore the Web Forms look
+   ---------------------------------------------------------------------
+   Analytics.aspx uses  qcu-page-head (h2 + p), qcu-toolbar > .row,
+   qcu-range, and Bootstrap "card card-body qcu-stat qcu-stat-<colour>"
+   tiles. Later "kit" rules in this file (the qcu-page-head flex row, the
+   qcu-toolbar flex bar, the two .qcu-stat blocks and the .qcu-range block)
+   change how those original classes look. The rules below put the original
+   values back. Original rules copied from Site.css (qcu-stat, qcu-range).
+   Nothing above is deleted - the now-unused kit rules are R13's job.
+   ===================================================================== */
+
+/* source-style heading (h2 + p, no wrapper div) stacks instead of sitting side by side */
+.qcu-page-head:not(:has(> div)) {
+    display: block;
+}
+
+/* source-style filter panel (a Bootstrap .row inside the toolbar) is a normal block */
+.qcu-toolbar:has(> .row) {
+    display: block;
+}
+
+.qcu-range {
+    color: #5b6b7b;
+    margin: 0 0 1rem;
+    font-size: 1rem;
+}
+
+    .qcu-range strong {
+        color: var(--qcu-blue-dark);
+    }
+
+.qcu-stat {
+    border-left: 5px solid var(--qcu-blue);
+    gap: 0;
+    transition: transform .15s ease, box-shadow .15s ease;
+}
+
+    .qcu-stat:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(0,40,90,.14);
+    }
+
+.qcu-stat-blue {
+    border-left-color: var(--qcu-blue);
+}
+
+.qcu-stat-orange {
+    border-left-color: var(--qcu-orange);
+}
+
+.qcu-stat-red {
+    border-left-color: #c0392b;
+}
+
+.qcu-stat-green {
+    border-left-color: #198754;
+}
+
+.qcu-stat-grey {
+    border-left-color: #8a97a5;
+}

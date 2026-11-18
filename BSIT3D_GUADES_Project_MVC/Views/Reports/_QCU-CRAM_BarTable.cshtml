@@ -5,65 +5,52 @@
     /* =====================================================================
        QCU-CRAM  |  Views/Reports/_QCU-CRAM_BarTable.cshtml
        ---------------------------------------------------------------------
-       One horizontal bar chart. The Analytics page shows seven of these, so
-       the Web Forms page's seven near-identical GridViews collapse into this
-       single partial.
+       One bar-table card from Guades_QCUCram_Analytics.aspx: the GridView
+       (label | Total 70px | bar) inside  card > card-header + card-body p-2 >
+       table-responsive. The caller supplies the col-lg-6 wrapper.
 
-       Usage:
-           @Html.Partial("_QCU-CRAM_BarTable", Model.StatusBreakdown)
+       The bar markup is what gvBar_RowDataBound wrote:
+           <div class="bar-track"><div class="bar-fill" style="width:N%"></div></div>
 
-       The width is already a 0-100 double from the service. ToString with
-       InvariantCulture is mandatory: on a machine whose culture uses a comma
-       decimal separator, style="width:42,9%" is silently ignored by the
-       browser and every bar renders empty.
+       InvariantCulture is mandatory: a comma decimal separator makes
+       style="width:42,9%" invalid and every bar renders empty.
+
+       An empty list shows the GridView's EmptyDataText in a one-cell table.
        ===================================================================== */
 
     CultureInfo inv = CultureInfo.InvariantCulture;
 }
 
-<section class="qcu-panel">
-    <header class="qcu-panel__head">
-        <h2>@Model.Title</h2>
-    </header>
-
-    @if (Model.Rows == null || Model.Rows.Count == 0)
-    {
-        <p class="qcu-empty">@Model.EmptyText</p>
-    }
-    else
-    {
-        <table class="qcu-table qcu-table--bars">
-            <thead>
-                <tr>
-                    <th>@Model.LabelHeader</th>
-                    <th class="qcu-num">@Model.ValueHeader</th>
-                    @if (Model.ShowNote)
-                    {
-                        <th class="qcu-num">Slots</th>
-                    }
-                    <th class="qcu-bar-col">@Model.BarHeader</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var row in Model.Rows)
+<div class="card mb-3">
+    <div class="card-header">@Model.Title</div>
+    <div class="card-body p-2">
+        <div class="table-responsive">
+            <table class="table table-sm table-bordered align-middle mb-0">
+                @if (Model.Rows == null || Model.Rows.Count == 0)
                 {
-                    <tr>
-                        <td>@row.Label</td>
-                        <td class="qcu-num">@row.Total.ToString("N0", inv)</td>
-                        @if (Model.ShowNote)
-                        {
-                            <td class="qcu-num qcu-note">@row.Note</td>
-                        }
-                        <td>
-                            <div class="qcu-bar" role="img"
-                                 aria-label="@row.Pct.ToString("0.#", inv) percent">
-                                <span class="qcu-bar__fill"
-                                      style="width:@row.Pct.ToString("0.#", inv)%"></span>
-                            </div>
-                        </td>
-                    </tr>
+                    <tbody><tr><td>@Model.EmptyText</td></tr></tbody>
                 }
-            </tbody>
-        </table>
-    }
-</section>
+                else
+                {
+                    <thead>
+                        <tr>
+                            <th scope="col">@Model.LabelHeader</th>
+                            <th scope="col" style="width:70px;">@Model.ValueHeader</th>
+                            <th scope="col">@Model.BarHeader</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var row in Model.Rows)
+                        {
+                            <tr>
+                                <td>@row.Label</td>
+                                <td style="width:70px;">@row.Total.ToString(inv)</td>
+                                <td><div class="bar-track"><div class="bar-fill" style="width:@(row.Pct.ToString("0.#", inv))%"></div></div></td>
+                            </tr>
+                        }
+                    </tbody>
+                }
+            </table>
+        </div>
+    </div>
+</div>
