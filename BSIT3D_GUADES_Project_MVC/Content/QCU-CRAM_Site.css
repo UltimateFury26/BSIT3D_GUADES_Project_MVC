@@ -10,7 +10,7 @@
    come AFTER this block, so they win - the header and footer keep the
    blue/orange QCU look. This block only supplies the names that the
    ported stylesheet does not have yet: .qcu-card, .qcu-badge--*,
-   .qcu-devclock, .qcu-app, .qcu-rules-list.
+   .qcu-app, .qcu-rules-list.
    ===================================================================== */
 :root {
     --qcu-maroon: #7a1f2b;
@@ -56,13 +56,8 @@
 .qcu-badge--completed  { background: #eef2f6; color: #334155; }
 .qcu-badge--forfeited  { background: #fdeceb; color: var(--qcu-danger); }
 
-.qcu-devclock {
-    background: #fff8e1;
-    border-bottom: 1px solid #f0e0a8;
-    color: #7a5b00;
-    font-size: .8125rem;
-    padding: .35rem 0;
-}
+/* Phase 06: the .qcu-devclock cream rule was removed. Site.Master shows the dev-clock banner
+   as a plain Bootstrap alert-danger (red); the cream override changed its colour. */
 
 /* ===== end QCU-CRAM design tokens ===== */
 
@@ -106,16 +101,11 @@ body {
     min-height: 100%;
 }
 
-form {
-    display: flex;
-    flex-direction: column;
-    min-height: 100vh;
-}
-
-    form > .body-content {
-        width: 100%;
-        flex: 0 0 auto;
-    }
+/* Phase 06: the Web Forms rule  form { display:flex; min-height:100vh }  made the single
+   page-wide <form runat="server"> the full-height column that pins the footer. Razor pages
+   have MANY ordinary <form>s (login, filters, row actions), so the same rule would stretch
+   every one of them to the window height. The page-level column is .qcu-app-shell (see
+   "layout bridge" near the end of this file). */
 
 /* ---------- Header (white strip with logo + name) ---------- */
 .qcu-header {
@@ -1671,7 +1661,7 @@ a:focus-visible,
     }
 
     .qcu-header, .qcu-nav, .qcu-site-footer, .qcu-footer, .qcu-footer-bar,
-    .no-print, hr, form > .alert {
+    .no-print, hr, .qcu-app-shell > .alert {
         display: none !important;
     }
 
@@ -2804,18 +2794,10 @@ html.qcu-refreshing {
         flex: 0 0 auto;
     }
 
-/* The Razor layout renders the dev-clock banner above the header; keep it flush. */
+/* The dev-clock banner sits between the nav bar and the page content (as in Site.Master); keep it flush. */
 .qcu-app-shell > .alert {
     margin-bottom: 0;
     border-radius: 0;
-}
-
-/* Toast partial: the ported stylesheet positions .qcu-toast for the old JS pop-out;
-   the server-rendered alert just needs to sit above the page card. */
-.body-content > .qcu-toast,
-main > .qcu-toast {
-    max-width: 1180px;
-    margin: 24px auto -8px;
 }
 
 /* Validation summary rendered by _QCU-CRAM_ValidationSummary */
