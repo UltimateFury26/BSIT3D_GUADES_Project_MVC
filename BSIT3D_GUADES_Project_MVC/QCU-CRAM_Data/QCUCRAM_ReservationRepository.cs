@@ -317,7 +317,10 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Data
 
             // ---- Rule 1: requester exists and is not restricted ----
             QCUCRAM_Student student = _db.QueryFirstOrDefault<QCUCRAM_Student>(
-                @"SELECT StudentID, IsRestricted, RestrictionLiftDate FROM Students WHERE StudentID = @id",
+                @"SELECT StudentID, StudentNumber, LastName, FirstName, MI, Email, Program,
+                         RequesterType, PasswordHash, NoShowCount, IsRestricted,
+                         RestrictionLiftDate, CreatedAt
+                    FROM Students WHERE StudentID = @id",
                 QCUCRAM_Db.P("@id", req.StudentId));
 
             if (student == null)

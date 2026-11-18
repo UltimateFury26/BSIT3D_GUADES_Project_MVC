@@ -129,9 +129,10 @@ namespace BSIT3D_GUADES_Project_MVC.Controllers.Student
             {
                 result = _service.Create(request);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 // The transaction has already rolled back; nothing was saved.
+                QCUCRAMErrorLog.Write(ex, "student-reserve", CurrentUserId.ToString());
                 FlashError("Something went wrong while saving your request. Please try again.");
                 Rehydrate(model);
                 ViewBag.Title = "Reserve a Room";

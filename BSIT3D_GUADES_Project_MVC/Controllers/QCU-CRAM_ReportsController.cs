@@ -240,16 +240,30 @@ namespace BSIT3D_GUADES_Project_MVC.Controllers
         public ActionResult PrintBooking(string id)
         {
             int reservationId;
-            // Phase 17: PrintBooking.aspx.cs NotFound() - digits only; a bad id shows the sheet
-            // with "That reservation could not be found." and the Back button, not a 404.
-            if (!int.TryParse(id, NumberStyles.None, CultureInfo.InvariantCulture, out reservationId)
-                || reservationId <= 0)
+            if (!int.TryParse(id, NumberStyles.None, CultureInfo.InvariantCulture, out reservationId))
             {
-                return View("QCU-CRAM_PrintBooking", _reports.PrintBooking(0, IsAdmin, CurrentUserId));
+                reservationId = 0;
             }
 
-            QCUCRAMPrintBookingViewModel model =
-                _reports.PrintBooking(reservationId, IsAdmin, CurrentUserId);
+            // PrintBooking.aspx.cs: a bad or foreign id keeps the Back button and shows a toast.
+            QCUCRAMPrintBookingViewModel model;
+            try
+            {
+                model = _reports.PrintBooking(reservationId, IsAdmin, CurrentUserId);
+            }
+            catch (Exception ex)
+            {
+                QCUCRAMErrorLog.Write(ex, "reports-print-booking", id);
+                model = new QCUCRAMPrintBookingViewModel
+                {
+                    IsAdmin = IsAdmin,
+                    BackUrl = IsAdmin ? "/admin/records" : "/student/my-reservations"
+                };
+                FlashError("Sorry, the report could not be loaded. Please try again.");
+                return View("QCU-CRAM_PrintBooking", model);
+            }
+
+            if (!model.Found) { FlashError(model.ErrorMessage); }
 
             return View("QCU-CRAM_PrintBooking", model);
         }

@@ -74,8 +74,8 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_ViewModels
 
         public QCUCRAMSlotEditModel()
         {
-            Start = "08:00";
-            End = "09:00";
+            Start = string.Empty;
+            End = string.Empty;
             IsActive = true;
         }
     }

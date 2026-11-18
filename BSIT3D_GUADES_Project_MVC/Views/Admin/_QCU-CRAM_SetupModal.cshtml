@@ -52,7 +52,7 @@
         @Html.AntiForgeryToken()
 
         <div class="qcu-form-head">
-            <h2 class="qcu-form-title" id="qcuSetupModalTitle">@Model.Title</h2>
+            <div class="qcu-form-title" id="qcuSetupModalTitle">@Model.Title</div>
             <a class="qcu-form-close" href="@cancel" data-qcu-close aria-label="Close">&times;</a>
         </div>
 
@@ -60,7 +60,7 @@
 
             @if (!string.IsNullOrWhiteSpace(Model.Error))
             {
-                <div class="qcu-alert qcu-alert--error" role="alert">@Model.Error</div>
+                <div class="alert alert-danger d-block">@Model.Error</div>
             }
 
             @if (Model.Body != null)
@@ -71,8 +71,8 @@
         </div>
 
         <div class="qcu-form-foot">
-            <a class="qcu-btn qcu-btn--ghost" href="@cancel" data-qcu-close>Cancel</a>
-            <button type="submit" class="qcu-btn qcu-btn--primary">@submit</button>
+            <a class="btn btn-outline-secondary" href="@cancel" data-qcu-close>Cancel</a>
+            <button type="submit" class="btn btn-primary">@submit</button>
         </div>
     </form>
 </div>

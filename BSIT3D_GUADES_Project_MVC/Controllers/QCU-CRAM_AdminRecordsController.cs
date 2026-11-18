@@ -55,7 +55,7 @@ namespace BSIT3D_GUADES_Project_MVC.Controllers
                 model.FilterError = error;
                 model.Rows.Clear();
                 model.TotalRows = 0;
-                return View("QCU-CRAM_Records", model);
+                return View("~/Views/Admin/QCU-CRAM_Records.cshtml", model);
             }
 
             if (detail.HasValue && detail.Value > 0)
@@ -63,7 +63,7 @@ namespace BSIT3D_GUADES_Project_MVC.Controllers
                 model.Detail = _service.Detail(detail.Value);
             }
 
-            return View("QCU-CRAM_Records", model);
+            return View("~/Views/Admin/QCU-CRAM_Records.cshtml", model);
         }
 
         /// <summary>
@@ -81,7 +81,7 @@ namespace BSIT3D_GUADES_Project_MVC.Controllers
                 return HttpNotFound("That reservation no longer exists.");
             }
 
-            return PartialView("_QCU-CRAM_ReservationDetail", model);
+            return PartialView("~/Views/Admin/_QCU-CRAM_ReservationDetail.cshtml", model);
         }
 
         [HttpGet]

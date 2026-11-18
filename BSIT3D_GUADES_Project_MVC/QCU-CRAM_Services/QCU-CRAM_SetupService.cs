@@ -166,8 +166,19 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
 
                 content.SetRoomActive(roomId, !room.IsActive);
 
-                return QCUCRAMOperationResult.Success(
-                    room.RoomName + (room.IsActive ? " disabled." : " enabled."));
+                // Rooms.aspx.cs ToggleRoom wording
+                if (!room.IsActive) { return QCUCRAMOperationResult.Success("Room enabled."); }
+
+                int upcoming = db.Count(
+                    @"SELECT COUNT(*) AS Total FROM Reservations
+                       WHERE RoomID = @id AND ReservationDate >= @today
+                         AND Status NOT IN ('Declined','Cancelled','Forfeited')",
+                    QCUCRAM_Db.P("@id", roomId),
+                    QCUCRAM_Db.P("@today", System.Data.SqlDbType.Date, QCUCRAM_Clock.Today));
+
+                string msg = "Room disabled. It won't be offered for new bookings.";
+                if (upcoming > 0) { msg += " " + upcoming + " upcoming reservation(s) still use it."; }
+                return QCUCRAMOperationResult.Success(msg);
             }
         }
 
@@ -177,17 +188,18 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
             {
                 QCUCRAM_ContentRepository content = new QCUCRAM_ContentRepository(db);
 
-                QCUCRAM_Room room = content.GetRoom(roomId);
-                if (room == null)
-                {
-                    return QCUCRAMOperationResult.Failure("That room no longer exists.");
-                }
-
-                int code = content.DeleteRoom(roomId);
-                if (code == -1)
+                int resCount = db.Count("SELECT COUNT(*) AS Total FROM Reservations WHERE RoomID = @id",
+                    QCUCRAM_Db.P("@id", roomId));
+                if (resCount > 0)
                 {
                     return QCUCRAMOperationResult.Failure(
                         "This room has reservations and cannot be deleted. Disable it instead.");
+                }
+
+                if (content.DeleteRoom(roomId) == -1)
+                {
+                    return QCUCRAMOperationResult.Failure(
+                        "This room is still in use and cannot be deleted. Disable it instead.");
                 }
 
                 return QCUCRAMOperationResult.Success("Room deleted.");
@@ -261,72 +273,70 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
             TimeSpan start;
             TimeSpan end;
 
-            if (!TimeSpan.TryParseExact((model.Start ?? "").Trim(), @"hh\:mm",
-                                        CultureInfo.InvariantCulture, out start) &&
-                !TimeSpan.TryParse((model.Start ?? "").Trim(), out start))
+            // TimeSlots.aspx.cs TryParseTime + the two server-side checks
+            if (!TryParseTime(model.Start, out start) || !TryParseTime(model.End, out end))
             {
-                return Retry("The start time is not a valid time.");
+                return Retry("Enter valid start and end times (for example 08:00 and 09:00).");
             }
-
-            if (!TimeSpan.TryParseExact((model.End ?? "").Trim(), @"hh\:mm",
-                                        CultureInfo.InvariantCulture, out end) &&
-                !TimeSpan.TryParse((model.End ?? "").Trim(), out end))
-            {
-                return Retry("The end time is not a valid time.");
-            }
-
             if (end <= start)
             {
-                return Retry("The end time must be after the start time.");
+                return Retry("End time must be later than start time.");
             }
 
             using (QCUCRAM_Db db = new QCUCRAM_Db())
             {
                 QCUCRAM_ContentRepository content = new QCUCRAM_ContentRepository(db);
+                bool isEdit = model.TimeSlotID > 0;
+                int idForChecks = isEdit ? model.TimeSlotID : 0;
 
-                if (model.TimeSlotID > 0)
+                // 1) Duplicate start time (ignoring the slot being edited)
+                int dup = db.Count(
+                    "SELECT COUNT(*) AS Total FROM TimeSlots WHERE StartTime = @s AND TimeSlotID <> @id",
+                    QCUCRAM_Db.P("@s", start), QCUCRAM_Db.P("@id", idForChecks));
+                if (dup > 0)
                 {
-                    // A slot that already holds a reservation has frozen times.
-                    int used;
-                    ReservationCountsBy(db, "TimeSlotID")
-                        .TryGetValue(model.TimeSlotID, out used);
+                    return Retry("A time slot starting at " + FormatTime(start) + " already exists.");
+                }
 
-                    QCUCRAM_TimeSlot existing = content.GetTimeSlot(model.TimeSlotID);
-                    if (existing == null)
+                // 2) Overlap with any other slot (touching edges are allowed)
+                QCUCRAM_TimeSlot overlap = db.QueryFirstOrDefault<QCUCRAM_TimeSlot>(
+                    @"SELECT TOP 1 TimeSlotID, StartTime, EndTime, IsActive FROM TimeSlots
+                       WHERE StartTime < @e AND EndTime > @s AND TimeSlotID <> @id
+                       ORDER BY StartTime",
+                    QCUCRAM_Db.P("@s", start), QCUCRAM_Db.P("@e", end), QCUCRAM_Db.P("@id", idForChecks));
+                if (overlap != null)
+                {
+                    return Retry("This time overlaps with the existing slot " +
+                                 FormatTime(overlap.StartTime) + " \u2013 " + FormatTime(overlap.EndTime) + ".");
+                }
+
+                if (isEdit)
+                {
+                    QCUCRAM_TimeSlot current = content.GetTimeSlot(model.TimeSlotID);
+                    if (current == null)
                     {
                         return QCUCRAMOperationResult.Failure("That time slot no longer exists.");
                     }
 
-                    if (used > 0 &&
-                        (existing.StartTime != start || existing.EndTime != end))
+                    // Changing the times of a slot that already has bookings would silently move them.
+                    if (current.StartTime != start || current.EndTime != end)
                     {
-                        return Retry(
-                            "This time slot already has reservations, so its times can no longer be changed. " +
-                            "Only its active flag may be switched.");
-                    }
-
-                    if (used > 0)
-                    {
-                        content.SetTimeSlotActive(model.TimeSlotID, model.IsActive);
-                        return QCUCRAMOperationResult.Success("Time slot updated.");
+                        int resCount = db.Count(
+                            "SELECT COUNT(*) AS Total FROM Reservations WHERE TimeSlotID = @id",
+                            QCUCRAM_Db.P("@id", model.TimeSlotID));
+                        if (resCount > 0)
+                        {
+                            return Retry("This slot has reservations, so its times cannot be changed. " +
+                                         "Disable it and add a new slot instead.");
+                        }
                     }
 
                     int code = content.UpdateTimeSlot(model.TimeSlotID, start, end, model.IsActive);
                     if (code == 0) { return QCUCRAMOperationResult.Success("Time slot updated."); }
-                    if (code == 1) { return Retry("Another slot already starts at that time."); }
+                    if (code == 1) { return Retry("A time slot with that start time already exists."); }
                     if (code == 2) { return QCUCRAMOperationResult.Failure("That time slot no longer exists."); }
 
                     return Retry("Sorry, the time slot could not be saved. Please try again.");
-                }
-
-                // New slot: it may not overlap any existing slot.
-                foreach (QCUCRAM_TimeSlot other in content.GetTimeSlots(false))
-                {
-                    if (start < other.EndTime && end > other.StartTime)
-                    {
-                        return Retry("That time range overlaps the existing slot " +
-                                     QCUCRAM_ReservationInfo.FormatSlot(other.StartTime, other.EndTime) + ".");
-                    }
                 }
 
                 int newId;
@@ -337,10 +347,30 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
                     if (!model.IsActive) { content.SetTimeSlotActive(newId, false); }
                     return QCUCRAMOperationResult.Success("Time slot added.");
                 }
-                if (created == 1) { return Retry("Another slot already starts at that time."); }
+                if (created == 1) { return Retry("A time slot with that start time already exists."); }
 
                 return Retry("Sorry, the time slot could not be saved. Please try again.");
             }
+        }
+
+        // TimeSlots.aspx.cs FormatTime / TryParseTime (accepts 08:00, 8:00, 08:00:00 and 8:00 AM)
+        private static string FormatTime(TimeSpan t)
+        {
+            return DateTime.Today.Add(t).ToString("h:mm tt", CultureInfo.InvariantCulture);
+        }
+
+        private static bool TryParseTime(string text, out TimeSpan result)
+        {
+            result = TimeSpan.Zero;
+            DateTime dt;
+            if (DateTime.TryParseExact((text ?? "").Trim(),
+                    new[] { "H:mm", "H:mm:ss", "h:mm tt" },
+                    CultureInfo.InvariantCulture, DateTimeStyles.None, out dt))
+            {
+                result = new TimeSpan(dt.Hour, dt.Minute, 0);
+                return true;
+            }
+            return false;
         }
 
         public static QCUCRAMOperationResult ToggleSlot(int timeSlotId)
@@ -357,9 +387,19 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
 
                 content.SetTimeSlotActive(timeSlotId, !slot.IsActive);
 
-                string label = QCUCRAM_ReservationInfo.FormatSlot(slot.StartTime, slot.EndTime);
-                return QCUCRAMOperationResult.Success(
-                    label + (slot.IsActive ? " disabled." : " enabled."));
+                // TimeSlots.aspx.cs ToggleSlot wording
+                if (!slot.IsActive) { return QCUCRAMOperationResult.Success("Time slot enabled."); }
+
+                int upcoming = db.Count(
+                    @"SELECT COUNT(*) AS Total FROM Reservations
+                       WHERE TimeSlotID = @id AND ReservationDate >= @today
+                         AND Status NOT IN ('Declined','Cancelled','Forfeited')",
+                    QCUCRAM_Db.P("@id", timeSlotId),
+                    QCUCRAM_Db.P("@today", System.Data.SqlDbType.Date, QCUCRAM_Clock.Today));
+
+                string msg = "Time slot disabled. It won't be offered for new bookings.";
+                if (upcoming > 0) { msg += " " + upcoming + " upcoming reservation(s) still use it."; }
+                return QCUCRAMOperationResult.Success(msg);
             }
         }
 
@@ -369,17 +409,23 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
             {
                 QCUCRAM_ContentRepository content = new QCUCRAM_ContentRepository(db);
 
-                QCUCRAM_TimeSlot slot = content.GetTimeSlot(timeSlotId);
-                if (slot == null)
+                if (content.GetTimeSlot(timeSlotId) == null)
                 {
                     return QCUCRAMOperationResult.Failure("That time slot no longer exists.");
                 }
 
-                int code = content.DeleteTimeSlot(timeSlotId);
-                if (code == -1)
+                int resCount = db.Count("SELECT COUNT(*) AS Total FROM Reservations WHERE TimeSlotID = @id",
+                    QCUCRAM_Db.P("@id", timeSlotId));
+                if (resCount > 0)
                 {
                     return QCUCRAMOperationResult.Failure(
-                        "This time slot is used by a reservation and cannot be deleted. Disable it instead.");
+                        "This time slot has reservations and cannot be deleted. Disable it instead.");
+                }
+
+                if (content.DeleteTimeSlot(timeSlotId) == -1)
+                {
+                    return QCUCRAMOperationResult.Failure(
+                        "This time slot is still in use and cannot be deleted. Disable it instead.");
                 }
 
                 return QCUCRAMOperationResult.Success("Time slot deleted.");

@@ -1,119 +1,79 @@
 @model BSIT3D_GUADES_Project_MVC.QCUCRAM_ViewModels.QCUCRAMTimeSlotsViewModel
 @using System
-@using System.Linq
+@using System.Globalization
 @{
     /* =====================================================================
        QCU-CRAM  |  Views/Admin/QCU-CRAM_TimeSlots.cshtml
-       ---------------------------------------------------------------------
        One-to-one port of Guades_QCUCram_Admin/Guades_QCUCram_TimeSlots.aspx.
-
-       Phase 22 parity points:
-         * same heading / sub-heading and "+ Add Time Slot" button,
-         * same column set and order: ID, Time Slot, Status, Reservations,
-           Actions,
-         * Active / Disabled badge wording,
-         * Disable / Enable action with the source confirmation text,
-         * same empty-state sentence and the same help note under the grid,
-         * pop-up titled "Add Time Slot" / "Edit Time Slot #id" with the
-           source labels and button captions.
-
-       Two business rules carried over verbatim:
-         * the start/end times of a slot that already has reservations are
-           frozen - the inputs are disabled and the server re-checks it;
-         * a new slot may not overlap an existing one.
        ===================================================================== */
-
     ViewBag.Title = "Time Slots";
     Layout = "~/Views/Shared/_QCU-CRAM_Layout.cshtml";
 
     bool isNew = Model.Edit == null || Model.Edit.TimeSlotID <= 0;
     string modalTitle = isNew ? "Add Time Slot" : "Edit Time Slot #" + Model.Edit.TimeSlotID;
+    CultureInfo inv = CultureInfo.InvariantCulture;
+    Func<TimeSpan, string> fmt = t => DateTime.Today.Add(t).ToString("h:mm tt", inv);
 }
 
-<div class="qcu-page-head">
-    <div>
-        <h1 class="qcu-page-title">Time Slots</h1>
-        <p class="qcu-page-sub">The bookable hours for each day</p>
+<div class="qcu-page-bar">
+    <div class="qcu-page-head">
+        <h2>Time Slots</h2>
+        <p>The bookable hours for each day</p>
     </div>
-    <div class="qcu-page-actions">
-        <a class="qcu-btn qcu-btn--primary" href="@Url.Action("TimeSlots", new { edit = 0 })">+ Add Time Slot</a>
-    </div>
+    <a class="btn btn-primary qcu-add-btn" href="@Url.Action("TimeSlots", new { edit = 0 })">+ Add Time Slot</a>
 </div>
 
-<section class="qcu-panel">
-    @if (Model.Rows.Count == 0)
-    {
-        <p class="qcu-empty">No time slots yet. Click &quot;+ Add Time Slot&quot; to create one.</p>
-    }
-    else
-    {
-        <table class="qcu-table">
-            <thead>
+<div class="table-responsive">
+    <table class="table table-bordered table-striped qcu-admin-table">
+        <thead>
+            <tr><th>ID</th><th>Time Slot</th><th>Status</th><th>Reservations</th><th>Actions</th></tr>
+        </thead>
+        <tbody>
+            @if (Model.Rows.Count == 0)
+            {
+                <tr><td colspan="5">No time slots yet. Click &quot;+ Add Time Slot&quot; to create one.</td></tr>
+            }
+            @foreach (var row in Model.Rows)
+            {
+                string action = row.IsActive ? "Disable" : "Enable";
                 <tr>
-                    <th>ID</th>
-                    <th>Time Slot</th>
-                    <th>Status</th>
-                    <th>Reservations</th>
-                    <th class="qcu-table__actions">Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var row in Model.Rows)
-                {
-                    <tr>
-                        <td>@row.TimeSlotID</td>
-                        <td><strong>@row.Label</strong></td>
-                        <td>
-                            <span class="qcu-badge @(row.IsActive ? "is-approved" : "is-cancelled")">
-                                @(row.IsActive ? "Active" : "Disabled")
-                            </span>
-                        </td>
-                        <td>@row.ReservationCount</td>
-                        <td class="qcu-table__actions">
-                            <div class="qcu-btn-row">
-                                <a class="qcu-btn qcu-btn--sm" href="@Url.Action("TimeSlots", new { edit = row.TimeSlotID })">Edit</a>
-
-                                <form method="post" action="@Url.Action("ToggleSlot", new { id = row.TimeSlotID })"
-                                      onsubmit="return confirm('@(row.IsActive ? "Disable" : "Enable") this time slot? A disabled slot cannot be booked. You can change this again at any time.');">
+                    <td>@row.TimeSlotID</td>
+                    <td>@(fmt(row.StartTime) + " \u2013 " + fmt(row.EndTime))</td>
+                    <td>
+                        @if (row.IsActive) { <span class="badge text-bg-success">Active</span> }
+                        else { <span class="badge text-bg-secondary">Disabled</span> }
+                    </td>
+                    <td>@row.ReservationCount</td>
+                    <td class="qcu-actions-cell">
+                        <div class="qcu-actions">
+                            <a class="btn btn-sm btn-outline-primary" href="@Url.Action("TimeSlots", new { edit = row.TimeSlotID })">Edit</a>
+                            <form method="post" action="@Url.Action("ToggleSlot", new { id = row.TimeSlotID })" class="d-inline">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn btn-sm btn-outline-secondary"
+                                        onclick="return qcuConfirm(this, { tone: 'warning', title: '@action this time slot?', message: 'A disabled time slot cannot be booked. You can change this again at any time.', confirmText: '@action' });">@action</button>
+                            </form>
+                            @if (row.CanDelete)
+                            {
+                                <form method="post" action="@Url.Action("DeleteSlot", new { id = row.TimeSlotID })" class="d-inline">
                                     @Html.AntiForgeryToken()
-                                    <button type="submit" class="qcu-btn qcu-btn--sm">
-                                        @(row.IsActive ? "Disable" : "Enable")
-                                    </button>
+                                    <button type="submit" class="btn btn-sm btn-outline-danger"
+                                            onclick="return qcuConfirm(this, { tone: 'danger', title: 'Delete this time slot?', message: 'The time slot is removed permanently. This cannot be undone.', confirmText: 'Delete' });">Delete</button>
                                 </form>
+                            }
+                        </div>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+<p class="text-muted">
+    A slot that has reservations cannot be deleted or have its times changed. Disable it instead:
+    it disappears from new bookings, but existing reservations still display.
+    Slots may touch (for example 9:00-10:00 and 10:00-11:00) but may not overlap.
+</p>
 
-                                @if (row.CanDelete)
-                                {
-                                    <form method="post" action="@Url.Action("DeleteSlot", new { id = row.TimeSlotID })"
-                                          onsubmit="return confirm('Delete this time slot? It is removed permanently. This cannot be undone.');">
-                                        @Html.AntiForgeryToken()
-                                        <button type="submit" class="qcu-btn qcu-btn--sm qcu-btn--danger">Delete</button>
-                                    </form>
-                                }
-                                else
-                                {
-                                    <button type="button" class="qcu-btn qcu-btn--sm" disabled="disabled"
-                                            title="This slot still has @row.ReservationCount reservation(s).">
-                                        Delete
-                                    </button>
-                                }
-                            </div>
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-
-        <div class="qcu-panel__body">
-            <p class="qcu-hint">
-                A slot that has reservations cannot be deleted or have its times changed. Disable it
-                instead: it disappears from new bookings, but existing reservations still display.
-                Slots may touch (for example 9:00-10:00 and 10:00-11:00) but may not overlap.
-            </p>
-        </div>
-    }
-</section>
-
-@Html.Partial("_QCU-CRAM_SetupModal", new BSIT3D_GUADES_Project_MVC.QCUCRAM_ViewModels.QCUCRAM_SetupModalViewModel
+@Html.Partial("~/Views/Admin/_QCU-CRAM_SetupModal.cshtml", new BSIT3D_GUADES_Project_MVC.QCUCRAM_ViewModels.QCUCRAM_SetupModalViewModel
 {
     Open = Model.ModalOpen,
     Title = modalTitle,
@@ -124,36 +84,20 @@
     Body = @<text>
         <input type="hidden" name="TimeSlotID" value="@(isNew ? 0 : Model.Edit.TimeSlotID)" />
 
-        @if (!isNew)
-        {
-            var edited = Model.Rows.Where(r => r.TimeSlotID == Model.Edit.TimeSlotID).FirstOrDefault();
-            if (edited != null && !edited.CanEditTimes)
-            {
-                <div class="qcu-alert qcu-alert--info">
-                    This slot has reservations, so its times cannot be changed. Disable it and add a
-                    new slot instead. You can still activate or deactivate it.
-                </div>
-            }
-        }
-
-        <div class="qcu-form__row qcu-form__row--split">
-            <div>
-                <label for="Start">Start Time</label>
-                <input id="Start" name="Start" type="time" class="form-control qcu-input--num" required="required"
-                       value="@(isNew ? "08:00" : Model.Edit.Start)" />
-                <span class="qcu-hint">Start time is required.</span>
+        <div class="row">
+            <div class="col-6 mb-3">
+                <label class="form-label" for="Start">Start Time</label>
+                <input id="Start" name="Start" type="time" class="form-control" value="@(Model.Edit == null ? string.Empty : Model.Edit.Start)" />
             </div>
-            <div>
-                <label for="End">End Time</label>
-                <input id="End" name="End" type="time" class="form-control qcu-input--num" required="required"
-                       value="@(isNew ? "09:00" : Model.Edit.End)" />
-                <span class="qcu-hint">End time is required and must be later than the start time.</span>
+            <div class="col-6 mb-3">
+                <label class="form-label" for="End">End Time</label>
+                <input id="End" name="End" type="time" class="form-control" value="@(Model.Edit == null ? string.Empty : Model.Edit.End)" />
             </div>
         </div>
 
-        <label class="qcu-switch">
-            <input type="checkbox" name="IsActive" value="true" @Html.Raw(isNew || Model.Edit.IsActive ? "checked=\"checked\"" : string.Empty) />
-            <span>Active (available for booking)</span>
-        </label>
+        <div class="form-check mb-3">
+            <input type="checkbox" class="form-check-input" id="IsActive" name="IsActive" value="true" @Html.Raw(Model.Edit == null || Model.Edit.IsActive ? "checked=\"checked\"" : string.Empty) />
+            <label class="form-check-label" for="IsActive">Active (available for booking)</label>
+        </div>
     </text>
 })

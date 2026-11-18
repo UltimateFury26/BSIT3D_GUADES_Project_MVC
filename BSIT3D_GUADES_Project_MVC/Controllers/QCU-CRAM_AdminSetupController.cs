@@ -29,6 +29,7 @@ namespace BSIT3D_GUADES_Project_MVC.Controllers
     public class AdminSetupController : QCUCRAM_AdminController
     {
         private const string ModalErrorKey = "QCUCRAM_ModalError";
+        private const string ModalEditKey = "QCUCRAM_ModalEdit";
         private const string SettingsErrorKey = "QCUCRAM_SettingsError";
         private const string DevResultKey = "QCUCRAM_DevResult";
         private const string DevSweepKey = "QCUCRAM_DevSweep";
@@ -40,6 +41,7 @@ namespace BSIT3D_GUADES_Project_MVC.Controllers
         public ActionResult Rooms(int? edit)
         {
             QCUCRAMRoomsViewModel vm = QCUCRAMSetupService.Rooms(edit);
+            if (edit.HasValue && edit.Value > 0 && vm.Edit == null) { FlashError("That room no longer exists."); }
             PullModalError(vm);
             return View("~/Views/Admin/QCU-CRAM_Rooms.cshtml", vm);
         }
@@ -53,6 +55,7 @@ namespace BSIT3D_GUADES_Project_MVC.Controllers
             if (!result.Ok && result.Retry)
             {
                 TempData[ModalErrorKey] = result.Message;
+                TempData[ModalEditKey] = model;
                 return RedirectToAction("Rooms",
                     new { edit = model != null && model.RoomID > 0 ? model.RoomID : (int?)null });
             }
@@ -84,6 +87,7 @@ namespace BSIT3D_GUADES_Project_MVC.Controllers
         public ActionResult TimeSlots(int? edit)
         {
             QCUCRAMTimeSlotsViewModel vm = QCUCRAMSetupService.TimeSlots(edit);
+            if (edit.HasValue && edit.Value > 0 && vm.Edit == null) { FlashError("That time slot no longer exists."); }
             PullModalError(vm);
             return View("~/Views/Admin/QCU-CRAM_TimeSlots.cshtml", vm);
         }
@@ -97,6 +101,7 @@ namespace BSIT3D_GUADES_Project_MVC.Controllers
             if (!result.Ok && result.Retry)
             {
                 TempData[ModalErrorKey] = result.Message;
+                TempData[ModalEditKey] = model;
                 return RedirectToAction("TimeSlots",
                     new { edit = model != null && model.TimeSlotID > 0 ? model.TimeSlotID : (int?)null });
             }
@@ -158,6 +163,7 @@ namespace BSIT3D_GUADES_Project_MVC.Controllers
             if (!result.Ok && result.Retry)
             {
                 TempData[ModalErrorKey] = result.Message;
+                TempData[ModalEditKey] = model;
                 return RedirectToAction("Students",
                     new { edit = model != null && model.StudentID > 0 ? model.StudentID : (int?)null });
             }
@@ -229,6 +235,7 @@ namespace BSIT3D_GUADES_Project_MVC.Controllers
             if (!result.Ok && result.Retry)
             {
                 TempData[ModalErrorKey] = result.Message;
+                TempData[ModalEditKey] = model;
                 return RedirectToAction("AdminUsers",
                     new { edit = model != null && model.AdminID > 0 ? model.AdminID : (int?)null });
             }
@@ -389,6 +396,10 @@ namespace BSIT3D_GUADES_Project_MVC.Controllers
             if (error == null) { return; }
             vm.ModalError = error.ToString();
             vm.ModalOpen = true;
+
+            // keep what the person typed, as the Web Forms pop-up did
+            QCUCRAMRoomEditModel typed = TempData[ModalEditKey] as QCUCRAMRoomEditModel;
+            if (typed != null) { vm.Edit = typed; }
         }
 
         private void PullModalError(QCUCRAMTimeSlotsViewModel vm)
@@ -397,6 +408,10 @@ namespace BSIT3D_GUADES_Project_MVC.Controllers
             if (error == null) { return; }
             vm.ModalError = error.ToString();
             vm.ModalOpen = true;
+
+            // keep what the person typed, as the Web Forms pop-up did
+            QCUCRAMSlotEditModel typed = TempData[ModalEditKey] as QCUCRAMSlotEditModel;
+            if (typed != null) { vm.Edit = typed; }
         }
 
         private void PullModalError(QCUCRAMStudentsViewModel vm)
@@ -405,6 +420,10 @@ namespace BSIT3D_GUADES_Project_MVC.Controllers
             if (error == null) { return; }
             vm.ModalError = error.ToString();
             vm.ModalOpen = true;
+
+            // keep what the person typed, as the Web Forms pop-up did
+            QCUCRAMStudentEditModel typed = TempData[ModalEditKey] as QCUCRAMStudentEditModel;
+            if (typed != null) { vm.Edit = typed; }
         }
 
         private void PullModalError(QCUCRAMAdminUsersViewModel vm)
@@ -413,6 +432,10 @@ namespace BSIT3D_GUADES_Project_MVC.Controllers
             if (error == null) { return; }
             vm.ModalError = error.ToString();
             vm.ModalOpen = true;
+
+            // keep what the person typed, as the Web Forms pop-up did
+            QCUCRAMAdminEditModel typed = TempData[ModalEditKey] as QCUCRAMAdminEditModel;
+            if (typed != null) { vm.Edit = typed; }
         }
     }
 }
