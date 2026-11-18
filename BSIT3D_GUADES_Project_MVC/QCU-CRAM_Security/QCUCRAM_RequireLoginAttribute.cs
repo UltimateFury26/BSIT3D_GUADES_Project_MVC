@@ -19,25 +19,41 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Security
     /// HttpContext.Items so it happens at most once per request even with several filters.
     /// </summary>
     [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method, AllowMultiple = false, Inherited = true)]
-    public class QCUCRAM_RequireLoginAttribute : ActionFilterAttribute
+    public class QCUCRAM_RequireLoginAttribute : ActionFilterAttribute, IAuthorizationFilter
     {
         private const string CacheKey = "QCUCRAM_AccountChecked";
+
+        // Phase 08: this check ALSO runs as an authorization filter. Authorization filters run
+        // before [ValidateAntiForgeryToken], so a signed-out POST to a login-only action
+        // (e.g. Account/ChangePassword) is redirected to the login page like the original,
+        // instead of failing with an anti-forgery exception first.
+        public void OnAuthorization(AuthorizationContext filterContext)
+        {
+            if (filterContext == null || filterContext.HttpContext == null) { return; }
+
+            ActionResult denied = Check(filterContext.HttpContext);
+            if (denied != null) { filterContext.Result = denied; }
+        }
 
         public override void OnActionExecuting(ActionExecutingContext filterContext)
         {
             if (filterContext == null || filterContext.HttpContext == null) { return; }
 
-            HttpContextBase http = filterContext.HttpContext;
+            ActionResult denied = Check(filterContext.HttpContext);
+            if (denied != null) { filterContext.Result = denied; }
+        }
 
+        /// <summary>Null when the request may continue, otherwise the redirect to send.</summary>
+        private static ActionResult Check(HttpContextBase http)
+        {
             // ---- 1. is there a session identity at all? ----
             if (!QCUCRAM_Session.IsAuthenticated)
             {
-                filterContext.Result = RedirectToLogin(http);
-                return;
+                return RedirectToLogin(http);
             }
 
             // ---- 2. is that account still usable? ----
-            if (http.Items[CacheKey] != null) { return; }
+            if (http.Items[CacheKey] != null) { return null; }
 
             bool ok = true;
             string role = QCUCRAM_Session.Role;
@@ -75,23 +91,22 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Security
             if (!ok)
             {
                 QCUCRAM_Session.SignOut(http);
-                filterContext.Result = new RedirectResult(
+                return new RedirectResult(
                     QCUCRAM_Constants.Paths.Login + "?" + QCUCRAM_Constants.QueryKeys.Message
                     + "=" + QCUCRAM_Constants.Messages.Deactivated);
             }
+
+            return null;
         }
 
-        /// <summary>Builds ~/login?msg=login&amp;ReturnUrl=... for the current request.</summary>
+        /// <summary>
+        /// Phase 08: ~/login?msg=login, exactly what Guades_QCUCram_SecurePage.OnInit sent
+        /// (the original appended no return URL, and the login page no longer honours one).
+        /// </summary>
         internal static RedirectResult RedirectToLogin(HttpContextBase http)
         {
-            string returnUrl = http.Request.RawUrl;
             string url = QCUCRAM_Constants.Paths.Login
                          + "?" + QCUCRAM_Constants.QueryKeys.Message + "=" + QCUCRAM_Constants.Messages.Login;
-
-            if (!string.IsNullOrEmpty(returnUrl))
-            {
-                url += "&" + QCUCRAM_Constants.QueryKeys.ReturnUrl + "=" + http.Server.UrlEncode(returnUrl);
-            }
 
             return new RedirectResult(url);
         }
