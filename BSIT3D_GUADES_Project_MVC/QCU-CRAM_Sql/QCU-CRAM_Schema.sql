@@ -14,6 +14,14 @@ GO
 USE [QCU-CRAM_DB];
 GO
 
+/* Everything from here to the final GO is ONE batch so the RETURN below stops the
+   whole script. If the tables already exist nothing is created or changed. */
+IF OBJECT_ID('dbo.Rooms', 'U') IS NOT NULL
+BEGIN
+    RAISERROR('QCU-CRAM_DB already contains the QCU-CRAM tables. Schema script aborted; nothing was changed.', 16, 1);
+    RETURN;
+END
+
 CREATE TABLE Rooms (
     RoomID        INT IDENTITY(1,1) PRIMARY KEY,
     RoomName      NVARCHAR(50) NOT NULL UNIQUE,

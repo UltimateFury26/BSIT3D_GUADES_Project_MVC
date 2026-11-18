@@ -11,7 +11,7 @@ Because the name contains a hyphen, it must always be written in brackets in T-S
 
 | # | Script | What it does | Required? |
 | --- | --- | --- | --- |
-| 1 | `QCU-CRAM_Schema.sql` | Creates `[QCU-CRAM_DB]` **only if it does not already exist**, then the nine tables, all six CHECK constraints, and the filtered unique index `UX_Res_ActiveSlot` | **Yes** |
+| 1 | `QCU-CRAM_Schema.sql` | Creates `[QCU-CRAM_DB]` **only if it does not already exist**, aborts cleanly if the tables already exist, then creates the nine tables, all six CHECK constraints, and the filtered unique index `UX_Res_ActiveSlot` | **Yes** |
 | 2 | `QCU-CRAM_Seed.sql` | Six rooms, nine time slots (08:00–17:00), five settings rows. Every insert is guarded, so it is safe to re-run | **Yes** |
 | 3 | `QCU-CRAM_CopyFromOldDb.sql` | **Optional.** Copies your data out of the old `Guades_QCUCram_DB` into `[QCU-CRAM_DB]`. Reads only — it never modifies or deletes the old database | Only if you have data to keep |
 | 4 | `QCU-CRAM_TestChecks.sql` | Asserts the constraints actually exist and bite; safe to re-run | Optional |
@@ -51,7 +51,8 @@ If you would rather start clean, skip the copy script entirely.
 `QCUCRAM_AdminUserRepository.EnsureDefaultAdmin()` on `Application_Start`, which creates
 that account only if no administrator exists. Change the password after the first login.
 If you ran the copy script and your old database already had administrators, they come
-across and no default account is created.
+across. If the app was opened first, the copy script removes that untouched default
+`admin` row (and only that row) before copying; any other existing admin row makes it abort.
 
 ## Changing the connection string
 

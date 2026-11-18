@@ -9,7 +9,7 @@
 
    Identity values are preserved, so foreign keys keep pointing
    at the same rows. Tables are copied parent-first. The script
-   refuses to run twice (it stops if Students already has rows),
+   refuses to run twice (it stops if Students already has rows or if AdminUsers holds anything besides the untouched default admin),
    so it cannot duplicate anything.
 
    Everything below is ONE batch on purpose. A RETURN inside a
@@ -35,7 +35,23 @@ BEGIN
     RETURN;
 END
 
+/* AdminUsers guard. Application_Start runs EnsureDefaultAdmin(), so if the app was
+   opened before this script the table holds ONE untouched default account
+   (admin / Library Assistant). That row would collide with the copied admin IDs and
+   usernames, so it - and only it - is removed below. Any other admin row means real
+   data is present: abort instead of guessing. */
+IF EXISTS (SELECT 1 FROM dbo.AdminUsers)
+   AND NOT (    (SELECT COUNT(*) FROM dbo.AdminUsers) = 1
+            AND EXISTS (SELECT 1 FROM dbo.AdminUsers WHERE Username = 'admin' AND FullName = 'Library Assistant'))
+BEGIN
+    RAISERROR('QCU-CRAM_DB already has administrator accounts other than the untouched default. Copy aborted so nothing is overwritten.', 16, 1);
+    RETURN;
+END
+
 BEGIN TRANSACTION;
+
+/* Remove the auto-created default admin (see guard above). Old admins are copied in step 4. */
+DELETE FROM dbo.AdminUsers;
 
 /* ---- Clear the rows QCU-CRAM_Seed.sql put there ----
    The seed script inserts rooms 1-6, slots 1-9 and the five settings, which
@@ -132,14 +148,22 @@ DBCC CHECKIDENT ('dbo.Notifications', RESEED) WITH NO_INFOMSGS;
 
 COMMIT TRANSACTION;
 
-/* ---- Verify: row counts should match the old database ---- */
-SELECT 'Rooms'                    AS TableName, COUNT(*) AS RowsCopied FROM dbo.Rooms
-UNION ALL SELECT 'TimeSlots',                COUNT(*) FROM dbo.TimeSlots
-UNION ALL SELECT 'Students',                 COUNT(*) FROM dbo.Students
-UNION ALL SELECT 'AdminUsers',               COUNT(*) FROM dbo.AdminUsers
-UNION ALL SELECT 'Reservations',             COUNT(*) FROM dbo.Reservations
-UNION ALL SELECT 'ReservationMembers',       COUNT(*) FROM dbo.ReservationMembers
-UNION ALL SELECT 'ReservationStatusHistory', COUNT(*) FROM dbo.ReservationStatusHistory
-UNION ALL SELECT 'Notifications',            COUNT(*) FROM dbo.Notifications
-UNION ALL SELECT 'Settings',                 COUNT(*) FROM dbo.Settings;
+/* ---- Verify: new vs old row counts (Match must be 1 for every table) ---- */
+SELECT 'Rooms' AS TableName,
+       (SELECT COUNT(*) FROM dbo.Rooms) AS NewCount,
+       (SELECT COUNT(*) FROM Guades_QCUCram_DB.dbo.Rooms) AS OldCount
+INTO #CopyCheck
+UNION ALL SELECT 'TimeSlots', (SELECT COUNT(*) FROM dbo.TimeSlots), (SELECT COUNT(*) FROM Guades_QCUCram_DB.dbo.TimeSlots)
+UNION ALL SELECT 'Students', (SELECT COUNT(*) FROM dbo.Students), (SELECT COUNT(*) FROM Guades_QCUCram_DB.dbo.Students)
+UNION ALL SELECT 'AdminUsers', (SELECT COUNT(*) FROM dbo.AdminUsers), (SELECT COUNT(*) FROM Guades_QCUCram_DB.dbo.AdminUsers)
+UNION ALL SELECT 'Reservations', (SELECT COUNT(*) FROM dbo.Reservations), (SELECT COUNT(*) FROM Guades_QCUCram_DB.dbo.Reservations)
+UNION ALL SELECT 'ReservationMembers', (SELECT COUNT(*) FROM dbo.ReservationMembers), (SELECT COUNT(*) FROM Guades_QCUCram_DB.dbo.ReservationMembers)
+UNION ALL SELECT 'ReservationStatusHistory', (SELECT COUNT(*) FROM dbo.ReservationStatusHistory), (SELECT COUNT(*) FROM Guades_QCUCram_DB.dbo.ReservationStatusHistory)
+UNION ALL SELECT 'Notifications', (SELECT COUNT(*) FROM dbo.Notifications), (SELECT COUNT(*) FROM Guades_QCUCram_DB.dbo.Notifications)
+UNION ALL SELECT 'Settings', (SELECT COUNT(*) FROM dbo.Settings), (SELECT COUNT(*) FROM Guades_QCUCram_DB.dbo.Settings);
+
+SELECT TableName, NewCount, OldCount,
+       CASE WHEN NewCount = OldCount THEN 1 ELSE 0 END AS Match
+FROM #CopyCheck;
+DROP TABLE #CopyCheck;
 GO
