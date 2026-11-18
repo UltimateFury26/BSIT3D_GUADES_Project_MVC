@@ -8,13 +8,14 @@
 
            @Html.Partial("_QCU-CRAM_Pager", Model.Pager)
 
-       or, from a controller:
-
-           var pager = QCUCRAMPagerViewModel.FromRequest(Request, page, 20, total);
-           return View(new SomeListViewModel { Rows = rows, Pager = pager });
-
        Renders nothing when there is only one page, so a list view never
        shows a lonely "1".
+
+       Markup matches the Web Forms GridView numeric pager
+       (PagerStyle CssClass="qcu-pager", PageButtonCount = 10): a soft bar
+       with a centred row of numbered buttons and "..." jumps to the
+       neighbouring block. The same markup is written inline in
+       MyReservations / Notifications, so every list looks the same.
        ===================================================================== */
 
     if (Model == null || !Model.HasPages)
@@ -25,49 +26,35 @@
     var total = Model.TotalPages;
     var current = Model.Page < 1 ? 1 : (Model.Page > total ? total : Model.Page);
 
-    // Show a window of at most 7 numbers so a 400-page list does not explode.
-    const int window = 7;
-    var first = current - (window / 2);
-    if (first < 1) { first = 1; }
-    var last = first + window - 1;
-    if (last > total) { last = total; first = last - window + 1; if (first < 1) { first = 1; } }
+    const int blockSize = 10;
+    var first = ((current - 1) / blockSize) * blockSize + 1;
+    var last = Math.Min(first + blockSize - 1, total);
 }
 
-<nav aria-label="Pagination">
-    <ul class="pagination pagination-sm justify-content-center mb-0">
-
-        <li class="page-item @(current <= 1 ? "disabled" : string.Empty)">
-            <a class="page-link" href="@Model.UrlFor(current - 1)" aria-label="Previous">&laquo;</a>
-        </li>
-
-        @if (first > 1)
-        {
-            <li class="page-item"><a class="page-link" href="@Model.UrlFor(1)">1</a></li>
-            if (first > 2)
-            {
-                <li class="page-item disabled"><span class="page-link">&hellip;</span></li>
-            }
-        }
-
-        @for (var p = first; p <= last; p++)
-        {
-            <li class="page-item @(p == current ? "active" : string.Empty)">
-                <a class="page-link" href="@Model.UrlFor(p)">@p</a>
-            </li>
-        }
-
-        @if (last < total)
-        {
-            if (last < total - 1)
-            {
-                <li class="page-item disabled"><span class="page-link">&hellip;</span></li>
-            }
-            <li class="page-item"><a class="page-link" href="@Model.UrlFor(total)">@total</a></li>
-        }
-
-        <li class="page-item @(current >= total ? "disabled" : string.Empty)">
-            <a class="page-link" href="@Model.UrlFor(current + 1)" aria-label="Next">&raquo;</a>
-        </li>
-
-    </ul>
-</nav>
+<div class="qcu-pager qcu-pager-block">
+    <table>
+        <tbody>
+            <tr>
+                @if (first > 1)
+                {
+                    <td><a href="@Model.UrlFor(first - 1)">...</a></td>
+                }
+                @for (var p = first; p <= last; p++)
+                {
+                    if (p == current)
+                    {
+                        <td><span>@p</span></td>
+                    }
+                    else
+                    {
+                        <td><a href="@Model.UrlFor(p)">@p</a></td>
+                    }
+                }
+                @if (last < total)
+                {
+                    <td><a href="@Model.UrlFor(last + 1)">...</a></td>
+                }
+            </tr>
+        </tbody>
+    </table>
+</div>

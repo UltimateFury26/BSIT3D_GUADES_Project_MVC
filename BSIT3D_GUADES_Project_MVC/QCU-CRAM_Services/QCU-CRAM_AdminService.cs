@@ -48,7 +48,7 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
     /// QCUCRAMStudentService) rather than the static helper the conversion guide
     /// sketched, because this project has no EF DbContext factory to lean on.
     /// </summary>
-    public class QCUCRAMAdminService
+    public class QCUCRAMAdminService : IDisposable
     {
         private static readonly CultureInfo Inv = CultureInfo.InvariantCulture;
 
@@ -57,7 +57,16 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
         private readonly QCUCRAM_StudentRepository _students;
         private readonly QCUCRAM_NotificationRepository _notifications;
         private readonly QCUCRAM_ReportRepository _reports;
-        private readonly QCUCRAM_AdminUserRepository _admins = new QCUCRAM_AdminUserRepository();
+
+        // Created lazily on first use rather than in a field initialiser: the admin
+        // user list is only touched by the AdminUsers page, so every other admin
+        // action used to open a fourth EF context it never queried.
+        private QCUCRAM_AdminUserRepository _adminsLazy;
+
+        private QCUCRAM_AdminUserRepository _admins
+        {
+            get { return _adminsLazy ?? (_adminsLazy = new QCUCRAM_AdminUserRepository()); }
+        }
 
         public QCUCRAMAdminService()
             : this(new QCUCRAM_ReservationRepository(), new QCUCRAM_ContentRepository(),
@@ -83,6 +92,21 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
             _students = students;
             _notifications = notifications;
             _reports = reports;
+        }
+
+        /// <summary>
+        /// Releases every repository this service created. Each repository owns a
+        /// QCUCRAM_Db (and therefore an EF context + SqlConnection), so without this
+        /// a request would leave those connections to the finaliser instead of the pool.
+        /// </summary>
+        public void Dispose()
+        {
+            if (_reservations != null) { _reservations.Dispose(); }
+            if (_content != null) { _content.Dispose(); }
+            if (_students != null) { _students.Dispose(); }
+            if (_notifications != null) { _notifications.Dispose(); }
+            if (_reports != null) { _reports.Dispose(); }
+            if (_adminsLazy != null) { _adminsLazy.Dispose(); }
         }
 
         // ==================================================================

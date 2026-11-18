@@ -69,7 +69,21 @@
 
     <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet" />
 
-    @Styles.Render("~/Content/QCU-CRAM_css")
+    @* master: <link href="<%= AssetUrl("~/Content/bootstrap.css") %>" ... /> followed by Site.css.
+       Debug keeps that shape on purpose. With compilation debug="true" the bundler runs with
+       BundleTable.EnableOptimizations = false, and Styles.Render then emits plain <link> tags with
+       NO ?v= stamp - so the browser keeps the old stylesheet and a page can look "not fixed" long
+       after the file on disk changed. QCUCRAM_AssetUrl.For() restores the master's last-write stamp.
+       Release still uses the bundle, whose URL already carries a content hash and is minified. *@
+    @if (Context.IsDebuggingEnabled)
+    {
+        <link href="@QCUCRAM_AssetUrl.For("~/Content/bootstrap.css")" rel="stylesheet" />
+        <link href="@QCUCRAM_AssetUrl.For("~/Content/QCU-CRAM_Site.css")" rel="stylesheet" />
+    }
+    else
+    {
+        @Styles.Render("~/Content/QCU-CRAM_css")
+    }
     @RenderSection("head", required: false)
 </head>
 <body class="qcu-app">
@@ -181,13 +195,21 @@
     </div>
 
     @* Plain script tags, same files and order as the ~/bundles/QCU-CRAM_js bundle. Scripts.Render
-       threw a NullReferenceException here, and these tags do not depend on System.Web.Optimization. *@
-    <script src="@Url.Content("~/Scripts/jquery-3.7.0.js")"></script>
-    <script src="@Url.Content("~/Scripts/bootstrap.bundle.js")"></script>
-    <script src="@Url.Content("~/Scripts/jquery.validate.js")"></script>
-    <script src="@Url.Content("~/Scripts/jquery.validate.unobtrusive.js")"></script>
-    <script src="@Url.Content("~/Scripts/QCU-CRAM_site.js")"></script>
-    <script src="@Url.Content("~/Scripts/QCU-CRAM_ui.js")"></script>
+       threw a NullReferenceException here, and these tags do not depend on System.Web.Optimization.
+       In Release (compilation debug="false") the minified copies are used: same behaviour,
+       roughly a third of the bytes and no source-map download. *@
+    @{
+        var jsMin = Context.IsDebuggingEnabled ? string.Empty : ".min";
+    }
+    @* Each URL goes through QCUCRAM_AssetUrl.For() so it carries the master's ?v=<last-write>
+       stamp. Without it an edited QCU-CRAM_ui.js stays cached and the Records dropdowns keep
+       behaving the old way even though the file on disk is correct. *@
+    <script src="@QCUCRAM_AssetUrl.For("~/Scripts/jquery-3.7.0" + jsMin + ".js")"></script>
+    <script src="@QCUCRAM_AssetUrl.For("~/Scripts/bootstrap.bundle" + jsMin + ".js")"></script>
+    <script src="@QCUCRAM_AssetUrl.For("~/Scripts/jquery.validate" + jsMin + ".js")"></script>
+    <script src="@QCUCRAM_AssetUrl.For("~/Scripts/jquery.validate.unobtrusive" + jsMin + ".js")"></script>
+    <script src="@QCUCRAM_AssetUrl.For("~/Scripts/QCU-CRAM_site.js")"></script>
+    <script src="@QCUCRAM_AssetUrl.For("~/Scripts/QCU-CRAM_ui.js")"></script>
 
     @* master: highlight the current page in the nav (orange, like "Home" on qcu.edu.ph) *@
     <script>

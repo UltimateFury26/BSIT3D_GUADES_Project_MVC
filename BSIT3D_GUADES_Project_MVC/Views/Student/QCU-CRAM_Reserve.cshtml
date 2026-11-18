@@ -211,5 +211,14 @@
 }
 
 @section scripts {
-    @Scripts.Render("~/bundles/QCU-CRAM_reserve")
+    @* Same cache-busting rule as the layout: in Debug the bundler emits the file without a
+       ?v= stamp, so an edited QCU-CRAM_reserve.js would stay cached. Release uses the bundle. *@
+    if (Context.IsDebuggingEnabled)
+    {
+        <script src="@QCUCRAM_AssetUrl.For("~/Scripts/QCU-CRAM_reserve.js")"></script>
+    }
+    else
+    {
+        @Scripts.Render("~/bundles/QCU-CRAM_reserve")
+    }
 }

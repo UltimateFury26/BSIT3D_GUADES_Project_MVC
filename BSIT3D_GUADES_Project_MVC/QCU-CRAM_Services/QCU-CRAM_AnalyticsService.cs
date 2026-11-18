@@ -23,7 +23,7 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
     /// QCUCRAMAdminService and QCUCRAMStudentService, because this project has no
     /// EF DbContext factory to lean on - QCUCRAM_Db is the unit of work.
     /// </summary>
-    public class QCUCRAMAnalyticsService
+    public class QCUCRAMAnalyticsService : IDisposable
     {
         private readonly QCUCRAM_ReportRepository _reports;
         private readonly QCUCRAM_Db _db;
@@ -38,6 +38,17 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
 
             _reports = reports;
             _db = db;
+        }
+
+        /// <summary>
+        /// Releases every repository this service created. Each repository owns a
+        /// QCUCRAM_Db (and therefore an EF context + SqlConnection), so without this
+        /// a request would leave those connections to the finaliser instead of the pool.
+        /// </summary>
+        public void Dispose()
+        {
+            if (_reports != null) { _reports.Dispose(); }
+            if (_db != null) { _db.Dispose(); }
         }
 
         // =================================================================

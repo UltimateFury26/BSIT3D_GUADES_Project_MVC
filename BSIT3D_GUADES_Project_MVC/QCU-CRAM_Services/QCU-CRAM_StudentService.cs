@@ -24,7 +24,7 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
     /// No SQL lives here: every method delegates to a repository, so the Phase 02 data
     /// layer stays the only place that talks to the database.
     /// </summary>
-    public class QCUCRAMStudentService
+    public class QCUCRAMStudentService : IDisposable
     {
         private readonly QCUCRAM_StudentRepository _students;
         private readonly QCUCRAM_ReservationRepository _reservations;
@@ -51,6 +51,19 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
             _reservations = reservations;
             _content = content;
             _notifications = notifications;
+        }
+
+        /// <summary>
+        /// Releases every repository this service created. Each repository owns a
+        /// QCUCRAM_Db (and therefore an EF context + SqlConnection), so without this
+        /// a request would leave those connections to the finaliser instead of the pool.
+        /// </summary>
+        public void Dispose()
+        {
+            if (_students != null) { _students.Dispose(); }
+            if (_reservations != null) { _reservations.Dispose(); }
+            if (_content != null) { _content.Dispose(); }
+            if (_notifications != null) { _notifications.Dispose(); }
         }
 
         // ==================================================================

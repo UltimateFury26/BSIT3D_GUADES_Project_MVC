@@ -121,14 +121,31 @@ namespace BSIT3D_GUADES_Project_MVC
         {
             if (Context == null || Context.Session == null) { return; }
 
+            // Static assets never read User.IsInRole, so skip the allocation entirely.
+            // This event fires for every request including CSS/JS/images/bundles.
+            HttpRequest request = Context.Request;
+            if (request != null && IsStaticAsset(request.AppRelativeCurrentExecutionFilePath))
+            {
+                return;
+            }
+
             string role = Context.Session[QCUCRAM_Constants.SessionKeys.Role] as string;
             object idValue = Context.Session[QCUCRAM_Constants.SessionKeys.UserId];
             string name = Context.Session[QCUCRAM_Constants.SessionKeys.UserName] as string;
 
             int userId = (idValue is int) ? (int)idValue : 0;
+
+            // Anonymous request: only replace the principal when the runtime has not
+            // already given us an equivalent empty one, so a signed-out page does not
+            // pay for a second GenericPrincipal + GenericIdentity.
             if (string.IsNullOrEmpty(role) || userId <= 0)
             {
-                Context.User = new GenericPrincipal(new GenericIdentity(string.Empty), new string[0]);
+                if (Context.User == null || Context.User.Identity == null || !Context.User.Identity.IsAuthenticated)
+                {
+                    return;
+                }
+
+                Context.User = AnonymousPrincipal;
                 return;
             }
 
@@ -136,6 +153,10 @@ namespace BSIT3D_GUADES_Project_MVC
                 new GenericIdentity(string.IsNullOrWhiteSpace(name) ? role : name),
                 new[] { role });
         }
+
+        /// <summary>Shared empty principal, so anonymous requests allocate nothing.</summary>
+        private static readonly GenericPrincipal AnonymousPrincipal =
+            new GenericPrincipal(new GenericIdentity(string.Empty), new string[0]);
 
         protected void Session_Start(object sender, EventArgs e)
         {

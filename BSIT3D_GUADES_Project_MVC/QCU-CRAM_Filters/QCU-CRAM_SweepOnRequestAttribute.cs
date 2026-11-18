@@ -42,6 +42,11 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Filters
                 // A page that switched the sweep off (Dev Tools) stays off here too.
                 if (filterContext.HttpContext.Items[QCUCRAM_BaseController.SkipSweepKey] != null) { return; }
 
+                // The base controller already evaluated the sweep for this request in
+                // OnActionExecuting. Re-checking here used to do the same LastRun
+                // comparison twice on every page view.
+                if (filterContext.HttpContext.Items[QCUCRAM_BaseController.SweepHandledKey] != null) { return; }
+
                 if (!IsOn("QCU-CRAM_SweepOnRequest", true)) { return; }
 
                 // Phase 17: DevTools.aspx.cs RunSweepOnLoad = false - that page must not sweep
@@ -54,6 +59,11 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Filters
                 }
 
                 int seconds = ReadInt("QCU-CRAM_SweepIntervalSeconds", 30, 5);
+
+                // Claim the sweep for this request BEFORE running it. Global filters run
+                // ahead of the controller's OnActionExecuting, so this flag is what stops
+                // the base controller doing the same LastRun comparison a second time.
+                filterContext.HttpContext.Items[QCUCRAM_BaseController.SweepHandledKey] = true;
 
                 QCUCRAM_MaintenanceService.SweepResult result = QCUCRAM_MaintenanceService.RunIfDue(seconds);
                 if (result != null && result.ChangedAnything)

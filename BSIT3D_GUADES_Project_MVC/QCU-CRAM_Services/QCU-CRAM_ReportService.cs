@@ -23,7 +23,7 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
     /// The confirmed statuses come from QCUCRAM_Status, never from a literal, so a
     /// new status can never silently drop off the sheet.
     /// </summary>
-    public class QCUCRAMReportService
+    public class QCUCRAMReportService : IDisposable
     {
         private readonly QCUCRAM_Db _db;
 
@@ -33,6 +33,16 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
         {
             if (db == null) throw new ArgumentNullException("db");
             _db = db;
+        }
+
+        /// <summary>
+        /// Releases every repository this service created. Each repository owns a
+        /// QCUCRAM_Db (and therefore an EF context + SqlConnection), so without this
+        /// a request would leave those connections to the finaliser instead of the pool.
+        /// </summary>
+        public void Dispose()
+        {
+            if (_db != null) { _db.Dispose(); }
         }
 
         // =================================================================

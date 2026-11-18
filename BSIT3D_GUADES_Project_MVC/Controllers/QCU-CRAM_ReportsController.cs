@@ -48,6 +48,21 @@ namespace BSIT3D_GUADES_Project_MVC.Controllers
             _reports = reports ?? new QCUCRAMReportService();
         }
 
+        /// <summary>
+        /// Disposes the service (and through it every repository / EF context) at the
+        /// end of the request. Controller.Dispose runs after the result is executed,
+        /// so the whole action has finished using the connection by then.
+        /// </summary>
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                if (_analytics != null) { _analytics.Dispose(); }
+                if (_reports != null) { _reports.Dispose(); }
+            }
+            base.Dispose(disposing);
+        }
+
         // =================================================================
         //  Analytics
         // =================================================================

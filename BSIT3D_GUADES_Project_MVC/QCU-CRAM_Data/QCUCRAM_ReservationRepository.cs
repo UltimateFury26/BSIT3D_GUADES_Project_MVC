@@ -19,7 +19,7 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Data
     /// Port of Guades_QCUCram_ReservationService with the same transition table,
     /// the same messages and the same locking (UPDLOCK / HOLDLOCK / Serializable).
     /// </summary>
-    public class QCUCRAM_ReservationRepository
+    public class QCUCRAM_ReservationRepository : IDisposable
     {
         public const string ActorAdmin = "Admin";
         public const string ActorStudent = "Student";
@@ -46,6 +46,17 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Data
         {
             if (db == null) { throw new ArgumentNullException("db"); }
             _db = db;
+        }
+
+        /// <summary>
+        /// Releases the EF context this repository opened. The default constructor
+        /// creates its own QCUCRAM_Db, so without this the SqlConnection behind it
+        /// would only come back to the pool on finalisation - a slow leak under load.
+        /// DbContext.Dispose is idempotent, so disposing an injected db twice is safe.
+        /// </summary>
+        public void Dispose()
+        {
+            if (_db != null) { _db.Dispose(); }
         }
 
         public QCUCRAM_Db Db { get { return _db; } }

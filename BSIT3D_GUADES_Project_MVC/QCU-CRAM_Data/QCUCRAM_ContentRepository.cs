@@ -13,7 +13,7 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Data
     /// Rooms, time slots, Settings and the availability grid - everything the admin
     /// maintains and every page reads.
     /// </summary>
-    public class QCUCRAM_ContentRepository
+    public class QCUCRAM_ContentRepository : IDisposable
     {
         private readonly QCUCRAM_Db _db;
 
@@ -23,6 +23,17 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Data
         {
             if (db == null) { throw new ArgumentNullException("db"); }
             _db = db;
+        }
+
+        /// <summary>
+        /// Releases the EF context this repository opened. The default constructor
+        /// creates its own QCUCRAM_Db, so without this the SqlConnection behind it
+        /// would only come back to the pool on finalisation - a slow leak under load.
+        /// DbContext.Dispose is idempotent, so disposing an injected db twice is safe.
+        /// </summary>
+        public void Dispose()
+        {
+            if (_db != null) { _db.Dispose(); }
         }
 
         // =================================================================

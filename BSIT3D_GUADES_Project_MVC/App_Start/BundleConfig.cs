@@ -29,24 +29,24 @@ namespace BSIT3D_GUADES_Project_MVC
                 .Include("~/Content/QCU-CRAM_Site.css"));
 
             // ------------------------------------------------------------------- JS
-            bundles.Add(new ScriptBundle("~/bundles/QCU-CRAM_jquery")
-                .Include("~/Scripts/jquery-3.7.0.js"));
-
-            bundles.Add(new ScriptBundle("~/bundles/QCU-CRAM_bootstrap")
-                .Include("~/Scripts/bootstrap.bundle.js"));
-
-            bundles.Add(new ScriptBundle("~/bundles/QCU-CRAM_validate")
-                .Include("~/Scripts/jquery.validate.js")
-                .Include("~/Scripts/jquery.validate.unobtrusive.js"));
-
+            // Reserve page only. Views/Student/QCU-CRAM_Reserve.cshtml renders this
+            // from its @section scripts, so it must stay registered - Scripts.Render
+            // throws for a bundle name that was never added.
             bundles.Add(new ScriptBundle("~/bundles/QCU-CRAM_reserve")
                 .Include("~/Scripts/QCU-CRAM_reserve.js"));
 
-            // Phase 05: Include() takes FILE paths. The old version listed the three
-            // bundle paths above, which are not files, so jQuery, Bootstrap and
-            // jquery.validate were silently left out of the layout bundle (no navbar
-            // collapse/dropdowns, no qcuConfirm modal, no client validation).
+
+            // Phase 05: Include() takes FILE paths. The old version listed bundle
+            // paths here, which are not files, so jQuery, Bootstrap and
+            // jquery.validate were silently left out (no navbar collapse/dropdowns,
+            // no qcuConfirm modal, no client validation).
             // Order matters: jQuery, Bootstrap, validate, then the site scripts.
+            //
+            // The layout currently emits these six files as plain <script> tags
+            // (System.Web.Optimization's Scripts.Render threw a NullReferenceException
+            // on this project), so this bundle is the canonical list rather than the
+            // thing that is rendered. The four per-file bundles that used to sit here
+            // were never rendered by any view and have been removed.
             bundles.Add(new ScriptBundle("~/bundles/QCU-CRAM_js")
                 .Include("~/Scripts/jquery-3.7.0.js")
                 .Include("~/Scripts/bootstrap.bundle.js")

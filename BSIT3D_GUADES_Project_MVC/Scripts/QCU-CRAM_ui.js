@@ -249,8 +249,44 @@
         var btn = findButton(btnSuffix, input);
         if (!btn) return;
         var m = prm();
-        if (m && m.get_isInAsyncPostBack()) m.abortPostBack();   // cancel the stale request
+        if (m) {
+            if (m.get_isInAsyncPostBack()) m.abortPostBack();   // cancel the stale request
+            btn.click();
+            return;
+        }
+        // MVC has no UpdatePanel, so the button does a normal GET submit. Remember
+        // the focused box and its caret first so the page comes back in the same
+        // state - this is the MVC equivalent of the UpdatePanel focus restore.
+        rememberLiveFocus();
         btn.click();
+    }
+
+    /* ---- MVC live-filter focus restore (the UpdatePanel equivalent) ---- */
+    var FOCUS_KEY = 'qcu-live-focus';
+
+    function rememberLiveFocus() {
+        try {
+            var a = document.activeElement;
+            if (!a || !a.id) return;
+            var s = null, e = null;
+            try { s = a.selectionStart; e = a.selectionEnd; } catch (x) { }
+            sessionStorage.setItem(FOCUS_KEY, JSON.stringify({ id: a.id, s: s, e: e }));
+        } catch (x) { }
+    }
+
+    function restoreLiveFocus() {
+        try {
+            var raw = sessionStorage.getItem(FOCUS_KEY);
+            if (!raw) return;
+            sessionStorage.removeItem(FOCUS_KEY);
+            var st = JSON.parse(raw);
+            var el = document.getElementById(st.id);
+            if (!el) return;
+            el.focus();
+            if (st.s !== null && st.e !== null && el.setSelectionRange) {
+                try { el.setSelectionRange(st.s, st.e); } catch (x) { }
+            }
+        } catch (x) { }
     }
 
     document.addEventListener('input', function (e) {
@@ -778,6 +814,7 @@
         initIdFields(document);
         syncFormModals();
         updateGates();      // buttons that wait for required fields
+        restoreLiveFocus(); // put the caret back after an MVC live-filter submit
         qcuFlushSafe();     // any toast the server queued
     }
 

@@ -82,15 +82,15 @@
     <div class="row g-3">
         <div class="col-md-3">
             <label class="form-label" for="txtFrom">From date</label>
-            <input class="form-control" type="date" id="txtFrom" name="from" value="@fromText" />
+            <input class="form-control" type="date" id="txtFrom" name="from" value="@fromText" data-live-btn="btnFilter" />
         </div>
         <div class="col-md-3">
             <label class="form-label" for="txtTo">To date</label>
-            <input class="form-control" type="date" id="txtTo" name="to" value="@toText" />
+            <input class="form-control" type="date" id="txtTo" name="to" value="@toText" data-live-btn="btnFilter" />
         </div>
         <div class="col-md-3">
             <label class="form-label" for="ddlStatus">Status</label>
-            <select class="form-select" id="ddlStatus" name="status">
+            <select class="form-select" id="ddlStatus" name="status" onchange="this.form.submit()">
                 @foreach (var o in Model.StatusOptions)
                 {
                     <option value="@o.Key" selected="@(o.Key == f.Status ? "selected" : null)">@o.Value</option>
@@ -99,7 +99,7 @@
         </div>
         <div class="col-md-3">
             <label class="form-label" for="ddlRoom">Room</label>
-            <select class="form-select" id="ddlRoom" name="room">
+            <select class="form-select" id="ddlRoom" name="room" onchange="this.form.submit()">
                 @foreach (var o in Model.RoomOptions)
                 {
                     <option value="@o.Key" selected="@(o.Key == roomText ? "selected" : null)">@o.Value</option>
@@ -108,7 +108,7 @@
         </div>
         <div class="col-md-4">
             <label class="form-label" for="ddlProgram">Program</label>
-            <select class="form-select" id="ddlProgram" name="program">
+            <select class="form-select" id="ddlProgram" name="program" onchange="this.form.submit()">
                 <option value="">All programs</option>
                 @foreach (var p in Model.ProgramOptions)
                 {
@@ -118,14 +118,14 @@
         </div>
         <div class="col-md-4">
             <label class="form-label" for="txtStudent">Student (name or number)</label>
-            <input class="form-control" type="text" id="txtStudent" name="q" value="@f.Search"
+            <input class="form-control" type="text" id="txtStudent" name="q" value="@f.Search" data-live-btn="btnFilter"
                    maxlength="100" autocomplete="off" placeholder="e.g. Santos or 24-00123" />
         </div>
         <div class="col-md-4 d-flex align-items-end flex-wrap gap-2">
             <input type="hidden" name="sort" value="@f.Sort" />
             <input type="hidden" name="dir" value="@f.Dir" />
 
-            <button type="submit" class="btn btn-primary">Apply Filters</button>
+            <button type="submit" id="btnFilter" class="btn btn-primary">Apply Filters</button>
             <a class="btn btn-outline-secondary" href="@Url.Action("Index", "AdminRecords")">Clear</a>
             <a class="btn btn-success"
                href="@Url.Action("ExportCsv", "AdminRecords", new {

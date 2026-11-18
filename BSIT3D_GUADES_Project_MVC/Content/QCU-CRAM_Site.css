@@ -533,6 +533,8 @@ input, select, textarea {
 /* =====================================================
    Login / Register / Change Password
    ===================================================== */
+/* :has() keeps the auth card centred in modern browsers; the plain .qcu-auth
+   margin below is the fallback for browsers/minifiers without :has(). */
 .body-content:has(.qcu-auth) {
     background: transparent;
     padding: 0;
@@ -543,6 +545,7 @@ input, select, textarea {
     display: flex;
     justify-content: center;
     padding: 0 12px;
+    margin: 40px auto;
 }
 
 .qcu-auth-card {
@@ -835,6 +838,16 @@ input, select, textarea {
     background: var(--qcu-blue);
     border-color: var(--qcu-blue);
     color: #fff;
+}
+
+/* Standalone pager (the _QCU-CRAM_Pager partial used by Records / Students):
+   the Web Forms GridView pager row is a full-width soft bar, so the partial
+   gets the same background and padding. */
+.qcu-pager-block {
+    background: var(--qcu-card-soft);
+    border-radius: 8px;
+    padding: .8rem;
+    margin-top: 12px;
 }
 
 /* ---------- Notifications: unread rows ---------- */
@@ -2960,8 +2973,11 @@ input[type="date"][readonly] {
     --qcu-accent: var(--qcu-blue);
 }
 
-.qcu-page-head { display:flex; justify-content:space-between; align-items:flex-end;
-                 gap:16px; margin:0 0 20px; flex-wrap:wrap; }
+/* The Web Forms pages stack the h2 and its sub-line (Site.css: .qcu-page-head is
+   a plain block). The kit block used to force a space-between flex row here,
+   which pushed the sub-line to the far right of the page. Keep the block
+   layout so every page head matches Web Forms. */
+.qcu-page-head { display:block; margin:0 0 1.35rem; }
 .qcu-page-title { font-size:1.6rem; margin:0 0 4px; }
 .qcu-page-sub { margin:0; color:var(--qcu-muted); font-size:.9rem; }
 .qcu-page-actions { display:flex; gap:8px; }
@@ -3018,8 +3034,14 @@ input[type="date"][readonly] {
 .qcu-pill { display:inline-block; margin-left:8px; padding:0 7px; border-radius:999px;
             background:rgba(255,255,255,.28); font-size:.72rem; }
 
-.qcu-toolbar, .qcu-filterbar { display:flex; flex-wrap:wrap; gap:10px;
-                               align-items:flex-end; margin-bottom:18px; }
+/* Web Forms renders every filter toolbar as a plain <div class="qcu-toolbar">
+   (Site.css only gives it a background/border/padding - no flex). The kit
+   block used to turn it into a flex bar with a 10px gap, which made the inner
+   .row shrink to its content width and wrapped the Apply / Last 30 days /
+   This month / All time buttons onto a second line. Keep it a block panel so
+   the .row spans the full width, exactly as in Web Forms. */
+.qcu-filterbar { display:flex; flex-wrap:wrap; gap:10px;
+                 align-items:flex-end; margin-bottom:18px; }
 .qcu-filterbar label { display:flex; flex-direction:column; gap:4px;
                        font-size:.75rem; text-transform:uppercase;
                        letter-spacing:.04em; color:var(--qcu-muted); }
@@ -3503,15 +3525,9 @@ input[type="date"][readonly] {
    Nothing above is deleted - the now-unused kit rules are R13's job.
    ===================================================================== */
 
-/* source-style heading (h2 + p, no wrapper div) stacks instead of sitting side by side */
-.qcu-page-head:not(:has(> div)) {
-    display: block;
-}
-
-/* source-style filter panel (a Bootstrap .row inside the toolbar) is a normal block */
-.qcu-toolbar:has(> .row) {
-    display: block;
-}
+/* The heading and the filter panel are plain blocks now (see the
+   .qcu-page-head / .qcu-toolbar rules above), so no :has() override is needed
+   here - which also keeps the file valid for browsers without :has(). */
 
 .qcu-range {
     color: #5b6b7b;
@@ -3552,4 +3568,74 @@ input[type="date"][readonly] {
 
 .qcu-stat-grey {
     border-left-color: #8a97a5;
+}
+
+/* =====================================================================
+   R14 - Web Forms design parity (shared layout classes)
+   ---------------------------------------------------------------------
+   The later "kit" block in this file re-styled classes that the Web Forms
+   pages also use, so a few elements drifted out of place: the filter
+   toolbars became flex bars with an extra 10px gap (pushing the Apply /
+   Clear / Export and New reservation buttons to the right), the page
+   heading lost its 1.35rem gap, the section sub-heading lost its blue /
+   orange rule, the Daily Schedule day title shrank, and the Analytics
+   summary tiles lost the .card look.
+
+   These rules put the Web Forms values back. Nothing above is deleted.
+   ===================================================================== */
+
+/* Page heading: stacked h2 + p, 1.35rem gap (Site.css). */
+.qcu-page-head {
+    display: block;
+    margin: 0 0 1.35rem;
+}
+
+/* Filter / date toolbar: a normal block panel, as in Web Forms. */
+.qcu-toolbar {
+    display: block;
+    margin-bottom: 0;
+}
+
+/* A toolbar that IS a Bootstrap .row keeps the row's own gutters and no
+   extra gap, so the filter buttons sit exactly where they do in Web Forms. */
+.qcu-toolbar.row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0;
+    align-items: flex-end;
+}
+
+/* Section sub-heading: blue bold text with the orange left rule. */
+.qcu-subhead {
+    margin: 0 0 .75rem;
+    padding-left: 12px;
+    border-left: 4px solid var(--qcu-orange);
+    font-size: 1.25rem;
+    font-weight: 700;
+    text-transform: none;
+    letter-spacing: normal;
+    color: var(--qcu-blue);
+}
+
+/* Daily Schedule day title keeps the h4 size used by Web Forms. */
+.qcu-day-title {
+    margin: 0 0 .25rem;
+    font-size: 1.5rem;
+}
+
+/* Analytics summary tiles: the Web Forms .card look (borderless soft card,
+   8px radius, coloured left rule, small hover lift). */
+.qcu-stat {
+    border: 0;
+    border-left: 5px solid var(--qcu-blue);
+    border-radius: 8px;
+    padding: 1rem;
+    gap: 0;
+    background: var(--qcu-card-soft);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, .08);
+}
+
+.qcu-stat:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 40, 90, .14);
 }

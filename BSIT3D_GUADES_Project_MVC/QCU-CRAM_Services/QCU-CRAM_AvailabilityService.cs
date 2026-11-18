@@ -25,7 +25,7 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
     /// like the original page, because the booking must not vanish from the grid. A
     /// disabled room or slot with NO booking on the date is left out, as in the original.
     /// </summary>
-    public class QCUCRAMAvailabilityService
+    public class QCUCRAMAvailabilityService : IDisposable
     {
         private readonly QCUCRAM_ContentRepository _content;
         private readonly QCUCRAM_ReservationRepository _reservations;
@@ -42,6 +42,17 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
             if (reservations == null) { throw new ArgumentNullException("reservations"); }
             _content = content;
             _reservations = reservations;
+        }
+
+        /// <summary>
+        /// Releases every repository this service created. Each repository owns a
+        /// QCUCRAM_Db (and therefore an EF context + SqlConnection), so without this
+        /// a request would leave those connections to the finaliser instead of the pool.
+        /// </summary>
+        public void Dispose()
+        {
+            if (_content != null) { _content.Dispose(); }
+            if (_reservations != null) { _reservations.Dispose(); }
         }
 
         /// <summary>Today + AdvanceBookingDays - the only date a request may be filed for.</summary>

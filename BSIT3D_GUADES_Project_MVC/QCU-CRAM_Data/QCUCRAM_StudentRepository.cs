@@ -12,7 +12,7 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Data
     /// Every read and write of dbo.Students. Method-for-method port of the Web Forms
     /// Register / Login / Profile / Students pages, with the same ResultCode contracts.
     /// </summary>
-    public class QCUCRAM_StudentRepository
+    public class QCUCRAM_StudentRepository : IDisposable
     {
         private static readonly Regex StudentNumberRegex = new Regex(@"^\d{2}-\d{4}$");
         private static readonly Regex OtherIdRegex = new Regex(@"^[A-Za-z0-9\-]{3,20}$");
@@ -25,6 +25,17 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Data
         {
             if (db == null) { throw new ArgumentNullException("db"); }
             _db = db;
+        }
+
+        /// <summary>
+        /// Releases the EF context this repository opened. The default constructor
+        /// creates its own QCUCRAM_Db, so without this the SqlConnection behind it
+        /// would only come back to the pool on finalisation - a slow leak under load.
+        /// DbContext.Dispose is idempotent, so disposing an injected db twice is safe.
+        /// </summary>
+        public void Dispose()
+        {
+            if (_db != null) { _db.Dispose(); }
         }
 
         public QCUCRAM_Db Db { get { return _db; } }

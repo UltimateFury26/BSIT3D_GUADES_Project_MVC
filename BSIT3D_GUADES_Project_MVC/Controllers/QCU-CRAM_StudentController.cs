@@ -43,6 +43,20 @@ namespace BSIT3D_GUADES_Project_MVC.Controllers.Student
             _service = service ?? new QCUCRAMStudentService();
         }
 
+        /// <summary>
+        /// Disposes the service (and through it every repository / EF context) at the
+        /// end of the request. Controller.Dispose runs after the result is executed,
+        /// so the whole action has finished using the connection by then.
+        /// </summary>
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                if (_service != null) { _service.Dispose(); }
+            }
+            base.Dispose(disposing);
+        }
+
         // ==================================================================
         //  Dashboard
         // ==================================================================

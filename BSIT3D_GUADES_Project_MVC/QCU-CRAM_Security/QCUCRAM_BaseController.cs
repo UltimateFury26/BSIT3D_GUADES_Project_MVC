@@ -31,6 +31,14 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Security
         public const string SkipSweepKey = "QCUCRAM_SkipSweep";
 
         /// <summary>
+        /// HttpContext.Items flag set once the sweep has already been considered for this
+        /// request. The base controller runs it in OnActionExecuting and the global
+        /// QCUCRAMSweepOnRequestAttribute runs it again; without this flag both did the
+        /// same LastRun comparison (and, when due, both tried to sweep) on every page.
+        /// </summary>
+        public const string SweepHandledKey = "QCUCRAM_SweepHandled";
+
+        /// <summary>
         /// SecurePage.RunSweepOnLoad (default true). A controller returns false for the actions
         /// that must not run the automatic rules before they render.
         /// </summary>
@@ -59,7 +67,15 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Security
             }
             else if (QCUCRAM_Session.IsAuthenticated)
             {
-                QCUCRAM_MaintenanceService.TryRunIfDue(QCUCRAM_AppSettings.SweepIntervalSeconds);
+                // Global action filters run BEFORE a controller's OnActionExecuting, so on a
+                // GET the request-sweep filter has already evaluated the sweep and set this
+                // flag. Only do the check ourselves when nobody has (POST, child action, or
+                // a controller with no filter).
+                if (http.Items[SweepHandledKey] == null)
+                {
+                    QCUCRAM_MaintenanceService.TryRunIfDue(QCUCRAM_AppSettings.SweepIntervalSeconds);
+                    http.Items[SweepHandledKey] = true;
+                }
             }
 
             // ---- Site.Master: the fields the layout binds to ----
@@ -76,21 +92,53 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Security
             ViewBag.QCUCRAM_ClockOffset = QCUCRAM_Clock.OffsetMinutes;
         }
 
-        /// <summary>Unread notifications for the signed-in student; 0 for guests and admins.</summary>
+        /// <summary>
+        /// Unread notifications for the signed-in student; 0 for guests and admins.
+        ///
+        /// Cached in HttpContext.Items for the rest of the request: OnActionExecuting
+        /// runs for every action and the layout reads the value again, so without this
+        /// the same COUNT(*) was issued two or three times per page view.
+        /// </summary>
         protected int UnreadCount()
         {
             if (!QCUCRAM_Session.IsStudent) { return 0; }
 
+            HttpContextBase http = HttpContext;
+            if (http != null && http.Items[UnreadCountKey] is int)
+            {
+                return (int)http.Items[UnreadCountKey];
+            }
+
+            int count;
             try
             {
-                return new QCUCRAM_NotificationRepository().CountUnread(QCUCRAM_Session.UserId);
+                using (QCUCRAM_NotificationRepository repo = new QCUCRAM_NotificationRepository())
+                {
+                    count = repo.CountUnread(QCUCRAM_Session.UserId);
+                }
             }
             catch (Exception ex)
             {
                 // A badge must never break a page.
                 Trace.TraceError("QCUCRAM unread count failed: " + ex);
-                return 0;
+                count = 0;
             }
+
+            if (http != null) { http.Items[UnreadCountKey] = count; }
+            return count;
+        }
+
+        /// <summary>HttpContext.Items key for the cached unread badge count.</summary>
+        public const string UnreadCountKey = "QCUCRAM_UnreadCount";
+
+        /// <summary>
+        /// Drops the cached badge count. Call after an action that changes read state
+        /// (mark read / mark all read) so a later read in the same request re-queries.
+        /// </summary>
+        protected void InvalidateUnreadCount()
+        {
+            HttpContextBase http = HttpContext;
+            if (http != null) { http.Items.Remove(UnreadCountKey); }
         }
 
         // ---- feedback helpers (SecurePage.ShowMessage, toast flavour) ----

@@ -10,22 +10,26 @@
        (QCUCRAM_Status.Pending / Approved / Reassigned / Declined /
        Cancelled / CheckedIn / Completed / Forfeited).
 
-       The class name is the lower-cased status with spaces removed, which
-       matches the .qcu-badge--* rules in Content/QCU-CRAM_Site.css:
-           Pending    -> qcu-badge--pending
-           CheckedIn  -> qcu-badge--checkedin
-       Anything unrecognised falls back to qcu-badge--unknown instead of
-       rendering an unstyled pill.
+       Emits exactly the same markup as the Web Forms StatusBadge() helpers
+       (Records.aspx.cs, Dashboard.aspx.cs, MyReservations.aspx.cs):
+           <span class="badge bg-warning text-dark">Pending</span>
+       so the pills keep the Bootstrap colours used across the Web Forms app.
        ===================================================================== */
 
     var status = Convert.ToString(Model ?? string.Empty).Trim();
 
-    var slug = status.ToLowerInvariant().Replace(" ", string.Empty).Replace("-", string.Empty);
-
-    var known = new[] { "pending", "approved", "reassigned", "declined", "cancelled", "checkedin", "completed", "forfeited" };
-    if (Array.IndexOf(known, slug) < 0)
+    string css;
+    switch (status)
     {
-        slug = "unknown";
+        case "Pending": css = "bg-warning text-dark"; break;
+        case "Approved": css = "bg-success"; break;
+        case "Reassigned": css = "bg-info text-dark"; break;
+        case "Declined": css = "bg-danger"; break;
+        case "Cancelled": css = "bg-secondary"; break;
+        case "CheckedIn": css = "bg-primary"; break;
+        case "Completed": css = "bg-dark"; break;
+        case "Forfeited": css = "bg-danger"; break;
+        default: css = "bg-light text-dark"; break;
     }
 
     var label = status == "CheckedIn" ? "Checked In"
@@ -33,4 +37,4 @@
               : status;
 }
 
-<span class="qcu-badge qcu-badge--@slug">@label</span>
+<span class="badge @css">@label</span>
