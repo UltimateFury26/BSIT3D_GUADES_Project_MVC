@@ -360,11 +360,15 @@ namespace BSIT3D_GUADES_Project_MVC.Controllers
             return View("~/Views/Admin/QCU-CRAM_DevTools.cshtml", vm);
         }
 
+        // Every Dev Tools POST is admin-only (base class), anti-forgery protected, and answers 404
+        // when QCU-CRAM_DevToolsEnabled is switched off - the same switch the GET uses.
         [HttpPost]
         [ValidateAntiForgeryToken]
         public ActionResult ShiftClock(string command)
         {
-            TempData[DevResultKey] = QCUCRAMDevToolsService.ShiftClock(command);
+            if (!QCUCRAMDevToolsService.Enabled) { return HttpNotFound(); }
+
+            ApplyDev(QCUCRAMDevToolsService.ShiftClock(command));
             return RedirectToAction("DevTools");
         }
 
@@ -372,6 +376,8 @@ namespace BSIT3D_GUADES_Project_MVC.Controllers
         [ValidateAntiForgeryToken]
         public ActionResult RunSweep()
         {
+            if (!QCUCRAMDevToolsService.Enabled) { return HttpNotFound(); }
+
             TempData[DevSweepKey] = QCUCRAMDevToolsService.RunSweep();
             return RedirectToAction("DevTools");
         }
@@ -380,7 +386,9 @@ namespace BSIT3D_GUADES_Project_MVC.Controllers
         [ValidateAntiForgeryToken]
         public ActionResult GenerateStudents()
         {
-            TempData[DevResultKey] = QCUCRAMDevToolsService.GenerateStudents(CurrentUserId);
+            if (!QCUCRAMDevToolsService.Enabled) { return HttpNotFound(); }
+
+            ApplyDev(QCUCRAMDevToolsService.GenerateStudents(CurrentUserId));
             return RedirectToAction("DevTools");
         }
 
@@ -388,8 +396,9 @@ namespace BSIT3D_GUADES_Project_MVC.Controllers
         [ValidateAntiForgeryToken]
         public ActionResult GenerateReservations(int daysBack, int daysAhead)
         {
-            TempData[DevResultKey] = QCUCRAMDevToolsService.GenerateReservations(
-                daysBack, daysAhead, CurrentUserId);
+            if (!QCUCRAMDevToolsService.Enabled) { return HttpNotFound(); }
+
+            ApplyDev(QCUCRAMDevToolsService.GenerateReservations(daysBack, daysAhead, CurrentUserId));
             return RedirectToAction("DevTools");
         }
 
@@ -397,7 +406,9 @@ namespace BSIT3D_GUADES_Project_MVC.Controllers
         [ValidateAntiForgeryToken]
         public ActionResult ClearSampleReservations()
         {
-            TempData[DevResultKey] = QCUCRAMDevToolsService.ClearSampleReservations();
+            if (!QCUCRAMDevToolsService.Enabled) { return HttpNotFound(); }
+
+            ApplyDev(QCUCRAMDevToolsService.ClearSampleReservations());
             return RedirectToAction("DevTools");
         }
 
@@ -405,26 +416,66 @@ namespace BSIT3D_GUADES_Project_MVC.Controllers
         [ValidateAntiForgeryToken]
         public ActionResult DeleteSampleStudents()
         {
-            TempData[DevResultKey] = QCUCRAMDevToolsService.DeleteSampleStudents();
+            if (!QCUCRAMDevToolsService.Enabled) { return HttpNotFound(); }
+
+            ApplyDev(QCUCRAMDevToolsService.DeleteSampleStudents());
             return RedirectToAction("DevTools");
         }
 
         /// <summary>
-        /// Port of btnClearAll_Click: the box must read DELETE (all capitals) and the
-        /// "I understand this cannot be undone." check must be ticked. Anything else
-        /// changes nothing and shows the original refusal message.
+        /// Port of btnClearAll_Click: the box must read DELETE (all capitals); anything else
+        /// changes nothing and shows the original refusal message. The "I understand this cannot
+        /// be undone." tick box lives in the qcuConfirm pop-up, as in the .aspx.
         /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult ClearAllReservations(string confirmText, bool confirmCheck)
+        public ActionResult ClearAllReservations(string confirmText)
         {
-            TempData[DevResultKey] = QCUCRAMDevToolsService.ClearAllReservations(confirmText, confirmCheck);
+            if (!QCUCRAMDevToolsService.Enabled) { return HttpNotFound(); }
+
+            ApplyDev(QCUCRAMDevToolsService.ClearAllReservations(confirmText));
             return RedirectToAction("DevTools");
+        }
+
+        /// <summary>
+        /// DevTools.aspx.cs RunSweepOnLoad = false: this page must not run the automatic rules
+        /// by itself, so "Run sweep now" shows real counts. Applies to the page and its postbacks.
+        /// </summary>
+        protected override bool RunSweepOnLoad(string actionName)
+        {
+            switch ((actionName ?? string.Empty).ToLowerInvariant())
+            {
+                case "devtools":
+                case "shiftclock":
+                case "runsweep":
+                case "generatestudents":
+                case "generatereservations":
+                case "clearsamplereservations":
+                case "deletesamplestudents":
+                case "clearallreservations":
+                    return false;
+                default:
+                    return true;
+            }
         }
 
         // =================================================================
         //  Helpers
         // =================================================================
+        /// <summary>Toast (lblMessage) plus the detail box that stays on the page (litSampleResult).</summary>
+        private void ApplyDev(QCUCRAMDevResult result)
+        {
+            if (result == null) { return; }
+
+            if (!string.IsNullOrEmpty(result.Toast))
+            {
+                if (result.IsError) { FlashError(result.Toast); }
+                else { Flash(result.Toast); }
+            }
+
+            if (!string.IsNullOrEmpty(result.DetailHtml)) { TempData[DevResultKey] = result.DetailHtml; }
+        }
+
         private void Toast(QCUCRAMOperationResult result)
         {
             if (result == null) { return; }

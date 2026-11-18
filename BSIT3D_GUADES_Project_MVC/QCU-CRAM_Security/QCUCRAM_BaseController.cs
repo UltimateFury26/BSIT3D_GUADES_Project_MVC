@@ -27,6 +27,18 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Security
         protected bool IsAdmin { get { return QCUCRAM_Session.IsAdmin; } }
         protected bool IsStudent { get { return QCUCRAM_Session.IsStudent; } }
 
+        /// <summary>HttpContext.Items flag read by the request-sweep filter.</summary>
+        public const string SkipSweepKey = "QCUCRAM_SkipSweep";
+
+        /// <summary>
+        /// SecurePage.RunSweepOnLoad (default true). A controller returns false for the actions
+        /// that must not run the automatic rules before they render.
+        /// </summary>
+        protected virtual bool RunSweepOnLoad(string actionName)
+        {
+            return true;
+        }
+
         protected override void OnActionExecuting(ActionExecutingContext filterContext)
         {
             base.OnActionExecuting(filterContext);
@@ -39,7 +51,13 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Security
             http.Response.Cache.SetExpires(DateTime.UtcNow.AddMinutes(-1));
 
             // ---- SecurePage.OnLoad: run the automatic rules before the page reads data ----
-            if (QCUCRAM_Session.IsAuthenticated)
+            // SecurePage.RunSweepOnLoad: pages that must not sweep (Dev Tools) switch it off.
+            string actionName = filterContext.ActionDescriptor != null ? filterContext.ActionDescriptor.ActionName : null;
+            if (!RunSweepOnLoad(actionName))
+            {
+                http.Items[SkipSweepKey] = true;   // the global request sweep honours this too
+            }
+            else if (QCUCRAM_Session.IsAuthenticated)
             {
                 QCUCRAM_MaintenanceService.TryRunIfDue(QCUCRAM_AppSettings.SweepIntervalSeconds);
             }

@@ -3,6 +3,7 @@ using System.Configuration;
 using System.Diagnostics;
 using System.Web.Mvc;
 using BSIT3D_GUADES_Project_MVC.QCUCRAM_Helpers;
+using BSIT3D_GUADES_Project_MVC.QCUCRAM_Security;
 using BSIT3D_GUADES_Project_MVC.QCUCRAM_Services;
 
 namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Filters
@@ -37,6 +38,9 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Filters
                 {
                     return;
                 }
+
+                // A page that switched the sweep off (Dev Tools) stays off here too.
+                if (filterContext.HttpContext.Items[QCUCRAM_BaseController.SkipSweepKey] != null) { return; }
 
                 if (!IsOn("QCU-CRAM_SweepOnRequest", true)) { return; }
 

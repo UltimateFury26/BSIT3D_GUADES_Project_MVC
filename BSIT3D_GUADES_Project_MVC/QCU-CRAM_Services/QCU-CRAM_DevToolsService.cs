@@ -20,6 +20,22 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
     /// deployment set QCU-CRAM_DevToolsEnabled to false in Web.config and the
     /// controller will answer 404.
     /// </summary>
+    /// <summary>
+    /// What one Dev Tools click produces: the toast (ShowMessage on lblMessage) and,
+    /// for the two generators, the detail box that stays on the page (ShowResult).
+    /// </summary>
+    public class QCUCRAMDevResult
+    {
+        public string Toast { get; set; }
+        public bool IsError { get; set; }
+        public string DetailHtml { get; set; }
+
+        public static QCUCRAMDevResult ToastOnly(string message, bool isError)
+        {
+            return new QCUCRAMDevResult { Toast = message, IsError = isError };
+        }
+    }
+
     public static class QCUCRAMDevToolsService
     {
         public const string OffsetKey = "DevTimeOffsetMinutes";
@@ -27,7 +43,11 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
 
         private static readonly CultureInfo Inv = CultureInfo.InvariantCulture;
 
-        /// <summary>Reads QCU-CRAM_DevToolsEnabled from Web.config (default true).</summary>
+        /// <summary>
+        /// Reads QCU-CRAM_DevToolsEnabled from Web.config. The Web Forms page has no such switch
+        /// (it is always available to administrators), so the default stays true; setting the key
+        /// to false is an extra way to switch every Dev Tools action off.
+        /// </summary>
         public static bool Enabled
         {
             get
@@ -72,18 +92,19 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
         }
 
         // ------------------------------------------------------------------ clock
-        public static string ShiftClock(string command)
+        /// <summary>btnShift_Command: toast only; an unknown command does nothing (source: "return;").</summary>
+        public static QCUCRAMDevResult ShiftClock(string command)
         {
             if (string.Equals(command, "reset", StringComparison.OrdinalIgnoreCase))
             {
                 SetOffset(0);
-                return Message("Clock reset to real time.", false);
+                return QCUCRAMDevResult.ToastOnly("Clock reset to real time.", false);
             }
 
             int delta;
             if (!int.TryParse(command, NumberStyles.Integer, Inv, out delta))
             {
-                return Message("Unknown clock command.", true);
+                return null;
             }
 
             int current;
@@ -97,7 +118,8 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
             if (next > MaxOffset) { next = MaxOffset; }
 
             SetOffset((int)next);
-            return Message("Clock moved forward. The offset is now " + next + " minute(s).", false);
+            return QCUCRAMDevResult.ToastOnly(
+                "Clock moved forward. The offset is now " + next + " minute(s).", false);
         }
 
         private static void SetOffset(int minutes)
@@ -134,7 +156,7 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
         }
 
         // ------------------------------------------------------------------ sample data
-        public static string GenerateStudents(int adminId)
+        public static QCUCRAMDevResult GenerateStudents(int adminId)
         {
             try
             {
@@ -142,29 +164,39 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
                     QCUCRAM_SampleData.GenerateStudents(
                         QCUCRAM_SampleData.StudentsPerClick, adminId);
 
-                return Message(
-                    "<strong>" + b.Created + " students added</strong> (" +
-                    b.Clean + " clean &middot; " + b.OneStrikeAway + " one strike away &middot; " +
-                    b.RestrictedNow + " restricted now &middot; " + b.ExpiredRestriction +
-                    " expired restriction; " +
-                    (b.Created - b.Faculty - b.Visitors) + " students, " +
-                    b.Faculty + " faculty, " + b.Visitors + " visitor). " +
-                    "Matching forfeited reservations added: " + b.StrikeReservations + ".<br />" +
-                    "Log in with: " + HttpUtility.HtmlEncode(string.Join(", ", b.Numbers.ToArray())) +
-                    " &middot; password <code>" +
-                    HttpUtility.HtmlEncode(QCUCRAM_SampleData.SamplePassword) + "</code>",
-                    false);
+                return new QCUCRAMDevResult
+                {
+                    Toast = b.Created + " sample students added.",
+                    IsError = false,
+                    DetailHtml = Detail(
+                        "<strong>" + b.Created + " students added</strong> (" +
+                        b.Clean + " clean &middot; " + b.OneStrikeAway + " one strike away &middot; " +
+                        b.RestrictedNow + " restricted now &middot; " + b.ExpiredRestriction +
+                        " expired restriction; " +
+                        (b.Created - b.Faculty - b.Visitors) + " students, " +
+                        b.Faculty + " faculty, " + b.Visitors + " visitor). " +
+                        "Matching forfeited reservations added: " + b.StrikeReservations + ".<br />" +
+                        "Log in with: " + HttpUtility.HtmlEncode(string.Join(", ", b.Numbers.ToArray())) +
+                        " &middot; password <code>" +
+                        HttpUtility.HtmlEncode(QCUCRAM_SampleData.SamplePassword) + "</code>")
+                };
             }
             catch (Exception)
             {
-                return Message("Could not create the sample students.", true);
+                return QCUCRAMDevResult.ToastOnly("Could not create the sample students.", true);
             }
         }
 
-        public static string GenerateReservations(int daysBack, int daysAhead, int adminId)
+        public static QCUCRAMDevResult GenerateReservations(int daysBack, int daysAhead, int adminId)
         {
             try
             {
+                // The Web Forms drop-downs only offer these values (event validation).
+                if (Array.IndexOf(HistoryChoices, daysBack) < 0 || Array.IndexOf(AheadChoices, daysAhead) < 0)
+                {
+                    return QCUCRAMDevResult.ToastOnly("Could not create the sample reservations.", true);
+                }
+
                 QCUCRAM_SampleData.ReservationBatch b =
                     QCUCRAM_SampleData.GenerateReservations(daysBack, daysAhead, adminId);
 
@@ -200,85 +232,84 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
                             "hours (clock buttons above) and click again.";
                 }
 
-                return Message(html, false);
+                return new QCUCRAMDevResult
+                {
+                    Toast = b.Created + " sample reservations added.",
+                    IsError = false,
+                    DetailHtml = Detail(html)
+                };
             }
             catch (InvalidOperationException ex)
             {
                 // "Generate the sample students first." / "There are no active rooms ..."
-                return Message(HttpUtility.HtmlEncode(ex.Message), true);
+                return QCUCRAMDevResult.ToastOnly(ex.Message, true);
             }
             catch (Exception)
             {
-                return Message("Could not create the sample reservations.", true);
+                return QCUCRAMDevResult.ToastOnly("Could not create the sample reservations.", true);
             }
         }
 
-        public static string ClearSampleReservations()
+        public static QCUCRAMDevResult ClearSampleReservations()
         {
             try
             {
                 int n = QCUCRAM_SampleData.ClearSampleReservations();
-                return Message(n + " sample reservations deleted.", false);
+                return QCUCRAMDevResult.ToastOnly(n + " sample reservations deleted.", false);
             }
             catch (Exception)
             {
-                return Message("Could not delete the sample reservations.", true);
+                return QCUCRAMDevResult.ToastOnly("Could not delete the sample reservations.", true);
             }
         }
 
-        public static string DeleteSampleStudents()
+        public static QCUCRAMDevResult DeleteSampleStudents()
         {
             try
             {
                 int n = QCUCRAM_SampleData.DeleteSampleStudents();
-                return Message(n + " sample students deleted.", false);
+                return QCUCRAMDevResult.ToastOnly(n + " sample students deleted.", false);
             }
             catch (Exception)
             {
-                return Message("Could not delete the sample students.", true);
+                return QCUCRAMDevResult.ToastOnly("Could not delete the sample students.", true);
             }
         }
 
         // ------------------------------------------------------------------ danger zone
         /// <summary>
-        /// Mirrors btnClearAll_Click: the box must read DELETE (all capitals) and
-        /// the "I understand" check must be ticked before anything is removed.
+        /// Mirrors btnClearAll_Click: the box must read DELETE (all capitals). The "I understand this
+        /// cannot be undone." tick box belongs to the qcuConfirm pop-up on the button (requireCheck),
+        /// exactly as in the .aspx, so the server only checks the typed word.
         /// </summary>
-        public static string ClearAllReservations(string confirmText, bool confirmCheck)
+        public static QCUCRAMDevResult ClearAllReservations(string confirmText)
         {
             if (!string.Equals((confirmText ?? string.Empty).Trim(), "DELETE", StringComparison.Ordinal))
             {
-                return Message(
+                return QCUCRAMDevResult.ToastOnly(
                     "Type DELETE (all capitals) in the box to confirm. Nothing was deleted.", true);
-            }
-
-            if (!confirmCheck)
-            {
-                return Message(
-                    "Tick \u201cI understand this cannot be undone.\u201d to confirm. Nothing was deleted.", true);
             }
 
             try
             {
                 int n = QCUCRAM_SampleData.ClearAllReservations();
-                return Message(
+                return QCUCRAMDevResult.ToastOnly(
                     "Deleted " + n + " reservation(s). Strikes and restrictions were reset.", false);
             }
             catch (Exception)
             {
-                return Message("Could not clear the data.", true);
+                return QCUCRAMDevResult.ToastOnly("Could not clear the data.", true);
             }
         }
 
-        // ------------------------------------------------------------------ helper
-        /// <summary>Same wrapper the original ShowResult() / ShowMessage() produce.</summary>
-        private static string Message(string html, bool isError)
-        {
-            string css = isError
-                ? "alert alert-danger py-2 small"
-                : "alert alert-success py-2 small";
+        // ------------------------------------------------------------------ helpers
+        private static readonly int[] HistoryChoices = { 14, 30, 60 };
+        private static readonly int[] AheadChoices = { 14, 21, 30 };
 
-            return "<div class=\"" + css + "\">" + html + "</div>";
+        /// <summary>DevTools.aspx.cs ShowResult(): the detail box that stays on the page.</summary>
+        private static string Detail(string html)
+        {
+            return "<div class=\"alert alert-success py-2 small\">" + html + "</div>";
         }
     }
 }

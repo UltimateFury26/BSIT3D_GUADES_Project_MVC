@@ -4,25 +4,19 @@
 @{
     /* =====================================================================
        QCU-CRAM  |  Views/Admin/QCU-CRAM_DevTools.cshtml
-       ---------------------------------------------------------------------
-       Port of Guades_QCUCram_Admin/Guades_QCUCram_DevTools.aspx.
+       One-to-one port of Guades_QCUCram_Admin/Guades_QCUCram_DevTools.aspx:
+       same page head, warning alert, "System clock" / "Automatic rules" /
+       "Sample data" sub-heads, bootstrap tables and buttons, drop-downs,
+       qcuConfirm pop-ups and the "Danger zone" card.
 
-       Sections, same as the original page:
-         1. the warning strip ("Testing tools only ... Reset the clock");
-         2. System clock - Real time / Offset / System time, five shift
-            buttons (15, 60, 1440, 10080, reset);
-         3. Automatic rules - the sweep hint and "Run sweep now";
-         4. Sample data - counts, "Generate 10 sample students", the ID and
-            password note, the 4/3/2/1 batch note, "History to generate" and
-            "Days ahead" drop-downs, "Generate sample reservations", the
-            "Covers all 8 statuses" hint, and the two sample clean-up buttons;
-         5. Danger zone - the "Type DELETE to confirm" gate plus the
-            "I understand this cannot be undone." check.
-
-       The whole page is hidden when QCU-CRAM_DevToolsEnabled is false in
-       Web.config - the controller returns 404 in that case.
+       R07 notes:
+         * One POST form, like the Web Forms form: every button carries its own
+           formaction, so every tool is POST-only and anti-forgery protected.
+         * Original confirms are qcuConfirm pop-ups; the "I understand this
+           cannot be undone." tick box is the pop-up's requireCheck.
+         * Messages: toasts (lblMessage) come from TempData through the layout;
+           the sweep result and the sample-data details stay on the page.
        ===================================================================== */
-
     ViewBag.Title = "Dev Tools";
     Layout = "~/Views/Shared/_QCU-CRAM_Layout.cshtml";
 
@@ -31,215 +25,117 @@
 }
 
 <div class="qcu-page-head">
-    <div>
-        <h1 class="qcu-page-title">Dev Tools</h1>
-        <p class="qcu-page-sub">Testing tools - not for normal use</p>
-    </div>
+    <h2>Dev Tools</h2>
+    <p>Testing tools - not for normal use</p>
 </div>
 
-<div class="qcu-alert qcu-alert--warning" role="alert">
-    Testing tools only. Moving the clock changes how every page decides what is
-    &ldquo;now&rdquo;. <strong>Reset the clock when you finish testing.</strong>
+<div class="alert alert-warning">
+    Testing tools only. Moving the clock changes how every page decides what is "now".
+    <strong>Reset the clock when you finish testing.</strong>
 </div>
 
-@* LastResult / LastSweepSummary already carry their own alert wrapper and
-   tone (success / info / danger), exactly like lblMessage and litSweepResult. *@
-@if (!string.IsNullOrWhiteSpace(Model.LastResult))
+@using (Html.BeginForm("ShiftClock", "AdminSetup", FormMethod.Post))
 {
-    @Html.Raw(Model.LastResult)
-}
+    @Html.AntiForgeryToken()
 
-@if (!string.IsNullOrWhiteSpace(Model.LastSweepSummary))
-{
-    @Html.Raw(Model.LastSweepSummary)
-}
+    @* ================= Clock ================= *@
+    <h5 class="qcu-subhead">System clock</h5>
+    <table class="table table-sm table-bordered w-auto"><tr><th>Real time</th><td>@Model.RealNow.ToString(stamp, inv)</td></tr><tr><th>Offset</th><td>@Model.OffsetMinutes minute(s)</td></tr><tr><th>System time (used by CRAM)</th><td><strong>@Model.SimulatedNow.ToString(stamp, inv)</strong></td></tr></table>
 
-@* -------------------------------------------------------- system clock *@
-<section class="qcu-panel">
-    <header class="qcu-panel__head">
-        <h2>System clock</h2>
-    </header>
+    <div class="mb-4">
+        <button type="submit" name="command" value="15" formaction="@Url.Action("ShiftClock")" class="btn btn-outline-primary">+15 minutes</button>
+        <button type="submit" name="command" value="60" formaction="@Url.Action("ShiftClock")" class="btn btn-outline-primary">+1 hour</button>
+        <button type="submit" name="command" value="1440" formaction="@Url.Action("ShiftClock")" class="btn btn-outline-primary">+1 day</button>
+        <button type="submit" name="command" value="10080" formaction="@Url.Action("ShiftClock")" class="btn btn-outline-primary">+1 week</button>
+        <button type="submit" name="command" value="reset" formaction="@Url.Action("ShiftClock")" class="btn btn-danger">Reset clock</button>
+    </div>
 
-    <div class="qcu-panel__body">
-        <table class="qcu-table qcu-table--kv">
-            <tbody>
-                <tr>
-                    <th>Real time</th>
-                    <td>@Model.RealNow.ToString(stamp, inv)</td>
-                </tr>
-                <tr>
-                    <th>Offset</th>
-                    <td>@Model.OffsetMinutes minute(s)</td>
-                </tr>
-                <tr>
-                    <th>System time (used by CRAM)</th>
-                    <td><strong>@Model.SimulatedNow.ToString(stamp, inv)</strong></td>
-                </tr>
-            </tbody>
-        </table>
+    @* ================= Sweep ================= *@
+    <h5 class="qcu-subhead">Automatic rules</h5>
+    <p class="text-muted small">
+        Runs: expire unreviewed pending requests, forfeit unclaimed bookings (adds strikes and restrictions),
+        complete finished sessions, and lift expired restrictions.
+    </p>
+    <button type="submit" formaction="@Url.Action("RunSweep")" class="btn btn-primary">Run sweep now</button>
+    <div class="mt-3 mb-4">
+        @if (!string.IsNullOrWhiteSpace(Model.LastSweepSummary))
+        {
+            @Html.Raw(Model.LastSweepSummary)
+        }
+    </div>
 
-        <div class="qcu-btn-row">
-            <form method="post" action="@Url.Action("ShiftClock")">
-                @Html.AntiForgeryToken()
-                <input type="hidden" name="command" value="15" />
-                <button type="submit" class="qcu-btn qcu-btn--sm">+15 minutes</button>
-            </form>
-            <form method="post" action="@Url.Action("ShiftClock")">
-                @Html.AntiForgeryToken()
-                <input type="hidden" name="command" value="60" />
-                <button type="submit" class="qcu-btn qcu-btn--sm">+1 hour</button>
-            </form>
-            <form method="post" action="@Url.Action("ShiftClock")">
-                @Html.AntiForgeryToken()
-                <input type="hidden" name="command" value="1440" />
-                <button type="submit" class="qcu-btn qcu-btn--sm">+1 day</button>
-            </form>
-            <form method="post" action="@Url.Action("ShiftClock")">
-                @Html.AntiForgeryToken()
-                <input type="hidden" name="command" value="10080" />
-                <button type="submit" class="qcu-btn qcu-btn--sm">+1 week</button>
-            </form>
-            <form method="post" action="@Url.Action("ShiftClock")">
-                @Html.AntiForgeryToken()
-                <input type="hidden" name="command" value="reset" />
-                <button type="submit" class="qcu-btn qcu-btn--sm qcu-btn--danger">Reset clock</button>
-            </form>
+    @* ================= Sample data ================= *@
+    <h5 class="qcu-subhead">Sample data</h5>
+    <table class="table table-sm table-bordered w-auto"><tr><th>Students</th><td>@Model.Students (@Model.SampleStudents sample: @Model.SampleRestricted restricted now, @Model.SampleOneStrikeAway one strike away)</td></tr><tr><th>Reservations</th><td>@Model.Reservations (@Model.SampleReservations sample)</td></tr><tr><th>Notifications</th><td>@Model.Notifications</td></tr></table>
+
+    @if (!string.IsNullOrWhiteSpace(Model.LastResult))
+    {
+        @Html.Raw(Model.LastResult)
+    }
+
+    <div class="mb-3">
+        <button type="submit" formaction="@Url.Action("GenerateStudents")" class="btn btn-outline-primary">Generate 10 sample students</button>
+        <span class="text-muted small ms-2">
+            Each click adds 10 <strong>new</strong> students (no limit). IDs look real: <code>24-0153</code>
+            (Faculty <code>FAC-0123</code>, Visitor <code>VIS-0123</code>). Password for all: <code>Test1234!</code>
+        </span>
+        <div class="text-muted small mt-1">
+            Every batch of 10: 4 clean &middot; 3 one strike away &middot; 2 restricted now &middot; 1 expired restriction
+            (the strike limit and restriction days come from Settings).
         </div>
     </div>
-</section>
 
-@* ------------------------------------------------------ automatic rules *@
-<section class="qcu-panel">
-    <header class="qcu-panel__head">
-        <h2>Automatic rules</h2>
-    </header>
-
-    <div class="qcu-panel__body">
-        <p class="qcu-hint">
-            Runs: expire unreviewed pending requests, forfeit unclaimed bookings
-            (adds strikes and restrictions), complete finished sessions, and lift
-            expired restrictions.
-        </p>
-
-        <form method="post" action="@Url.Action("RunSweep")">
-            @Html.AntiForgeryToken()
-            <button type="submit" class="qcu-btn qcu-btn--primary">Run sweep now</button>
-        </form>
-    </div>
-</section>
-
-@* ----------------------------------------------------------- sample data *@
-<section class="qcu-panel">
-    <header class="qcu-panel__head">
-        <h2>Sample data</h2>
-    </header>
-
-    <div class="qcu-panel__body">
-        <table class="qcu-table qcu-table--kv">
-            <tbody>
-                <tr>
-                    <th>Students</th>
-                    <td>
-                        @Model.Students total &middot; @Model.SampleStudents sample
-                        (@Model.SampleOneStrikeAway one strike away, @Model.SampleRestricted restricted)
-                    </td>
-                </tr>
-                <tr>
-                    <th>Reservations</th>
-                    <td>@Model.Reservations total &middot; @Model.SampleReservations sample</td>
-                </tr>
-                <tr>
-                    <th>Notifications</th>
-                    <td>@Model.Notifications</td>
-                </tr>
-            </tbody>
-        </table>
-
-        <h3 class="qcu-subhead">Students</h3>
-
-        <form method="post" action="@Url.Action("GenerateStudents")">
-            @Html.AntiForgeryToken()
-            <button type="submit" class="qcu-btn qcu-btn--sm">Generate 10 sample students</button>
-        </form>
-
-        <p class="qcu-hint">
-            Each click adds 10 <strong>new</strong> students (no limit). IDs look real:
-            <code>24-0153</code> (Faculty <code>FAC-0123</code>, Visitor <code>VIS-0123</code>).
-            Password for all: <code>Test1234!</code>
-        </p>
-        <p class="qcu-hint">
-            Every batch of 10: 4 clean &middot; 3 one strike away &middot; 2 restricted now &middot;
-            1 expired restriction (the strike limit and restriction days come from Settings).
-        </p>
-
-        <h3 class="qcu-subhead">Reservations</h3>
-
-        <form method="post" action="@Url.Action("GenerateReservations")" class="qcu-inline-form">
-            @Html.AntiForgeryToken()
-            <label for="daysBack">History to generate</label>
-            <select id="daysBack" name="daysBack" class="form-control qcu-input--num">
-                <option value="14">14 days</option>
-                <option value="30" selected="selected">30 days</option>
-                <option value="60">60 days</option>
+    <div class="qcu-toolbar row g-2 align-items-end mb-3">
+        <div class="col-auto">
+            <label for="daysBack" class="form-label">History to generate</label>
+            <select id="daysBack" name="daysBack" class="form-select">
+                <option value="14">Last 14 days</option>
+                <option value="30" selected="selected">Last 30 days</option>
+                <option value="60">Last 60 days</option>
             </select>
-            <label for="daysAhead">Days ahead</label>
-            <select id="daysAhead" name="daysAhead" class="form-control qcu-input--num">
-                <option value="14" selected="selected">14 days</option>
-                <option value="21">21 days</option>
-                <option value="30">30 days</option>
+        </div>
+        <div class="col-auto">
+            <label for="daysAhead" class="form-label">Days ahead</label>
+            <select id="daysAhead" name="daysAhead" class="form-select">
+                <option value="14" selected="selected">Next 14 days</option>
+                <option value="21">Next 21 days</option>
+                <option value="30">Next 30 days</option>
             </select>
-            <button type="submit" class="qcu-btn qcu-btn--sm">Generate sample reservations</button>
-        </form>
-
-        <p class="qcu-hint">
-            Covers all 8 statuses, every room, past days and at least 14 days ahead.
-            They follow the automatic rules, so the sweep leaves them alone (a
-            <em>CheckedIn</em> one needs a slot that is running right now &mdash; use the
-            clock buttons above to move into library hours).
-        </p>
-
-        <div class="qcu-btn-row">
-            <form method="post" action="@Url.Action("ClearSampleReservations")"
-                  onsubmit="return confirm('Every SAMPLE reservation is deleted. Your own bookings are kept.');">
-                @Html.AntiForgeryToken()
-                <button type="submit" class="qcu-btn qcu-btn--sm qcu-btn--danger">Clear sample reservations</button>
-            </form>
-
-            <form method="post" action="@Url.Action("DeleteSampleStudents")"
-                  onsubmit="return confirm('Every SAMPLE student and everything that belongs to them is deleted.');">
-                @Html.AntiForgeryToken()
-                <button type="submit" class="qcu-btn qcu-btn--sm qcu-btn--danger">Delete sample students and their data</button>
-            </form>
+        </div>
+        <div class="col-auto">
+            <button type="submit" formaction="@Url.Action("GenerateReservations")" class="btn btn-outline-primary">Generate sample reservations</button>
         </div>
     </div>
-</section>
-
-@* ----------------------------------------------------------- danger zone *@
-<section class="qcu-panel qcu-panel--danger">
-    <header class="qcu-panel__head">
-        <h2>Danger zone</h2>
-    </header>
-
-    <div class="qcu-panel__body">
-        <p class="qcu-hint">
-            Deletes <strong>every</strong> reservation (with members and history) and
-            <strong>every</strong> notification, and resets all students' strikes and
-            restrictions. Accounts are kept.
-        </p>
-
-        <form method="post" action="@Url.Action("ClearAllReservations")"
-              onsubmit="return confirm('This deletes EVERY reservation and notification and resets all strikes. It cannot be undone. Continue?');">
-            @Html.AntiForgeryToken()
-            <label for="confirmText">Type DELETE to confirm</label>
-            <input id="confirmText" name="confirmText" type="text" class="form-control"
-                   autocomplete="off" placeholder="DELETE" />
-            <label class="qcu-check">
-                <input type="checkbox" name="confirmCheck" value="true" required="required" />
-                I understand this cannot be undone.
-            </label>
-            <button type="submit" class="qcu-btn qcu-btn--sm qcu-btn--danger">
-                Clear ALL reservations and notifications
-            </button>
-        </form>
+    <div class="text-muted small mb-3">
+        Covers all 8 statuses, every room, past days and at least 14 days ahead. They follow the automatic rules, so the sweep leaves them alone
+        (a <em>CheckedIn</em> one needs a slot that is running right now &mdash; use the clock buttons above to move into library hours).
     </div>
-</section>
+
+    <div class="mb-4">
+        <button type="submit" formaction="@Url.Action("ClearSampleReservations")" class="btn btn-outline-secondary"
+                onclick="return qcuConfirm(this, { tone: 'warning', title: 'Clear sample reservations?', message: 'Every SAMPLE reservation is deleted. Your own bookings are kept.', confirmText: 'Clear' });">Clear sample reservations</button>
+        <button type="submit" formaction="@Url.Action("DeleteSampleStudents")" class="btn btn-outline-secondary"
+                onclick="return qcuConfirm(this, { tone: 'danger', title: 'Delete sample students?', message: 'Every SAMPLE student and everything that belongs to them is deleted.', confirmText: 'Delete' });">Delete sample students and their data</button>
+    </div>
+
+    @* ================= Danger zone ================= *@
+    <div class="card border-danger mb-5">
+        <div class="card-header text-danger"><strong>Danger zone</strong></div>
+        <div class="card-body">
+            <p class="mb-2">
+                Deletes <strong>every</strong> reservation (with members and history) and <strong>every</strong> notification,
+                and resets all students' strikes and restrictions. Accounts are kept.
+            </p>
+            <div class="row g-2 align-items-end">
+                <div class="col-auto">
+                    <label for="confirmText" class="form-label">Type DELETE to confirm</label>
+                    <input type="text" id="confirmText" name="confirmText" class="form-control" autocomplete="off" />
+                </div>
+                <div class="col-auto">
+                    <button type="submit" formaction="@Url.Action("ClearAllReservations")" class="btn btn-danger"
+                            onclick="return qcuConfirm(this, { tone: 'danger', title: 'Clear ALL reservations?', message: 'This deletes every reservation and every notification, and resets all strikes and restrictions. Accounts are kept.', confirmText: 'Clear everything', requireCheck: 'I understand this cannot be undone.' });">Clear ALL reservations and notifications</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
