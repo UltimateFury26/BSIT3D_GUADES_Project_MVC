@@ -68,7 +68,9 @@ namespace BSIT3D_GUADES_Project_MVC.Controllers
         [ValidateAntiForgeryToken]
         public ActionResult ToggleRoom(int id)
         {
-            Toast(QCUCRAMSetupService.ToggleRoom(id));
+            // Rooms.aspx.cs gvRooms_RowCommand: any failure -> the same generic message
+            try { Toast(QCUCRAMSetupService.ToggleRoom(id)); }
+            catch (System.Exception) { FlashError("Sorry, that action could not be completed. Please try again."); }
             return RedirectToAction("Rooms");
         }
 
@@ -76,7 +78,8 @@ namespace BSIT3D_GUADES_Project_MVC.Controllers
         [ValidateAntiForgeryToken]
         public ActionResult DeleteRoom(int id)
         {
-            Toast(QCUCRAMSetupService.DeleteRoom(id));
+            try { Toast(QCUCRAMSetupService.DeleteRoom(id)); }
+            catch (System.Exception) { FlashError("Sorry, that action could not be completed. Please try again."); }
             return RedirectToAction("Rooms");
         }
 

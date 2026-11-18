@@ -23,15 +23,26 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_ViewModels
     {
         public int RoomID { get; set; }
         public string RoomName { get; set; }
-        public int MinCapacity { get; set; }
-        public int MaxCapacity { get; set; }
+
+        // R02: text, like txtMin / txtMax in Rooms.aspx, so what was typed survives a failed save
+        // and a blank / non-numeric box gets the validator message instead of a silent 0.
+        public string MinCapacity { get; set; }
+        public string MaxCapacity { get; set; }
         public bool IsActive { get; set; }
+
+        // R02: the Rooms.aspx validator messages (ValidationGroup="Room"), shown under each box.
+        public List<string> NameErrors { get; set; }
+        public List<string> MinErrors { get; set; }
+        public List<string> MaxErrors { get; set; }
 
         public QCUCRAMRoomEditModel()
         {
-            MinCapacity = 5;
-            MaxCapacity = 10;
+            MinCapacity = "5";
+            MaxCapacity = "10";
             IsActive = true;
+            NameErrors = new List<string>();
+            MinErrors = new List<string>();
+            MaxErrors = new List<string>();
         }
     }
 
@@ -293,6 +304,12 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_ViewModels
         public string Error { get; set; }
         public string SubmitText { get; set; }
         public string CancelUrl { get; set; }
+
+        /// <summary>
+        /// R02: optional "|"-separated CSS selectors of required fields. The Save button stays
+        /// disabled until they are filled (QCU-CRAM_ui.js data-qcu-needs), as data-qcu-gate did.
+        /// </summary>
+        public string Needs { get; set; }
 
         /// <summary>The form fields, supplied by the calling view as an @&lt;text&gt; block.</summary>
         public Func<object, System.Web.WebPages.HelperResult> Body { get; set; }

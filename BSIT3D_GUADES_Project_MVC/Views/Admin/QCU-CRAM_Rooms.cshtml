@@ -1,5 +1,6 @@
 @model BSIT3D_GUADES_Project_MVC.QCUCRAM_ViewModels.QCUCRAMRoomsViewModel
 @using System
+@using System.Collections.Generic
 @{
     /* =====================================================================
        QCU-CRAM  |  Views/Admin/QCU-CRAM_Rooms.cshtml
@@ -12,6 +13,10 @@
 
     bool isNew = Model.Edit == null || Model.Edit.RoomID <= 0;
     string modalTitle = isNew ? "Add Room" : "Edit Room #" + Model.Edit.RoomID;
+
+    List<string> nameErrors = Model.Edit == null ? new List<string>() : Model.Edit.NameErrors;
+    List<string> minErrors = Model.Edit == null ? new List<string>() : Model.Edit.MinErrors;
+    List<string> maxErrors = Model.Edit == null ? new List<string>() : Model.Edit.MaxErrors;
 }
 
 <div class="qcu-page-bar">
@@ -23,15 +28,20 @@
 </div>
 
 <div class="table-responsive">
+    @if (Model.Rows.Count == 0)
+    {
+        @* GridView EmptyDataText: just the message, no header row *@
+        <table class="table table-bordered table-striped qcu-admin-table">
+            <tr><td>No rooms yet. Click &quot;+ Add Room&quot; to create one.</td></tr>
+        </table>
+    }
+    else
+    {
     <table class="table table-bordered table-striped qcu-admin-table">
         <thead>
             <tr><th>ID</th><th>Room Name</th><th>Min Capacity</th><th>Max Capacity</th><th>Status</th><th>Reservations</th><th>Actions</th></tr>
         </thead>
         <tbody>
-            @if (Model.Rows.Count == 0)
-            {
-                <tr><td colspan="7">No rooms yet. Click &quot;+ Add Room&quot; to create one.</td></tr>
-            }
             @foreach (var row in Model.Rows)
             {
                 string action = row.IsActive ? "Disable" : "Enable";
@@ -67,6 +77,7 @@
             }
         </tbody>
     </table>
+    }
 </div>
 <p class="text-muted">
     A room that has reservations cannot be deleted. Disable it instead: it disappears from new bookings,
@@ -80,6 +91,7 @@
     Action = Url.Action("SaveRoom"),
     Error = Model.ModalError,
     SubmitText = isNew ? "Add Room" : "Update Room",
+    Needs = "#RoomName|#MinCapacity|#MaxCapacity",
     CancelUrl = Url.Action("Rooms"),
     Body = @<text>
         <input type="hidden" name="RoomID" value="@(isNew ? 0 : Model.Edit.RoomID)" />
@@ -88,24 +100,30 @@
             <label class="form-label" for="RoomName">Room Name</label>
             <input id="RoomName" name="RoomName" class="form-control" maxlength="50" autocomplete="off"
                    value="@(Model.Edit == null ? string.Empty : Model.Edit.RoomName)" />
+            @foreach (string m in nameErrors) { <span class="text-danger">@m</span> }
         </div>
 
         <div class="row">
             <div class="col-6 mb-3">
                 <label class="form-label" for="MinCapacity">Min Capacity</label>
                 <input id="MinCapacity" name="MinCapacity" class="form-control" maxlength="3" autocomplete="off"
-                       value="@(Model.Edit == null ? 5 : Model.Edit.MinCapacity)" />
+                       value="@(Model.Edit == null ? "5" : Model.Edit.MinCapacity)" />
+                @foreach (string m in minErrors) { <span class="text-danger">@m</span> }
             </div>
             <div class="col-6 mb-3">
                 <label class="form-label" for="MaxCapacity">Max Capacity</label>
                 <input id="MaxCapacity" name="MaxCapacity" class="form-control" maxlength="3" autocomplete="off"
-                       value="@(Model.Edit == null ? 10 : Model.Edit.MaxCapacity)" />
+                       value="@(Model.Edit == null ? "10" : Model.Edit.MaxCapacity)" />
+                @foreach (string m in maxErrors) { <span class="text-danger">@m</span> }
             </div>
         </div>
 
         <div class="form-check mb-3">
             <input type="checkbox" class="form-check-input" id="IsActive" name="IsActive" value="true" @Html.Raw(Model.Edit == null || Model.Edit.IsActive ? "checked=\"checked\"" : string.Empty) />
             <label class="form-check-label" for="IsActive">Active (available for booking)</label>
+            @* R02: an unticked box posts nothing, so the model kept its constructor default (true) and
+               "Active" could never be turned off. The hidden false must come AFTER the checkbox. *@
+            <input type="hidden" name="IsActive" value="false" />
         </div>
     </text>
 })

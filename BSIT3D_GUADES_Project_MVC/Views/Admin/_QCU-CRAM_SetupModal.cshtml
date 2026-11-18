@@ -72,7 +72,7 @@
 
         <div class="qcu-form-foot">
             <a class="btn btn-outline-secondary" href="@cancel" data-qcu-close>Cancel</a>
-            <button type="submit" class="btn btn-primary">@submit</button>
+            <button type="submit" class="btn btn-primary" data-qcu-needs="@(string.IsNullOrWhiteSpace(Model.Needs) ? null : Model.Needs)">@submit</button>
         </div>
     </form>
 </div>

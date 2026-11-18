@@ -52,7 +52,11 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
 
                 Dictionary<int, int> counts = ReservationCountsBy(db, "RoomID");
 
-                foreach (QCUCRAM_Room room in content.GetRooms(false))
+                // Rooms.aspx.cs BindGrid: ORDER BY r.RoomID (GetRooms sorts by name for other pages)
+                List<QCUCRAM_Room> allRooms = content.GetRooms(false);
+                allRooms.Sort((x, y) => x.RoomID.CompareTo(y.RoomID));
+
+                foreach (QCUCRAM_Room room in allRooms)
                 {
                     int used;
                     counts.TryGetValue(room.RoomID, out used);
@@ -82,8 +86,8 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
                             {
                                 RoomID = room.RoomID,
                                 RoomName = room.RoomName,
-                                MinCapacity = room.MinCapacity,
-                                MaxCapacity = room.MaxCapacity,
+                                MinCapacity = room.MinCapacity.ToString(),
+                                MaxCapacity = room.MaxCapacity.ToString(),
                                 IsActive = room.IsActive
                             };
                             vm.ModalOpen = true;
@@ -104,20 +108,67 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
         {
             if (model == null) { return Retry("Room details are missing."); }
 
-            string name = (model.RoomName ?? "").Trim();
+            model.NameErrors.Clear();
+            model.MinErrors.Clear();
+            model.MaxErrors.Clear();
 
+            string name = (model.RoomName ?? "").Trim();
+            string minText = (model.MinCapacity ?? "").Trim();
+            string maxText = (model.MaxCapacity ?? "").Trim();
+            int min, max;
+            bool minIsInt = int.TryParse(minText, System.Globalization.NumberStyles.Integer,
+                                         System.Globalization.CultureInfo.InvariantCulture, out min);
+            bool maxIsInt = int.TryParse(maxText, System.Globalization.NumberStyles.Integer,
+                                         System.Globalization.CultureInfo.InvariantCulture, out max);
+
+            // Rooms.aspx validators (ValidationGroup="Room"), in markup order. Each one that
+            // fails shows its own message under the box and keeps the pop-up open.
+            if (name.Length == 0) { model.NameErrors.Add("Room name is required."); }
+
+            if (minText.Length == 0)
+            {
+                model.MinErrors.Add("Min capacity is required.");
+            }
+            else if (!minIsInt || min < 1 || min > 100)
+            {
+                model.MinErrors.Add("Min capacity must be a whole number from 1 to 100.");
+            }
+
+            if (maxText.Length == 0)
+            {
+                model.MaxErrors.Add("Max capacity is required.");
+            }
+            else
+            {
+                if (!maxIsInt || max < 1 || max > 100)
+                {
+                    model.MaxErrors.Add("Max capacity must be a whole number from 1 to 100.");
+                }
+                // CompareValidator (GreaterThanEqual, Integer): fails for a non-number; passes
+                // when the min box cannot be read as a number.
+                if (!maxIsInt || (minIsInt && max < min))
+                {
+                    model.MaxErrors.Add("Max capacity must be at least the min capacity.");
+                }
+            }
+
+            if (model.NameErrors.Count > 0 || model.MinErrors.Count > 0 || model.MaxErrors.Count > 0)
+            {
+                return Retry(string.Empty);     // the validators show their own messages
+            }
+
+            // btnSave_Click server-side re-checks (browser checks can be bypassed)
             if (name.Length == 0 || name.Length > 50)
             {
                 return Retry("Room name is required (maximum 50 characters).");
             }
 
-            if (model.MinCapacity < 1 || model.MaxCapacity < 1 ||
-                model.MinCapacity > 100 || model.MaxCapacity > 100)
+            if (!minIsInt || !maxIsInt || min < 1 || max < 1 || min > 100 || max > 100)
             {
                 return Retry("Capacities must be whole numbers from 1 to 100.");
             }
 
-            if (model.MinCapacity > model.MaxCapacity)
+            if (min > max)
             {
                 return Retry("Min capacity cannot be greater than max capacity.");
             }
@@ -128,8 +179,7 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
 
                 if (model.RoomID > 0)
                 {
-                    int code = content.UpdateRoom(model.RoomID, name,
-                        model.MinCapacity, model.MaxCapacity, model.IsActive);
+                    int code = content.UpdateRoom(model.RoomID, name, min, max, model.IsActive);
 
                     if (code == 0) { return QCUCRAMOperationResult.Success("Room updated."); }
                     if (code == 1) { return Retry("A room named \"" + name + "\" already exists."); }
@@ -139,7 +189,7 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
                 }
 
                 int newId;
-                int created = content.InsertRoom(name, model.MinCapacity, model.MaxCapacity, out newId);
+                int created = content.InsertRoom(name, min, max, out newId);
 
                 if (created == 0)
                 {
