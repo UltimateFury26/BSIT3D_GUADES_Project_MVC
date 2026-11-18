@@ -855,7 +855,7 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
 
             using (QCUCRAM_Db db = new QCUCRAM_Db())
             {
-                foreach (QCUCRAM_AdminUser admin in new QCUCRAM_AdminUserRepository(db).GetAll())
+                foreach (QCUCRAM_AdminUser admin in new QCUCRAM_AdminUserRepository(db).GetAllByUsername())   // R05: BindGrid ORDER BY Username
                 {
                     vm.Rows.Add(new QCUCRAMAdminRow
                     {
@@ -884,55 +884,89 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
         {
             if (model == null) { return Retry("Account details are missing."); }
 
-            string username = (model.Username ?? "").Trim();
+            model.UsernameErrors.Clear();
+            model.FullNameErrors.Clear();
+
+            bool adding = model.AdminID <= 0;
+            string rawUsername = model.Username ?? "";
+            string username = rawUsername.Trim();
             string fullName = (model.FullName ?? "").Trim();
 
-            if (model.AdminID == 0 && !UsernamePattern.IsMatch(username))
+            // AdminUsers.aspx validators (ValidationGroup="Admin"), in markup order. The username
+            // box exists only when ADDING (pnlUsername), so an edit never validates it.
+            // RequiredFieldValidator trims; RegularExpressionValidator tests the raw text.
+            if (adding)
+            {
+                if (username.Length == 0)
+                {
+                    model.UsernameErrors.Add("Username is required.");
+                }
+                else if (!UsernamePattern.IsMatch(rawUsername))
+                {
+                    model.UsernameErrors.Add("Use 3-50 letters, numbers, dots, dashes or underscores (no spaces).");
+                }
+            }
+            if (fullName.Length == 0) { model.FullNameErrors.Add("Full name is required."); }
+
+            if (model.UsernameErrors.Count > 0 || model.FullNameErrors.Count > 0)
+            {
+                return Retry(string.Empty);     // the validators show their own messages
+            }
+
+            // btnSave_Click -> SaveNew / SaveEdit server-side re-checks (browser checks can be bypassed)
+            if (adding && !UsernamePattern.IsMatch(username))
             {
                 return Retry("Username must be 3-50 letters, numbers, dots, dashes or underscores.");
             }
-
             if (fullName.Length == 0 || fullName.Length > 120)
             {
                 return Retry("Full name is required (maximum 120 characters).");
             }
 
-            using (QCUCRAM_Db db = new QCUCRAM_Db())
+            try
             {
-                QCUCRAM_AdminUserRepository admins = new QCUCRAM_AdminUserRepository(db);
-
-                if (model.AdminID == 0)
+                using (QCUCRAM_Db db = new QCUCRAM_Db())
                 {
-                    int next = admins.Count() + 1;
-                    string temporary = QCUCRAM_PasswordHash.AdminTemporaryPassword(next);
+                    QCUCRAM_AdminUserRepository admins = new QCUCRAM_AdminUserRepository(db);
 
-                    int newId;
-                    int code = admins.Insert(username, fullName, temporary, out newId);
-
-                    if (code == 0)
+                    if (adding)
                     {
-                        return QCUCRAMOperationResult.Success(
-                            "Admin account '" + username +
-                            "' added. Temporary password: " + temporary + ".");
+                        // Temporary password = "admin" + this account's number (5 admins exist -> admin6)
+                        string temporary = QCUCRAM_PasswordHash.AdminTemporaryPassword(admins.Count() + 1);
+
+                        int newId;
+                        int code = admins.Insert(username, fullName, temporary, out newId);
+
+                        if (code == 0)
+                        {
+                            return QCUCRAMOperationResult.Success(
+                                "Admin account '" + username +
+                                "' added. Temporary password: " + temporary + ".");
+                        }
+                        if (code == 1) { return Retry("That username is already taken."); }
+
+                        return Retry("Sorry, the account could not be saved. Please try again.");
                     }
-                    if (code == 1) { return Retry("That username is already taken."); }
+
+                    // SaveEdit: full name only - "a username cannot be changed".
+                    int updated = admins.UpdateFullName(model.AdminID, fullName);
+
+                    if (updated == 0)
+                    {
+                        // If the admin renamed themselves, refresh the name shown in the menu.
+                        if (model.AdminID == QCUCRAM_Session.UserId)
+                        {
+                            QCUCRAM_Session.RefreshName(fullName);
+                        }
+                        return QCUCRAMOperationResult.Success("Admin account updated.");
+                    }
+                    if (updated == 2) { return QCUCRAMOperationResult.Failure("That account no longer exists."); }
 
                     return Retry("Sorry, the account could not be saved. Please try again.");
                 }
-
-                int updated = admins.Update(model.AdminID, username, fullName);
-
-                if (updated == 0)
-                {
-                    if (model.AdminID == QCUCRAM_Session.UserId)
-                    {
-                        QCUCRAM_Session.RefreshName(fullName);
-                    }
-                    return QCUCRAMOperationResult.Success("Admin account updated.");
-                }
-                if (updated == 1) { return Retry("That username is already taken."); }
-                if (updated == 2) { return QCUCRAMOperationResult.Failure("That account no longer exists."); }
-
+            }
+            catch (Exception)
+            {
                 return Retry("Sorry, the account could not be saved. Please try again.");
             }
         }
@@ -996,7 +1030,14 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
                     QCUCRAM_Db.P("@id", adminId));
 
                 string temporary = QCUCRAM_PasswordHash.AdminTemporaryPassword(number);
-                admins.ResetPassword(adminId, temporary);
+
+                // R05: the return code used to be ignored, so a skipped UPDATE still reported success.
+                int reset = admins.ResetPassword(adminId, temporary);
+                if (reset == 2) { return QCUCRAMOperationResult.Failure("That account no longer exists."); }
+                if (reset != 0)
+                {
+                    return QCUCRAMOperationResult.Failure("Sorry, that action could not be completed. Please try again.");
+                }
 
                 return QCUCRAMOperationResult.Success(
                     "Password reset for " + admin.Username +

@@ -98,6 +98,15 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Data
             return _db.Query<QCUCRAM_AdminUser>(SelectAdmin + " ORDER BY AdminID");
         }
 
+        /// <summary>
+        /// R05: AdminUsers.aspx.cs BindGrid lists the accounts ORDER BY Username
+        /// (GetAll above sorts by AdminID for other callers).
+        /// </summary>
+        public List<QCUCRAM_AdminUser> GetAllByUsername()
+        {
+            return _db.Query<QCUCRAM_AdminUser>(SelectAdmin + " ORDER BY Username");
+        }
+
         public int Count()
         {
             return _db.Count("SELECT COUNT(*) AS Total FROM AdminUsers");
@@ -130,7 +139,11 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Data
 
             if (user.Length < 3 || user.Length > 50) { return 3; }
             if (name.Length == 0 || name.Length > 120) { return 3; }
-            if (QCUCRAM_PasswordHash.GetStrengthMessage(password) != null) { return 3; }
+
+            // R05: AdminUsers.aspx.cs SaveNew hashed "admin" + number WITHOUT the strength policy
+            // (the temporary password is deliberately simple). Applying the policy here rejected
+            // "admin6" every time, so no account could ever be added.
+            if (string.IsNullOrEmpty(password)) { return 3; }
 
             if (_db.Any("SELECT COUNT(*) AS Total FROM AdminUsers WHERE Username = @u",
                         QCUCRAM_Db.P("@u", user)))
@@ -218,7 +231,10 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Data
         /// <summary>Admin reset: sets a temporary password without asking for the old one.</summary>
         public int ResetPassword(int adminId, string temporaryPassword)
         {
-            if (QCUCRAM_PasswordHash.GetStrengthMessage(temporaryPassword) != null) { return 3; }
+            // R05: AdminUsers.aspx.cs ResetPassword never applied the strength policy to the
+            // temporary password ("admin3"). With it, the UPDATE was skipped (return 3) while the
+            // page still announced a successful reset.
+            if (string.IsNullOrEmpty(temporaryPassword)) { return 3; }
 
             int rows = _db.Execute("UPDATE AdminUsers SET PasswordHash = @h WHERE AdminID = @id",
                 QCUCRAM_Db.P("@h", QCUCRAM_PasswordHash.Hash(temporaryPassword)),

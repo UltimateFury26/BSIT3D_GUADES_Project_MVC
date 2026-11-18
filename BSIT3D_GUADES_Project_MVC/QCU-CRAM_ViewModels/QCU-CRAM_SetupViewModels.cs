@@ -224,6 +224,17 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_ViewModels
         public int AdminID { get; set; }
         public string Username { get; set; }
         public string FullName { get; set; }
+
+        // R05: the AdminUsers.aspx validator messages (ValidationGroup="Admin"), shown under each
+        // box while the pop-up stays open - same idea as the Rooms edit model.
+        public List<string> UsernameErrors { get; set; }
+        public List<string> FullNameErrors { get; set; }
+
+        public QCUCRAMAdminEditModel()
+        {
+            UsernameErrors = new List<string>();
+            FullNameErrors = new List<string>();
+        }
     }
 
     public class QCUCRAMAdminUsersViewModel

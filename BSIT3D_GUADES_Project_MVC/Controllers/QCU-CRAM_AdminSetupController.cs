@@ -240,6 +240,9 @@ namespace BSIT3D_GUADES_Project_MVC.Controllers
                         vm.ModalOpen = true;
                         break;
                     }
+
+                    // R05: AdminUsers.aspx.cs LoadForEdit -> "That account no longer exists."
+                    if (vm.Edit == null) { FlashError("That account no longer exists."); }
                 }
                 else
                 {
@@ -274,7 +277,9 @@ namespace BSIT3D_GUADES_Project_MVC.Controllers
         [ValidateAntiForgeryToken]
         public ActionResult ToggleAdmin(int id)
         {
-            Toast(QCUCRAMSetupService.ToggleAdmin(id));
+            // gvAdmins_RowCommand wrapped every row action in one try/catch
+            try { Toast(QCUCRAMSetupService.ToggleAdmin(id)); }
+            catch (System.Exception) { FlashError("Sorry, that action could not be completed. Please try again."); }
             return RedirectToAction("AdminUsers");
         }
 
@@ -282,7 +287,8 @@ namespace BSIT3D_GUADES_Project_MVC.Controllers
         [ValidateAntiForgeryToken]
         public ActionResult ResetAdminPassword(int id)
         {
-            Toast(QCUCRAMSetupService.ResetAdminPassword(id));
+            try { Toast(QCUCRAMSetupService.ResetAdminPassword(id)); }
+            catch (System.Exception) { FlashError("Sorry, that action could not be completed. Please try again."); }
             return RedirectToAction("AdminUsers");
         }
 
@@ -461,7 +467,13 @@ namespace BSIT3D_GUADES_Project_MVC.Controllers
 
             // keep what the person typed, as the Web Forms pop-up did
             QCUCRAMAdminEditModel typed = TempData[ModalEditKey] as QCUCRAMAdminEditModel;
-            if (typed != null) { vm.Edit = typed; }
+            if (typed != null)
+            {
+                // R05: the edit pop-up no longer posts the username (the source cannot change it),
+                // so keep the stored one for the "Edit Admin: {username}" title.
+                if (string.IsNullOrEmpty(typed.Username) && vm.Edit != null) { typed.Username = vm.Edit.Username; }
+                vm.Edit = typed;
+            }
         }
     }
 }
