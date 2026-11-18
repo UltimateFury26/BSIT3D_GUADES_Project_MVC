@@ -255,6 +255,18 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Data
                    WHERE ReservationDate = CAST(@d AS DATE) AND Status = 'CheckedIn'",
                 QCUCRAM_Db.P("@d", SqlDbType.Date, today));
 
+            // Dashboard.aspx.cs CntPending / CntForfeited / CntTotal. These three were never
+            // filled, so the Pending, Forfeited-today and Total cards always showed 0.
+            c.Pending = _db.Count(
+                "SELECT COUNT(*) AS Total FROM Reservations WHERE Status = 'Pending'");
+
+            c.ForfeitedToday = _db.Count(
+                @"SELECT COUNT(*) AS Total FROM Reservations
+                   WHERE ReservationDate = CAST(@d AS DATE) AND Status = 'Forfeited'",
+                QCUCRAM_Db.P("@d", SqlDbType.Date, today));
+
+            c.TotalReservations = _db.Count("SELECT COUNT(*) AS Total FROM Reservations");
+
             c.TotalStudents = _db.Count("SELECT COUNT(*) AS Total FROM Students");
             c.RestrictedStudents = _db.Count("SELECT COUNT(*) AS Total FROM Students WHERE IsRestricted = 1");
             c.UnreadNotifications = _db.Count("SELECT COUNT(*) AS Total FROM Notifications WHERE IsRead = 0");

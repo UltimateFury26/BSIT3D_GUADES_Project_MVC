@@ -50,7 +50,23 @@ namespace BSIT3D_GUADES_Project_MVC.Controllers
         [Route("dashboard")]
         public ActionResult Dashboard()
         {
-            return View("QCU-CRAM_Dashboard", _service.Dashboard());
+            QCUCRAMAdminDashboardViewModel model;
+
+            try
+            {
+                model = _service.Dashboard();
+            }
+            catch (Exception)
+            {
+                // Dashboard.aspx.cs: the page still opened and showed this toast.
+                model = new QCUCRAMAdminDashboardViewModel();
+                FlashError("Sorry, the dashboard could not be fully loaded. Please refresh the page.");
+            }
+
+            // Dashboard.aspx.cs lblWelcome: "Welcome, " + CurrentUserName + "."
+            model.WelcomeName = "Welcome, " + CurrentUserName + ".";
+
+            return View("QCU-CRAM_Dashboard", model);
         }
 
         // ==================================================================
@@ -113,9 +129,10 @@ namespace BSIT3D_GUADES_Project_MVC.Controllers
             QCUCRAMOperationResult result = _service.Decline(id, reason, CurrentUserId);
             Report(result);
 
-            // Keep the review panel open when the reason was rejected so the
-            // assistant can fix it without hunting for the row again.
-            if (!result.Ok)
+            // btnDecline_Click kept the panel open when the reason was rejected (empty,
+            // too long) or the write failed unexpectedly, and closed it when the change
+            // itself was refused. The service marks the first group with Retry.
+            if (!result.Ok && result.Retry)
             {
                 return RedirectToAction("Queue", new { review = id });
             }

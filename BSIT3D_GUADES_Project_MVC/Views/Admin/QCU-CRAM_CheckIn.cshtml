@@ -37,14 +37,22 @@
     <div class="col-auto">
         <label class="form-label" for="txtSearch">Search</label>
         <input class="form-control" type="text" id="txtSearch" name="q" value="@Model.Search"
-               autocomplete="off" placeholder="Reservation #, student number, or last name" />
+               data-live-btn="btnSearch" autocomplete="off" placeholder="Reservation #, student number, or last name" />
     </div>
     <div class="col-auto">
-        <button type="submit" class="btn btn-primary">Search</button>
+        <button type="submit" id="btnSearch" class="btn btn-primary">Search</button>
         <a class="btn btn-outline-secondary" href="@Url.Action("CheckIn", "Admin")">Clear</a>
         <a class="btn btn-outline-primary" href="@Url.Action("CheckIn", "Admin", new { q = Model.Search })">Refresh</a>
     </div>
 </form>
+
+@* Live search reloads the page; put the cursor back at the end of the box, as the UpdatePanel did. *@
+<script>
+    (function () {
+        var t = document.getElementById('txtSearch');
+        if (t && t.value) { t.focus(); t.setSelectionRange(t.value.length, t.value.length); }
+    })();
+</script>
 
 <h5 class="qcu-subhead">Today's bookings waiting for check-in</h5>
 <div class="table-responsive">

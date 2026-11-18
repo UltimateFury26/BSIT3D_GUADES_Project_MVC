@@ -260,6 +260,7 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
             if (reviewId > 0)
             {
                 vm.Detail = Detail(reviewId);
+                ApplyQueueNames(vm.Detail, reviewId, map);
             }
 
             if (reassignId > 0)
@@ -268,6 +269,41 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
             }
 
             return vm;
+        }
+
+        /// <summary>
+        /// Queue.aspx.cs ShowDetails wrote the requester and every member as
+        /// "Last, First" + " " + MI with the MI exactly as stored (no trim, no added
+        /// period). Detail() is shared with the Records page and uses JoinName, so the
+        /// Queue review panel re-applies the as-stored wording here.
+        /// </summary>
+        private void ApplyQueueNames(QCUCRAMReservationDetailViewModel detail, int reservationId,
+                                     Dictionary<int, QCUCRAM_Student> map)
+        {
+            if (detail == null) { return; }
+
+            QCUCRAM_ReservationInfo info = _reservations.GetInfo(reservationId);
+            QCUCRAM_Student student;
+            if (info != null && map.TryGetValue(info.StudentId, out student))
+            {
+                detail.RequesterName = StudentName(student);
+            }
+
+            List<QCUCRAM_ReservationMember> members = _reservations.GetMembers(reservationId).ToList();
+            for (int i = 0; i < members.Count && i < detail.Members.Count; i++)
+            {
+                QCUCRAM_ReservationMember m = members[i];
+                detail.Members[i].FullName = m.LastName + ", " + m.FirstName +
+                                             (string.IsNullOrWhiteSpace(m.MI) ? "" : " " + m.MI);
+            }
+        }
+
+        /// <summary>A rejected submit that leaves the pop-up open (the Web Forms panel stayed visible).</summary>
+        private static QCUCRAMOperationResult RetryFailure(string message)
+        {
+            QCUCRAMOperationResult result = QCUCRAMOperationResult.Failure(message);
+            result.Retry = true;
+            return result;
         }
 
         /// <summary>Queue.aspx.cs StatusBadge - the exact Bootstrap classes it emitted.</summary>
@@ -368,13 +404,16 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
             // FillTargets(): slots outer, rooms inner, started slots and rooms that
             // do not fit the group skipped, and any held pair (including this
             // booking's own slot) left out.
+            // FillTargets(): rooms were read ORDER BY RoomID (not by name).
+            List<QCUCRAM_Room> rooms = _content.GetRooms(true).OrderBy(x => x.RoomID).ToList();
+
             foreach (QCUCRAM_TimeSlot slot in _content.GetTimeSlots(true))
             {
                 if (info.Date.Date.Add(slot.StartTime) <= now) { continue; }
 
                 string slotLabel = QCUCRAM_ReservationInfo.FormatSlot(slot.StartTime, slot.EndTime);
 
-                foreach (QCUCRAM_Room room in _content.GetRooms(true))
+                foreach (QCUCRAM_Room room in rooms)
                 {
                     if (members < room.MinCapacity || members > room.MaxCapacity) { continue; }
 
@@ -441,11 +480,11 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
 
             if (why.Length == 0)
             {
-                return QCUCRAMOperationResult.Failure("Please enter a reason before declining.");
+                return RetryFailure("Please enter a reason before declining.");
             }
             if (why.Length > 250)
             {
-                return QCUCRAMOperationResult.Failure("The reason must be 250 characters or fewer.");
+                return RetryFailure("The reason must be 250 characters or fewer.");
             }
 
             QCUCRAM_ReservationInfo info = _reservations.GetInfo(reservationId);
@@ -467,7 +506,7 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
             }
             catch (Exception)
             {
-                return QCUCRAMOperationResult.Failure("Something went wrong while declining. Please try again.");
+                return RetryFailure("Something went wrong while declining. Please try again.");
             }
         }
 
@@ -475,22 +514,19 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
         {
             string why = (reason ?? string.Empty).Trim();
 
-            if (string.IsNullOrWhiteSpace(target))
-            {
-                return QCUCRAMOperationResult.Failure("Please choose the new room and time.");
-            }
-            if (why.Length == 0)
-            {
-                return QCUCRAMOperationResult.Failure("Please enter a reason for the reassignment.");
-            }
-
-            string[] parts = target.Split('|');
-            int roomId, slotId;
-            if (parts.Length != 2 ||
+            // btnDoReassign_Click: the room/time check came first, then the reason, and the
+            // panel stayed open after either message.
+            string[] parts = (target ?? string.Empty).Split('|');
+            int roomId = 0, slotId = 0;
+            if (string.IsNullOrWhiteSpace(target) || parts.Length != 2 ||
                 !int.TryParse(parts[0], NumberStyles.Integer, Inv, out roomId) ||
                 !int.TryParse(parts[1], NumberStyles.Integer, Inv, out slotId))
             {
-                return QCUCRAMOperationResult.Failure("Please choose the new room and time.");
+                return RetryFailure("Please choose the new room and time.");
+            }
+            if (why.Length == 0)
+            {
+                return RetryFailure("Please enter a reason for the reassignment.");
             }
 
             try
@@ -516,7 +552,7 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
             }
             catch (Exception)
             {
-                return QCUCRAMOperationResult.Failure(
+                return RetryFailure(
                     "Something went wrong while reassigning. Please try again.");
             }
         }
@@ -584,7 +620,9 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
                 string name = row.StudentName +
                               (string.IsNullOrWhiteSpace(mi) ? "" : " " + mi);
 
-                if (q.Length > 0 && !Matches(q, row, name))
+                // CheckIn.aspx.cs applied the search to the waiting grid only; the
+                // "Checked in today" grid (BindCheckedIn) was never filtered.
+                if (q.Length > 0 && row.Status != QCUCRAM_Status.CheckedIn && !Matches(q, row, name))
                 {
                     continue;
                 }
