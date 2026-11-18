@@ -1,7 +1,8 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Web.Mvc;
 using BSIT3D_GUADES_Project_MVC.QCUCRAM_Security;
+using BSIT3D_GUADES_Project_MVC.QCUCRAM_Helpers;
 using BSIT3D_GUADES_Project_MVC.QCUCRAM_Services;
 using BSIT3D_GUADES_Project_MVC.QCUCRAM_ViewModels;
 
@@ -359,7 +360,7 @@ namespace BSIT3D_GUADES_Project_MVC.Controllers
             {
                 // Do not let an initial Dev Tools read crash the whole MVC page.
                 // The exception detail is rendered as encoded text; the full stack is logged.
-                System.Diagnostics.Trace.TraceError("QCUCRAM Dev Tools initial load failed: {0}", ex);
+                QCUCRAMErrorLog.Write(ex, "admin-setup-devtools-load", null);
                 vm = new QCUCRAMDevToolsViewModel
                 {
                     RealNow = DateTime.Now,

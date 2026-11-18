@@ -181,9 +181,10 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
                         HttpUtility.HtmlEncode(QCUCRAM_SampleData.SamplePassword) + "</code>")
                 };
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                return QCUCRAMDevResult.ToastOnly("Could not create the sample students.", true);
+                System.Diagnostics.Trace.TraceError("QCUCRAM Dev Tools GenerateStudents failed: " + ex);
+                return QCUCRAMDevResult.ToastOnly("Could not create the sample students. Check the application log for details.", true);
             }
         }
 
@@ -244,9 +245,10 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
                 // "Generate the sample students first." / "There are no active rooms ..."
                 return QCUCRAMDevResult.ToastOnly(ex.Message, true);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                return QCUCRAMDevResult.ToastOnly("Could not create the sample reservations.", true);
+                System.Diagnostics.Trace.TraceError("QCUCRAM Dev Tools GenerateReservations failed: " + ex);
+                return QCUCRAMDevResult.ToastOnly("Could not create the sample reservations. Check the application log for details.", true);
             }
         }
 
@@ -270,9 +272,10 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
                 int n = QCUCRAM_SampleData.DeleteSampleStudents();
                 return QCUCRAMDevResult.ToastOnly(n + " sample students deleted.", false);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                return QCUCRAMDevResult.ToastOnly("Could not delete the sample students.", true);
+                System.Diagnostics.Trace.TraceError("QCUCRAM Dev Tools DeleteSampleStudents failed: " + ex);
+                return QCUCRAMDevResult.ToastOnly("Could not delete the sample students. Check the application log for details.", true);
             }
         }
 
@@ -296,9 +299,10 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
                 return QCUCRAMDevResult.ToastOnly(
                     "Deleted " + n + " reservation(s). Strikes and restrictions were reset.", false);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                return QCUCRAMDevResult.ToastOnly("Could not clear the data.", true);
+                System.Diagnostics.Trace.TraceError("QCUCRAM Dev Tools ClearAllReservations failed: " + ex);
+                return QCUCRAMDevResult.ToastOnly("Could not clear the data. Check the application log for details.", true);
             }
         }
 

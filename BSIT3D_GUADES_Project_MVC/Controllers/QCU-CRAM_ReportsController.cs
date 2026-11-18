@@ -65,6 +65,13 @@ namespace BSIT3D_GUADES_Project_MVC.Controllers
         [QCUCRAM_RequireLogin]
         public ActionResult Analytics(string from, string to, string range)
         {
+            // Analytics is live operational data. Prevent browsers and intermediate
+            // proxies from replaying a previously rendered report after bookings change.
+            Response.Cache.SetCacheability(System.Web.HttpCacheability.NoCache);
+            Response.Cache.SetNoStore();
+            Response.Cache.SetRevalidation(System.Web.HttpCacheRevalidation.AllCaches);
+            Response.Cache.SetExpires(DateTime.UtcNow.AddYears(-1));
+
             DateTime start;
             DateTime end;
             string preset;
