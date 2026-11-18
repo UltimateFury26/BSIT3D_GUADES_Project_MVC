@@ -89,12 +89,30 @@ namespace BSIT3D_GUADES_Project_MVC.Controllers.Student
                 model = new QCUCRAMReserveViewModel();
             }
 
-            // A hand-rolled post can arrive with no member rows at all.
-            if (model.Members == null)
+            // A hand-rolled post can arrive with no member rows at all, or with an empty slot.
+            List<QCUCRAM_MemberInput> members = new List<QCUCRAM_MemberInput>();
+            if (model.Members != null)
             {
-                model.Members = new List<QCUCRAM_MemberInput>();
+                foreach (QCUCRAM_MemberInput m in model.Members)
+                {
+                    members.Add(m ?? new QCUCRAM_MemberInput());
+                }
             }
+            model.Members = members;
 
+            // btnSubmit_Click read the date as exactly yyyy-MM-dd; anything else = missing/invalid
+            // (DateTime.MinValue), which the service reports as "Please choose a valid date."
+            DateTime postedDate;
+            bool dateOk = DateTime.TryParseExact((Request.Form["Date"] ?? string.Empty).Trim(), "yyyy-MM-dd",
+                System.Globalization.CultureInfo.InvariantCulture,
+                System.Globalization.DateTimeStyles.None, out postedDate);
+            model.Date = dateOk ? postedDate.Date : DateTime.MinValue;
+
+            // Every rule is checked by the service. Binder complaints about an empty or malformed
+            // field ("A value is required.") must not show up as extra lines in the error list.
+            ModelState.Clear();
+
+            // The requester is always the signed-in student; a posted StudentID is never read.
             QCUCRAM_CreateRequest request = new QCUCRAM_CreateRequest
             {
                 StudentId = CurrentUserId,
@@ -103,10 +121,22 @@ namespace BSIT3D_GUADES_Project_MVC.Controllers.Student
                 TimeSlotId = model.TimeSlotId,
                 Purpose = (model.Purpose ?? string.Empty).Trim(),
                 NumberOfMembers = model.NumberOfMembers,
-                Members = model.Members
+                Members = members
             };
 
-            QCUCRAM_CreateResult result = _service.Create(request);
+            QCUCRAM_CreateResult result;
+            try
+            {
+                result = _service.Create(request);
+            }
+            catch (Exception)
+            {
+                // The transaction has already rolled back; nothing was saved.
+                FlashError("Something went wrong while saving your request. Please try again.");
+                Rehydrate(model);
+                ViewBag.Title = "Reserve a Room";
+                return View("~/Views/Student/QCU-CRAM_Reserve.cshtml", model);
+            }
 
             if (result.Success)
             {
