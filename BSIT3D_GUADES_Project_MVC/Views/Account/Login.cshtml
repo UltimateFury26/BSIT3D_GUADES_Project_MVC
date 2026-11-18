@@ -23,12 +23,6 @@
 
     ViewBag.Title = "Login";
     Layout = "~/Views/Shared/_QCU-CRAM_LoginLayout.cshtml";
-
-    string noticeText = ViewBag.QCUCRAM_NoticeText as string;
-    string noticeKind = ViewBag.QCUCRAM_NoticeKind as string;
-    string noticeCss = noticeKind == "error" ? "alert-danger"
-                     : noticeKind == "success" ? "alert-success"
-                     : "alert-info";
 }
 
 <div class="qcu-auth-card">
@@ -41,17 +35,14 @@
 
     <div class="qcu-auth-body">
 
-        @if (!string.IsNullOrWhiteSpace(noticeText))
-        {
-            <div class="alert @noticeCss py-2 small" role="alert">@noticeText</div>
-        }
+        @* Phase 07: the original showed lblMessage as the upper-right toast, not an in-card alert.
+           The layout suppresses its own toast on Login, so the view renders it once, here. *@
+        @Html.Partial("_QCU-CRAM_Toast")
 
         @using (Html.BeginForm("Login", "Account", FormMethod.Post, new { @class = "qcu-auth-form", novalidate = "novalidate" }))
         {
             @Html.AntiForgeryToken()
             @Html.HiddenFor(m => m.ReturnUrl)
-
-            @Html.ValidationSummary(true, string.Empty, new { @class = "alert alert-danger py-2 small" })
 
             <div class="mb-3">
                 <span class="form-label d-block">Sign in as</span>

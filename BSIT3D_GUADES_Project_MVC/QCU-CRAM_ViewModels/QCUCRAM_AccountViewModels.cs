@@ -62,72 +62,68 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_ViewModels
     /// </summary>
     public class QCUCRAM_ChangePasswordViewModel
     {
-        [Required(ErrorMessage = "Please enter your current password.")]
+        // Phase 07: wording copied from the Web Forms validators. The strength rule is NOT an
+        // attribute - the original showed "Password is too weak..." as a toast from the server.
+        [Required(ErrorMessage = "Current password is required.")]
         [DataType(DataType.Password)]
         [Display(Name = "Current Password")]
         public string CurrentPassword { get; set; }
 
-        [Required(ErrorMessage = "Please choose a new password.")]
-        [StringLength(64, MinimumLength = 8, ErrorMessage = "The new password must be at least 8 characters.")]
+        [Required(ErrorMessage = "New password is required.")]
         [DataType(DataType.Password)]
         [Display(Name = "New Password")]
         public string NewPassword { get; set; }
 
-        [Required(ErrorMessage = "Please re-type the new password.")]
+        [Required(ErrorMessage = "Please confirm the new password.")]
         [DataType(DataType.Password)]
         [Display(Name = "Confirm New Password")]
-        [Compare("NewPassword", ErrorMessage = "The two new passwords do not match.")]
+        [Compare("NewPassword", ErrorMessage = "Passwords do not match.")]
         public string ConfirmPassword { get; set; }
     }
 
     /// <summary>Everything the registration form posts.</summary>
     public class QCUCRAM_RegisterViewModel
     {
-        [Required(ErrorMessage = "Please enter your ID / student number.")]
+        // Phase 07: every message below is the text of the matching Web Forms validator.
+        [Required(ErrorMessage = "ID / Student Number is required.")]
         [Display(Name = "Student Number / ID")]
         public string StudentNumber { get; set; }
 
-        [Required(ErrorMessage = "Please enter your last name.")]
+        [Required(ErrorMessage = "Last name is required.")]
         [Display(Name = "Last Name")]
         public string LastName { get; set; }
 
-        [Required(ErrorMessage = "Please enter your first name.")]
+        [Required(ErrorMessage = "First name is required.")]
         [Display(Name = "First Name")]
         public string FirstName { get; set; }
 
+        // The original box is MaxLength=2; the server trims, upper-cases and cuts to 2.
         [Display(Name = "M.I.")]
-        [StringLength(2, ErrorMessage = "The middle initial is at most 2 letters.")]
         public string MI { get; set; }
 
-        [Required(ErrorMessage = "Please enter your e-mail address.")]
-        [EmailAddress(ErrorMessage = "Enter a valid email address.")]
+        [Required(ErrorMessage = "Email is required.")]
+        [RegularExpression(@"^\w+([-+.']\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*$",
+            ErrorMessage = "Enter a valid email address.")]
         public string Email { get; set; }
 
-        [Required(ErrorMessage = "Please choose your program.")]
+        [Required(ErrorMessage = "Please select a program.")]
         public string Program { get; set; }
 
-        [Required(ErrorMessage = "Please choose your requester type.")]
+        [Required(ErrorMessage = "Please select a requester type.")]
         [Display(Name = "Requester Type")]
         public string RequesterType { get; set; }
 
-        [Required(ErrorMessage = "Please choose a password.")]
-        // 100, not 64 - see the note on QCUCRAM_ChangePasswordViewModel.NewPassword.
-        [StringLength(100, MinimumLength = 8, ErrorMessage = "The password must be at least 8 characters.")]
+        [Required(ErrorMessage = "Password is required.")]
         [DataType(DataType.Password)]
         public string Password { get; set; }
 
-        [Required(ErrorMessage = "Please re-type the password.")]
+        [Required(ErrorMessage = "Please confirm your password.")]
         [DataType(DataType.Password)]
         [Display(Name = "Confirm Password")]
-        [Compare("Password", ErrorMessage = "The two passwords do not match.")]
+        [Compare("Password", ErrorMessage = "Passwords do not match.")]
         public string ConfirmPassword { get; set; }
 
-        public QCUCRAM_RegisterViewModel()
-        {
-            RequesterType = "Student";
-        }
-
-        /// <summary>Filled by the controller so the drop-downs can be re-rendered.</summary>
+        /// <summary>Drop-down choices.</summary>
         public IEnumerable<string> ProgramChoices
         {
             get { return QCUCRAM_Programs.All; }

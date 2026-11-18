@@ -27,10 +27,9 @@ namespace BSIT3D_GUADES_Project_MVC
     {
         public static void RegisterBundles(BundleCollection bundles)
         {
-            // The default ignore list drops *.intellisense.js and *-vsdoc.js, which is
-            // what we want, but it also drops nothing else we need. Clear it anyway so
-            // the explicit lists below are honoured exactly.
-            bundles.IgnoreList.Clear();
+            // The default ignore list is left alone. Clearing it (bundles.IgnoreList.Clear())
+            // can make Scripts.Render throw a NullReferenceException on some setups, and every
+            // file below is listed explicitly, so nothing needed is ever ignored.
 
             // ------------------------------------------------------------------ CSS
             bundles.Add(new StyleBundle("~/Content/QCU-CRAM_css")

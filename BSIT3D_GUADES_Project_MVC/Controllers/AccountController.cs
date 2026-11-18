@@ -1,8 +1,11 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Text.RegularExpressions;
 using System.Web.Mvc;
 using BSIT3D_GUADES_Project_MVC.QCUCRAM_Data;
 using BSIT3D_GUADES_Project_MVC.QCUCRAM_Helpers;
+using BSIT3D_GUADES_Project_MVC.QCUCRAM_Models;
 using BSIT3D_GUADES_Project_MVC.QCUCRAM_Security;
 using BSIT3D_GUADES_Project_MVC.QCUCRAM_ViewModels;
 
@@ -26,6 +29,20 @@ namespace BSIT3D_GUADES_Project_MVC.Controllers
     {
         private const string InvalidCredentials = "Invalid credentials.";
         private const string SignInFailed = "Sorry, we could not sign you in right now. Please try again.";
+
+        // Phase 07: same patterns as Guades_QCUCram_Register.aspx.cs.
+        private static readonly Regex StudentNumberRegex = new Regex(@"^\d{2}-\d{4}$");
+        private static readonly Regex OtherIdRegex = new Regex(@"^[A-Za-z0-9\-]{3,20}$");
+
+        /// <summary>
+        /// Phase 07: the Web Forms pages showed lblMessage as an upper-right toast
+        /// (SecurePage.ShowMessage -> QueueToast). The toast partial reads these two fields.
+        /// </summary>
+        private void Notice(string text, bool isError)
+        {
+            ViewBag.QCUCRAM_NoticeText = text;
+            ViewBag.QCUCRAM_NoticeKind = isError ? "error" : "success";
+        }
 
         // ------------------------------------------------------------------
         //  GET /login
@@ -59,50 +76,52 @@ namespace BSIT3D_GUADES_Project_MVC.Controllers
                 model = new QCUCRAM_LoginViewModel();
             }
 
-            string id = (model.Identifier ?? string.Empty).Trim();
-            string password = model.Password ?? string.Empty;
-
             // The radio button is a required field, but a hand-rolled POST can omit it.
             if (string.IsNullOrEmpty(model.Role)) { model.Role = QCUCRAM_Constants.Roles.Student; }
 
-            if (string.IsNullOrEmpty(id) || string.IsNullOrEmpty(password))
+            // Web Forms: Page.IsValid == false -> the validators' inline text, nothing else.
+            // The Identifier message follows the role exactly like the original's script did.
+            if (string.IsNullOrWhiteSpace(model.Identifier) || string.IsNullOrEmpty(model.Password))
             {
-                ModelState.AddModelError(string.Empty, InvalidCredentials);
+                ModelState.Clear();
+                if (string.IsNullOrWhiteSpace(model.Identifier))
+                {
+                    ModelState.AddModelError("Identifier",
+                        model.Role == QCUCRAM_Constants.Roles.Admin
+                            ? "Username is required." : "Student number / ID is required.");
+                }
+                if (string.IsNullOrEmpty(model.Password))
+                {
+                    ModelState.AddModelError("Password", "Password is required.");
+                }
                 return View(model);
             }
 
-            QCUCRAM_LoginResult result;
+            string id = model.Identifier.Trim();
+            string password = model.Password;
 
-            if (model.Role == QCUCRAM_Constants.Roles.Admin)
-            {
-                result = TryAdminLogin(id, password);
-            }
-            else
-            {
-                result = TryStudentLogin(id, password);
-            }
+            QCUCRAM_LoginResult result = (model.Role == QCUCRAM_Constants.Roles.Admin)
+                ? TryAdminLogin(id, password)
+                : TryStudentLogin(id, password);
 
-            // ResultCode 2 = the database itself failed. That is not a credential problem,
-            // so it must not be reported as one.
+            // ResultCode 2 = the database itself failed. That is not a credential problem.
             if (result.ResultCode == 2)
             {
-                ModelState.AddModelError(string.Empty, SignInFailed);
+                Notice(SignInFailed, true);
                 return View(model);
             }
 
             if (!result.Success)
             {
-                ModelState.AddModelError(string.Empty, InvalidCredentials);
+                // Same message for wrong ID and wrong password (and an inactive assistant).
+                Notice(InvalidCredentials, true);
                 return View(model);
             }
 
             // Wipes any previous login, sets the 3 session keys, rebuilds the principal.
             QCUCRAM_Session.SignIn(HttpContext, result.Role, result.UserId.Value, result.FullName);
 
-            // An explicit ReturnUrl wins, but only if it is a local URL.
-            string target = QCUCRAM_BaseController.SafeReturnUrl(model.ReturnUrl, null);
-            if (target != null) { return Redirect(target); }
-
+            // Phase 07: the original always went to the role's dashboard (it had no ReturnUrl).
             return Redirect(Url.Content(QCUCRAM_Session.HomeFor(result.Role)));
         }
 
@@ -139,7 +158,7 @@ namespace BSIT3D_GUADES_Project_MVC.Controllers
         }
 
         // ------------------------------------------------------------------
-        //  POST /register
+        //  POST /register   (port of Guades_QCUCram_Register.aspx.cs btnRegister_Click)
         // ------------------------------------------------------------------
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -147,48 +166,91 @@ namespace BSIT3D_GUADES_Project_MVC.Controllers
         {
             if (model == null) { model = new QCUCRAM_RegisterViewModel(); }
 
+            // Web Forms: the page validators (required / email pattern / confirm compare) run first.
             if (!ModelState.IsValid) { return View(model); }
 
-            QCUCRAM_RegisterResult result;
+            string type = model.RequesterType;
+            string number = (model.StudentNumber ?? string.Empty).Trim();
+            string last = (model.LastName ?? string.Empty).Trim();
+            string first = (model.FirstName ?? string.Empty).Trim();
+            string mi = (model.MI ?? string.Empty).Trim().TrimEnd('.').ToUpperInvariant();
+            if (mi.Length > 2) { mi = mi.Substring(0, 2); }
+            string email = (model.Email ?? string.Empty).Trim();
+            string program = model.Program;
+            string password = model.Password ?? string.Empty;
+            string confirm = model.ConfirmPassword ?? string.Empty;
+
+            // A student typing 230001 means 23-0001
+            if (type == "Student") { number = QCUCRAM_Programs.NormalizeStudentNumber(number); }
+
+            // ---- server-side re-checks, same order and wording as the original ----
+            List<string> errors = new List<string>();
+
+            if (!QCUCRAM_Programs.IsValidRequesterType(type))
+                errors.Add("Please select a valid requester type.");
+            if (!QCUCRAM_Programs.IsValidProgram(program))
+                errors.Add("Please select a valid program.");
+            if (type == "Student")
+            {
+                if (!StudentNumberRegex.IsMatch(number))
+                    errors.Add("Student number must look like 23-0001.");
+            }
+            else if (!OtherIdRegex.IsMatch(number))
+            {
+                errors.Add("ID number must be 3-20 letters, numbers, or dashes only.");
+            }
+            if (last.Length == 0 || first.Length == 0)
+                errors.Add("Last name and first name are required.");
+            if (email.Length == 0 || email.Length > 120)
+                errors.Add("Please enter a valid email address.");
+            string pwIssue = QCUCRAM_PasswordHash.GetStrengthMessage(password);
+            if (pwIssue != null)
+                errors.Add(pwIssue);
+            if (password != confirm)
+                errors.Add("Passwords do not match.");
+
+            if (errors.Count > 0)
+            {
+                Notice(string.Join(" ", errors), true);
+                return View(model);
+            }
+
             try
             {
-                result = new QCUCRAM_StudentRepository().Register(
-                    model.StudentNumber,
-                    model.LastName,
-                    model.FirstName,
-                    model.MI,
-                    model.Email,
-                    model.Program,
-                    model.RequesterType,
-                    model.Password);
+                QCUCRAM_StudentRepository repo = new QCUCRAM_StudentRepository();
+
+                // ---- friendly duplicate checks: BOTH are reported together, like the original ----
+                if (repo.GetByStudentNumber(number) != null)
+                    errors.Add("That ID / Student Number is already registered. Try logging in instead.");
+                if (repo.GetByEmail(email) != null)
+                    errors.Add("That email address is already registered.");
+
+                if (errors.Count > 0)
+                {
+                    Notice(string.Join(" ", errors), true);
+                    return View(model);
+                }
+
+                QCUCRAM_RegisterResult result = repo.Register(number, last, first, mi, email,
+                                                              program, type, password);
+
+                if (result.ResultCode == 0)
+                {
+                    return Redirect(Url.Content(
+                        QCUCRAM_Constants.Paths.Login + "?" +
+                        QCUCRAM_Constants.QueryKeys.Message + "=" + QCUCRAM_Constants.Messages.Registered));
+                }
+
+                // 1 / 2 = unique index hit by two people registering at the same moment.
+                if (result.ResultCode == 1 || result.ResultCode == 2)
+                    Notice("That ID / Student Number or email is already registered.", true);
+                else
+                    Notice("Sorry, registration could not be completed. Please try again.", true);
             }
             catch (Exception ex)
             {
                 Trace.TraceError("QCU-CRAM register failed: " + ex);
-                ModelState.AddModelError(string.Empty,
-                    "Sorry, we could not create your account right now. Please try again.");
-                return View(model);
-            }
-
-            switch (result.ResultCode)
-            {
-                case 0:
-                    return Redirect(Url.Content(
-                        QCUCRAM_Constants.Paths.Login + "?" +
-                        QCUCRAM_Constants.QueryKeys.Message + "=" + QCUCRAM_Constants.Messages.Registered));
-
-                case 1:
-                    ModelState.AddModelError("StudentNumber", "That ID / student number is already registered.");
-                    break;
-
-                case 2:
-                    ModelState.AddModelError("Email", "That e-mail address is already registered.");
-                    break;
-
-                default:
-                    ModelState.AddModelError(string.Empty,
-                        "Please check the form - some details were not accepted.");
-                    break;
+                Notice("Sorry, registration could not be completed. Please try again.", true);
             }
 
             return View(model);
@@ -196,8 +258,6 @@ namespace BSIT3D_GUADES_Project_MVC.Controllers
 
         // ------------------------------------------------------------------
         //  GET /account/changepassword
-        //  Phase 04 was missing this action even though the navigation dropdown
-        //  already linked to it, so the link 404'd. Both roles share the page.
         // ------------------------------------------------------------------
         [HttpGet]
         [QCUCRAM_RequireLogin]
@@ -207,7 +267,9 @@ namespace BSIT3D_GUADES_Project_MVC.Controllers
         }
 
         // ------------------------------------------------------------------
-        //  POST /account/changepassword
+        //  POST /account/changepassword   (port of ChangePassword.aspx.cs btnChange_Click)
+        //  Same order as the original: strength -> match -> current password -> must differ.
+        //  Success stays on the page with a toast; the session is NOT ended.
         // ------------------------------------------------------------------
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -215,67 +277,65 @@ namespace BSIT3D_GUADES_Project_MVC.Controllers
         public ActionResult ChangePassword(QCUCRAM_ChangePasswordViewModel model)
         {
             if (model == null) { model = new QCUCRAM_ChangePasswordViewModel(); }
+
+            // Required fields and the "Passwords do not match." compare (inline, like the validators).
             if (!ModelState.IsValid) { return View(model); }
 
-            // Same policy check the repositories run, but done first so the user gets
-            // the precise reason instead of a generic rejection.
-            string strength = QCUCRAM_PasswordHash.GetStrengthMessage(model.NewPassword);
-            if (strength != null)
+            string current = model.CurrentPassword ?? string.Empty;
+            string newPassword = model.NewPassword ?? string.Empty;
+
+            string pwIssue = QCUCRAM_PasswordHash.GetStrengthMessage(newPassword);
+            if (pwIssue != null)
             {
-                ModelState.AddModelError("NewPassword", strength);
+                Notice(pwIssue, true);
                 return View(model);
             }
 
-            int code;
             try
             {
+                string stored;
                 if (QCUCRAM_Session.IsAdmin)
                 {
-                    code = new QCUCRAM_AdminUserRepository().ChangePassword(
-                        QCUCRAM_Session.UserId, model.CurrentPassword, model.NewPassword);
+                    QCUCRAM_AdminUser admin = new QCUCRAM_AdminUserRepository().GetById(QCUCRAM_Session.UserId);
+                    stored = admin == null ? null : admin.PasswordHash;
                 }
                 else
                 {
-                    code = new QCUCRAM_StudentRepository().ChangePassword(
-                        QCUCRAM_Session.UserId, model.CurrentPassword, model.NewPassword);
+                    QCUCRAM_Student student = new QCUCRAM_StudentRepository().GetById(QCUCRAM_Session.UserId);
+                    stored = student == null ? null : student.PasswordHash;
+                }
+
+                if (stored == null || !QCUCRAM_PasswordHash.Verify(current, stored))
+                {
+                    Notice("Your current password is incorrect.", true);
+                    return View(model);
+                }
+
+                if (current == newPassword)
+                {
+                    Notice("The new password must be different from the current one.", true);
+                    return View(model);
+                }
+
+                int code = QCUCRAM_Session.IsAdmin
+                    ? new QCUCRAM_AdminUserRepository().ChangePassword(QCUCRAM_Session.UserId, current, newPassword)
+                    : new QCUCRAM_StudentRepository().ChangePassword(QCUCRAM_Session.UserId, current, newPassword);
+
+                if (code != 0)
+                {
+                    Notice("Sorry, the password could not be changed. Please try again.", true);
+                    return View(model);
                 }
             }
             catch (Exception ex)
             {
                 Trace.TraceError("QCU-CRAM change password failed: " + ex);
-                ModelState.AddModelError(string.Empty,
-                    "Sorry, we could not change your password right now. Please try again.");
+                Notice("Sorry, the password could not be changed. Please try again.", true);
                 return View(model);
             }
 
-            switch (code)
-            {
-                case 0:
-                    Flash("Your password was changed.");
-                    return Redirect(Url.Content(QCUCRAM_Session.HomeFor(QCUCRAM_Session.Role)));
-
-                case 1:
-                    ModelState.AddModelError("CurrentPassword", "Your current password is not correct.");
-                    break;
-
-                case 2:
-                    ModelState.AddModelError(string.Empty,
-                        "Your account could not be found. Please sign in again.");
-                    break;
-
-                case 3:
-                    ModelState.AddModelError("NewPassword",
-                        QCUCRAM_PasswordHash.GetStrengthMessage(model.NewPassword)
-                        ?? "The new password was not accepted.");
-                    break;
-
-                default:
-                    ModelState.AddModelError("NewPassword",
-                        "The new password was not accepted. Use at least 8 characters.");
-                    break;
-            }
-
-            return View(model);
+            Notice("Your password has been changed.", false);
+            return View(new QCUCRAM_ChangePasswordViewModel());
         }
 
         // ==================================================================

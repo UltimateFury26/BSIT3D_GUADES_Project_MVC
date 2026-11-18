@@ -180,7 +180,14 @@
 
     </div>
 
-    @Scripts.Render("~/bundles/QCU-CRAM_js")
+    @* Plain script tags, same files and order as the ~/bundles/QCU-CRAM_js bundle. Scripts.Render
+       threw a NullReferenceException here, and these tags do not depend on System.Web.Optimization. *@
+    <script src="@Url.Content("~/Scripts/jquery-3.7.0.js")"></script>
+    <script src="@Url.Content("~/Scripts/bootstrap.bundle.js")"></script>
+    <script src="@Url.Content("~/Scripts/jquery.validate.js")"></script>
+    <script src="@Url.Content("~/Scripts/jquery.validate.unobtrusive.js")"></script>
+    <script src="@Url.Content("~/Scripts/QCU-CRAM_site.js")"></script>
+    <script src="@Url.Content("~/Scripts/QCU-CRAM_ui.js")"></script>
 
     @* master: highlight the current page in the nav (orange, like "Home" on qcu.edu.ph) *@
     <script>

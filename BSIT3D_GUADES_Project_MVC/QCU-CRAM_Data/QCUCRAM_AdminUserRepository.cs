@@ -29,7 +29,7 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Data
         // =================================================================
 
         /// <summary>
-        /// 0 = OK, 1 = invalid credentials, 2 = account inactive.
+        /// 0 = OK, 1 = invalid credentials (including an inactive account), 2 = database failure.
         /// Only active accounts are considered, so a deactivated assistant gets the same
         /// answer as a wrong password (no account enumeration).
         /// </summary>
@@ -60,7 +60,9 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Data
 
             if (!row.IsActive)
             {
-                return new QCUCRAM_LoginResult { ResultCode = 2 };
+                // Phase 07: the original selected WHERE IsActive = 1, so an inactive assistant got
+                // "Invalid credentials." - code 2 is reserved for a database failure.
+                return new QCUCRAM_LoginResult { ResultCode = 1 };
             }
 
             return new QCUCRAM_LoginResult

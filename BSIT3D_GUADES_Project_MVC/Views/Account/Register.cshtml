@@ -36,12 +36,11 @@
         {
             @Html.AntiForgeryToken()
 
-            @Html.ValidationSummary(true, string.Empty, new { @class = "alert alert-danger py-2 small" })
-
             <div class="mb-3">
                 @Html.LabelFor(m => m.RequesterType, new { @class = "form-label" })
                 @Html.DropDownListFor(m => m.RequesterType,
                     new SelectList(Model.RequesterTypeChoices, Model.RequesterType),
+                    "-- Select type --",
                     new { @class = "form-select", id = "RequesterType" })
                 @Html.ValidationMessageFor(m => m.RequesterType, string.Empty, new { @class = "text-danger" })
             </div>
@@ -56,7 +55,8 @@
                     data_qcu_idtype = "RequesterType",
                     data_qcu_idstrict = "1",
                     data_qcu_idlabel = "lblRegNumber",
-                    data_qcu_idhint = "hintRegNumber"
+                    data_qcu_idhint = "hintRegNumber",
+                    data_val_qcuregid = "Enter a valid ID number."
                 })
                 @Html.ValidationMessageFor(m => m.StudentNumber, string.Empty, new { @class = "text-danger" })
                 <div class="form-text" id="hintRegNumber"></div>
@@ -97,7 +97,7 @@
                 @Html.LabelFor(m => m.Program, new { @class = "form-label" })
                 @Html.DropDownListFor(m => m.Program,
                     new SelectList(Model.ProgramChoices, Model.Program),
-                    "-- select your program --",
+                    "-- Select program --",
                     new { @class = "form-select" })
                 @Html.ValidationMessageFor(m => m.Program, string.Empty, new { @class = "text-danger" })
             </div>
@@ -108,7 +108,8 @@
                 {
                     @class = "form-control",
                     maxlength = "100",
-                    autocomplete = "new-password"
+                    autocomplete = "new-password",
+                    data_val_qcustrong = "Password is too weak. Meet every requirement in the checklist below."
                 })
                 @Html.ValidationMessageFor(m => m.Password, string.Empty, new { @class = "text-danger" })
                 <div data-qcu-strength data-input="Password"
@@ -124,11 +125,43 @@
                     autocomplete = "new-password"
                 })
                 @Html.ValidationMessageFor(m => m.ConfirmPassword, string.Empty, new { @class = "text-danger" })
+                <div class="qcu-match" data-qcu-match data-a="Password" data-b="ConfirmPassword"></div>
             </div>
 
-            <button type="submit" class="btn btn-primary">Register</button>
-            <a href="@Url.Action("Login", "Account")" class="btn btn-link">Back to log in</a>
+            <button type="submit" class="btn btn-primary"
+                    onclick="if (typeof($(this.form).valid) === 'function' &amp;&amp; !$(this.form).valid()) { return false; } this.disabled = true; this.innerHTML = 'Please wait...'; this.form.submit(); return false;">Register</button>
+            <a href="@Url.Action("Login", "Account")" class="btn btn-link">Already have an account? Login</a>
         }
 
     </div>
 </div>
+
+@section scripts {
+    <script>
+        // Client rules the Web Forms CustomValidators carried (the server re-checks everything).
+        (function () {
+            if (!window.jQuery || !jQuery.validator || !jQuery.validator.unobtrusive) { return; }
+
+            // ID box: Student = 23-0001, everybody else = 3-20 letters, numbers or dashes.
+            function regType() { var t = document.getElementById('RequesterType'); return t ? t.value : ''; }
+            jQuery.validator.addMethod('qcuregid', function (value) {
+                value = (value || '').trim();
+                if (!value) { return true; }          // "required" reports the empty case
+                return regType() === 'Student' ? /^\d{2}-\d{4}$/.test(value) : /^[A-Za-z0-9\-]{3,20}$/.test(value);
+            });
+            jQuery.validator.unobtrusive.adapters.add('qcuregid', [], function (options) {
+                options.rules.qcuregid = true;
+                options.messages.qcuregid = function () {
+                    return regType() === 'Student' ? 'Student number must look like 23-0001.'
+                                                   : 'Use 3-20 letters, numbers, or dashes only.';
+                };
+            });
+
+            // Password strength checklist must be fully met.
+            jQuery.validator.addMethod('qcustrong', function (value) {
+                return !value || !window.Qcu || Qcu.evaluatePassword(value, []).valid;
+            });
+            jQuery.validator.unobtrusive.adapters.addBool('qcustrong');
+        })();
+    </script>
+}
