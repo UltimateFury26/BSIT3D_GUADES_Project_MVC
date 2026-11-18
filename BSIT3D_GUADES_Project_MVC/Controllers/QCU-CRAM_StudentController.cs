@@ -29,7 +29,7 @@ namespace BSIT3D_GUADES_Project_MVC.Controllers.Student
     public class StudentController : QCUCRAM_StudentController
     {
         private const int ReservationsPageSize = 10;
-        private const int NotificationsPageSize = 20;
+        private const int NotificationsPageSize = 15;
 
         private readonly QCUCRAMStudentService _service;
 
@@ -233,31 +233,31 @@ namespace BSIT3D_GUADES_Project_MVC.Controllers.Student
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Route("notifications/read")]
-        public ActionResult MarkRead(int id, bool unread = false, int? page = null)
+        public ActionResult MarkRead(int? id, bool unread = false, int? page = null)
         {
-            _service.MarkRead(id, CurrentUserId);
+            // Web Forms: a command argument that is not a number is ignored silently.
+            // The service/repository UPDATE is scoped by StudentID, so another student's id changes nothing.
+            if (id.HasValue)
+            {
+                _service.MarkRead(id.Value, CurrentUserId);
+            }
+
             return RedirectToAction("Notifications", new { unread, page = page ?? 1 });
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Route("notifications/read-all")]
-        public ActionResult MarkAllRead(bool unread = false)
+        public ActionResult MarkAllRead(bool unread = false, int? page = null)
         {
             int changed = _service.MarkAllRead(CurrentUserId);
 
-            if (changed > 0)
-            {
-                Flash(changed == 1
-                    ? "1 notification marked as read."
-                    : changed + " notifications marked as read.");
-            }
-            else
-            {
-                Flash("You had no unread notifications.");
-            }
+            // Same wording as btnMarkAll_Click.
+            Flash(changed == 0
+                ? "You have no unread notifications."
+                : changed + " notification(s) marked as read.");
 
-            return RedirectToAction("Notifications", new { unread });
+            return RedirectToAction("Notifications", new { unread, page = page ?? 1 });
         }
 
         // ==================================================================
