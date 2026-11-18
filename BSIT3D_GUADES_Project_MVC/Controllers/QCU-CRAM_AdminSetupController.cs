@@ -30,7 +30,7 @@ namespace BSIT3D_GUADES_Project_MVC.Controllers
     {
         private const string ModalErrorKey = "QCUCRAM_ModalError";
         private const string ModalEditKey = "QCUCRAM_ModalEdit";
-        private const string SettingsErrorKey = "QCUCRAM_SettingsError";
+        private const string SettingsValuesKey = "QCUCRAM_SettingsValues";
         private const string DevResultKey = "QCUCRAM_DevResult";
         private const string DevSweepKey = "QCUCRAM_DevSweep";
 
@@ -300,8 +300,17 @@ namespace BSIT3D_GUADES_Project_MVC.Controllers
         {
             QCUCRAMSettingsViewModel vm = QCUCRAMSetupService.Settings();
 
-            object error = TempData[SettingsErrorKey];
-            if (error != null) { vm.Error = error.ToString(); }
+            // A failed save keeps what was typed (the Web Forms grid kept it in ViewState);
+            // the error itself arrives as a toast through FlashError.
+            Dictionary<string, string> typed = TempData[SettingsValuesKey] as Dictionary<string, string>;
+            if (typed != null)
+            {
+                foreach (QCUCRAMSettingRow row in vm.Rows)
+                {
+                    string value;
+                    if (typed.TryGetValue(row.Key, out value)) { row.Value = value; }
+                }
+            }
 
             return View("~/Views/Admin/QCU-CRAM_Settings.cshtml", vm);
         }
@@ -322,10 +331,12 @@ namespace BSIT3D_GUADES_Project_MVC.Controllers
 
             if (!result.Ok)
             {
-                TempData[SettingsErrorKey] = result.Message;
+                FlashError(result.Message);
+                if (result.Retry) { TempData[SettingsValuesKey] = values; }
                 return RedirectToAction("Settings");
             }
 
+            // "Settings saved (N changed)." and "No changes to save." are both green toasts.
             Flash(result.Message);
             return RedirectToAction("Settings");
         }

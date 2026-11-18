@@ -762,7 +762,7 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
             DateTime now = QCUCRAM_Clock.Now;
 
             int threshold = Math.Max(1, _content.GetSettingInt("NoShowThreshold", 3));
-            int days = Math.Max(1, _content.GetSettingInt("RestrictionDays", 7));
+            int days = _content.GetSettingInt("RestrictionDays", 7);   // Restrictions.aspx.cs BindAll(): no Math.Max
 
             QCUCRAMRestrictionsViewModel vm = new QCUCRAMRestrictionsViewModel
             {

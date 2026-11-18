@@ -1,55 +1,45 @@
 @model BSIT3D_GUADES_Project_MVC.QCUCRAM_ViewModels.QCUCRAMSettingsViewModel
-@using System
 @{
     /* =====================================================================
        QCU-CRAM  |  Views/Admin/QCU-CRAM_Settings.cshtml
-       ---------------------------------------------------------------------
-       One-to-one port of Guades_QCUCram_Admin/Guades_QCUCram_Settings.aspx.
+       One-to-one port of Guades_QCUCram_Admin/Guades_QCUCram_Settings.aspx:
+       same page head, GridView table classes, Setting / Value / Description
+       columns, text-box width and length, "Save Settings" button with the
+       "Please wait..." behaviour, and the DevTimeOffsetMinutes footnote.
 
-       Phase 25 parity points:
-         * same heading / sub-heading,
-         * same empty-state sentence ("No settings found. Run the seed script."),
-         * one row per setting with the value in a whole-number box, the
-           description and the "Whole number from X to Y." range note,
-         * same "Save Settings" caption and the developer-clock footnote,
-         * the server re-checks every value and only writes the ones that
-           actually changed ("No changes to save." / "Settings saved (N changed).").
+       R06 notes:
+         * The rows are the rows of the Settings table (EmptyDataText when none).
+         * RequiredFieldValidator / RangeValidator -> browser validation
+           (required, min, max, step) showing the same "Required." and
+           "Whole number from X to Y." texts; the server re-checks everything
+           and answers with the original messages as toasts.
        ===================================================================== */
-
     ViewBag.Title = "Settings";
     Layout = "~/Views/Shared/_QCU-CRAM_Layout.cshtml";
 }
 
 <div class="qcu-page-head">
-    <div>
-        <h1 class="qcu-page-title">Settings</h1>
-        <p class="qcu-page-sub">System rules and limits</p>
-    </div>
+    <h2>Settings</h2>
+    <p>System rules and limits</p>
 </div>
 
-@if (!string.IsNullOrWhiteSpace(Model.Error))
-{
-    <div class="qcu-alert qcu-alert--error" role="alert">@Model.Error</div>
-}
-
-@using (Html.BeginForm("Settings", "AdminSetup", FormMethod.Post, new { @class = "qcu-form" }))
+@using (Html.BeginForm("Settings", "AdminSetup", FormMethod.Post))
 {
     @Html.AntiForgeryToken()
 
-    <section class="qcu-panel">
+    <div class="table-responsive">
         @if (Model.Rows.Count == 0)
         {
-            <p class="qcu-empty">No settings found. Run the seed script.</p>
+            @* GridView EmptyDataText: just the message, no header row *@
+            <table class="table table-bordered table-striped qcu-admin-table">
+                <tr><td>No settings found. Run the seed script.</td></tr>
+            </table>
         }
         else
         {
-            <table class="qcu-table qcu-table--kv">
+            <table class="table table-bordered table-striped qcu-admin-table">
                 <thead>
-                    <tr>
-                        <th>Setting</th>
-                        <th>Value</th>
-                        <th>Description</th>
-                    </tr>
+                    <tr><th>Setting</th><th>Value</th><th>Description</th></tr>
                 </thead>
                 <tbody>
                     @foreach (var row in Model.Rows)
@@ -57,10 +47,11 @@
                         <tr>
                             <td><strong>@row.Key</strong></td>
                             <td>
-                                <input type="number" class="form-control qcu-input--num"
-                                       name="s_@row.Key" value="@row.Value"
-                                       min="@row.Min" max="@row.Max" step="1" maxlength="9"
-                                       required="required" aria-label="@row.Key" />
+                                <input type="number" name="s_@row.Key" class="form-control" style="width:150px;"
+                                       maxlength="9" min="@row.Min" max="@row.Max" step="1" required="required"
+                                       value="@row.Value"
+                                       oninvalid="this.setCustomValidity(this.validity.valueMissing ? 'Required.' : '@row.RangeText')"
+                                       oninput="this.setCustomValidity('')" />
                             </td>
                             <td>
                                 @row.Description
@@ -71,16 +62,13 @@
                 </tbody>
             </table>
         }
-    </section>
-
-    <div class="qcu-form__actions">
-        <button type="submit" class="qcu-btn qcu-btn--primary">Save Settings</button>
-        <a class="qcu-btn qcu-btn--ghost" href="@Url.Action("Settings")">Discard changes</a>
     </div>
 
-    <p class="qcu-hint">
-        <strong>DevTimeOffsetMinutes</strong> is for testing only: it shifts the system clock so
-        you can test forfeiture and restrictions without waiting. Keep it at 0 for normal use.
-        While it is not 0, a red banner shows on every page.
-    </p>
+    <input type="submit" value="Save Settings" class="btn btn-primary"
+           onclick="if (!this.form.checkValidity()) { return true; } this.disabled = true; this.value = 'Please wait...'; this.form.submit(); return false;" />
 }
+
+<p class="text-muted mt-3">
+    <strong>DevTimeOffsetMinutes</strong> is for testing only: it shifts the system clock so you can test forfeiture
+    and restrictions without waiting. Keep it at 0 for normal use. While it is not 0, a red banner shows on every page.
+</p>

@@ -1064,44 +1064,57 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
                 { "DevTimeOffsetMinutes", new[] { 0, 1000000 } }
             };
 
-        private static readonly Dictionary<string, string> SettingDescriptions =
-            new Dictionary<string, string>
-            {
-                { "GraceMinutes",         "Minutes after a slot starts before an unclaimed booking is forfeited." },
-                { "NoShowThreshold",      "Number of forfeitures before a requester is restricted." },
-                { "RestrictionDays",      "How many days an automatic restriction lasts." },
-                { "AdvanceBookingDays",   "How many days ahead a booking may be filed." },
-                { "DevTimeOffsetMinutes", "Developer clock offset in minutes. 0 means real time." }
-            };
+        // Settings.aspx.cs RuleFor(): a key without a rule gets { 0, 1000000 }.
+        private static readonly int[] DefaultSettingRule = { 0, 1000000 };
 
+        private static int[] SettingRuleFor(string key)
+        {
+            int[] rule;
+            return (key != null && SettingRules.TryGetValue(key, out rule)) ? rule : DefaultSettingRule;
+        }
+
+        // Settings.aspx.cs BindGrid(): ORDER BY CASE SettingKey ... ELSE 6 END, SettingKey.
+        private static int SettingRank(string key)
+        {
+            for (int i = 0; i < SettingOrder.Length; i++)
+            {
+                if (string.Equals(SettingOrder[i], key, StringComparison.OrdinalIgnoreCase)) { return i + 1; }
+            }
+            return SettingOrder.Length + 1;
+        }
+
+        private static List<QCUCRAM_Setting> OrderedSettings(QCUCRAM_Db db)
+        {
+            List<QCUCRAM_Setting> rows = new List<QCUCRAM_Setting>();
+            foreach (QCUCRAM_Setting row in new QCUCRAM_ContentRepository(db).GetAllSettings())
+            {
+                if (row.SettingKey != null) { rows.Add(row); }
+            }
+
+            rows.Sort(delegate (QCUCRAM_Setting x, QCUCRAM_Setting y)
+            {
+                int c = SettingRank(x.SettingKey).CompareTo(SettingRank(y.SettingKey));
+                return c != 0 ? c : string.Compare(x.SettingKey, y.SettingKey, StringComparison.OrdinalIgnoreCase);
+            });
+            return rows;
+        }
+
+        /// <summary>Settings.aspx.cs BindGrid(): one row per row in the Settings table.</summary>
         public static QCUCRAMSettingsViewModel Settings()
         {
             QCUCRAMSettingsViewModel vm = new QCUCRAMSettingsViewModel();
 
             using (QCUCRAM_Db db = new QCUCRAM_Db())
             {
-                Dictionary<string, QCUCRAM_Setting> stored =
-                    new Dictionary<string, QCUCRAM_Setting>(StringComparer.OrdinalIgnoreCase);
-
-                foreach (QCUCRAM_Setting row in new QCUCRAM_ContentRepository(db).GetAllSettings())
+                foreach (QCUCRAM_Setting row in OrderedSettings(db))
                 {
-                    if (row.SettingKey != null) { stored[row.SettingKey] = row; }
-                }
-
-                foreach (string key in SettingOrder)
-                {
-                    QCUCRAM_Setting row;
-                    stored.TryGetValue(key, out row);
-
-                    int[] range = SettingRules[key];
+                    int[] range = SettingRuleFor(row.SettingKey);
 
                     vm.Rows.Add(new QCUCRAMSettingRow
                     {
-                        Key = key,
-                        Value = row == null ? "" : row.SettingValue,
-                        Description = (row != null && !string.IsNullOrEmpty(row.Description))
-                            ? row.Description
-                            : SettingDescriptions[key],
+                        Key = row.SettingKey,
+                        Value = row.SettingValue,
+                        Description = row.Description,
                         Min = range[0],
                         Max = range[1]
                     });
@@ -1111,61 +1124,81 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
             return vm;
         }
 
+        /// <summary>
+        /// Settings.aspx.cs btnSave_Click(). A validation failure is returned with Retry = true
+        /// (the controller then keeps the typed values, as the page's ViewState did); a database
+        /// failure is a plain failure (the original re-bound the grid from the database).
+        /// </summary>
         public static QCUCRAMOperationResult SaveSettings(IDictionary<string, string> values)
         {
-            if (values == null)
-            {
-                return QCUCRAMOperationResult.Failure("No settings were submitted.");
-            }
+            if (values == null) { values = new Dictionary<string, string>(); }
 
             List<string> errors = new List<string>();
-            Dictionary<string, int> parsed = new Dictionary<string, int>();
+            List<KeyValuePair<string, int>> newValues = new List<KeyValuePair<string, int>>();
 
-            foreach (string key in SettingOrder)
+            try
             {
-                string raw;
-                if (!values.TryGetValue(key, out raw)) { continue; }
-
-                int value;
-                int[] range = SettingRules[key];
-
-                if (!int.TryParse((raw ?? "").Trim(), NumberStyles.Integer,
-                                  CultureInfo.InvariantCulture, out value))
+                using (QCUCRAM_Db db = new QCUCRAM_Db())
                 {
-                    errors.Add(key + " must be a whole number.");
-                    continue;
-                }
+                    // Server-side re-check of every row of the grid, in grid order.
+                    foreach (QCUCRAM_Setting row in OrderedSettings(db))
+                    {
+                        string key = row.SettingKey;
+                        if (!SettingRules.ContainsKey(key)) { continue; }   // ignore unknown keys
 
-                if (value < range[0] || value > range[1])
-                {
-                    errors.Add(key + " must be between " + range[0] + " and " + range[1] + ".");
-                    continue;
-                }
+                        string raw;
+                        if (!values.TryGetValue(key, out raw)) { raw = ""; }
 
-                parsed[key] = value;
+                        int value;
+                        if (!int.TryParse((raw ?? "").Trim(), NumberStyles.Integer,
+                                          CultureInfo.InvariantCulture, out value))
+                        {
+                            errors.Add(key + " must be a whole number.");
+                            continue;
+                        }
+
+                        int[] range = SettingRules[key];
+                        if (value < range[0] || value > range[1])
+                        {
+                            errors.Add(key + " must be from " + range[0] + " to " + range[1] + ".");
+                            continue;
+                        }
+
+                        newValues.Add(new KeyValuePair<string, int>(key, value));
+                    }
+
+                    if (errors.Count > 0)
+                    {
+                        return Retry(string.Join(" ", errors.ToArray()));
+                    }
+
+                    QCUCRAM_ContentRepository content = new QCUCRAM_ContentRepository(db);
+                    int changed = 0;
+
+                    foreach (KeyValuePair<string, int> kv in newValues)
+                    {
+                        string current = content.GetSetting(kv.Key);
+                        string next = kv.Value.ToString(CultureInfo.InvariantCulture);
+                        if (current != next)
+                        {
+                            content.SetSetting(kv.Key, next);
+                            changed++;
+                        }
+                    }
+
+                    return QCUCRAMOperationResult.Success(
+                        changed == 0 ? "No changes to save." : "Settings saved (" + changed + " changed).");
+                }
             }
-
-            if (errors.Count > 0)
+            catch (Exception)
             {
-                return QCUCRAMOperationResult.Failure(string.Join(" ", errors.ToArray()));
+                return QCUCRAMOperationResult.Failure("Sorry, the settings could not be saved. Please try again.");
             }
-
-            using (QCUCRAM_Db db = new QCUCRAM_Db())
+            finally
             {
-                QCUCRAM_ContentRepository content = new QCUCRAM_ContentRepository(db);
-
-                foreach (KeyValuePair<string, int> pair in parsed)
-                {
-                    content.SetSetting(pair.Key,
-                        pair.Value.ToString(CultureInfo.InvariantCulture));
-                }
+                // SettingsHelper.Set dropped the cached clock offset after every write.
+                QCUCRAM_Clock.Invalidate();
             }
-
-            // SetSetting already drops the clock cache; do it again so the very next
-            // request is guaranteed to see the new offset.
-            QCUCRAM_Clock.Invalidate();
-
-            return QCUCRAMOperationResult.Success("Settings saved.");
         }
 
         // =================================================================
