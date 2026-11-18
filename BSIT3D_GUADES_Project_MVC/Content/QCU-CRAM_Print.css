@@ -71,31 +71,112 @@ body {
     margin: 0;
 }
 
-/* ---- Tables ---- */
-table.qcu-print-table {
+/* ---- Tables ----
+   The Daily Schedule sheet marks its grid .qcu-table--print while the older
+   reports use .qcu-print-table; the booking report's history/member grids use
+   the plain .qcu-table. All three must print with the same ruled look. */
+table.qcu-print-table,
+table.qcu-table--print,
+table.qcu-table {
     width: 100%;
     border-collapse: collapse;
 }
 
     table.qcu-print-table th,
-    table.qcu-print-table td {
+    table.qcu-print-table td,
+    table.qcu-table--print th,
+    table.qcu-table--print td,
+    table.qcu-table th,
+    table.qcu-table td {
         border: 1px solid #999;
         padding: 6px 8px;
         vertical-align: top;
     }
 
-    table.qcu-print-table th {
+    table.qcu-print-table th,
+    table.qcu-table--print th,
+    table.qcu-table th {
         background: #f0f0f0;
         text-align: left;
     }
 
-    table.qcu-print-table thead {
+    table.qcu-print-table thead,
+    table.qcu-table--print thead,
+    table.qcu-table thead {
         display: table-header-group; /* repeat the header on every printed page */
     }
 
-    table.qcu-print-table tr {
+    table.qcu-print-table tr,
+    table.qcu-table--print tr,
+    table.qcu-table tr {
         page-break-inside: avoid;
     }
+
+/* ---- Booking report sheet (Views/Reports/QCU-CRAM_PrintBooking) ---- */
+.qcu-report {
+    color: #000;
+}
+
+.qcu-report__head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-bottom: 2px solid #00509e;
+    padding-bottom: 8px;
+    margin-bottom: 12px;
+}
+
+.qcu-report__seal {
+    height: 56px;
+    width: auto;
+}
+
+.qcu-report__head h1 {
+    font-size: 15pt;
+    font-weight: 700;
+    margin: 0;
+}
+
+.qcu-report__sub {
+    font-size: 10pt;
+    margin: 0;
+}
+
+.qcu-report__section {
+    font-size: 11pt;
+    font-weight: 700;
+    margin: 14px 0 6px;
+}
+
+table.qcu-kv {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+    table.qcu-kv th,
+    table.qcu-kv td {
+        border: 1px solid #999;
+        padding: 5px 8px;
+        vertical-align: top;
+        text-align: left;
+    }
+
+    table.qcu-kv th {
+        width: 34%;
+        background: #f0f0f0;
+        font-weight: 600;
+    }
+
+.qcu-day-title {
+    font-size: 14pt;
+    font-weight: 700;
+    margin: 12px 0 6px;
+}
+
+.qcu-qcid {
+    margin-top: 18px;
+    font-size: 10pt;
+}
 
 /* ---- Signatures ---- */
 .qcu-print-signature {

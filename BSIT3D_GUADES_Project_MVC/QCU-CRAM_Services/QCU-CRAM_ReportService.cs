@@ -72,7 +72,11 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
                     EndTime = r.TimeSlot.EndTime,
                     RoomName = r.Room.RoomName,
                     StudentNumber = r.Student.StudentNumber,
-                    RequesterName = r.Student.LastName + ", " + r.Student.FirstName,
+                    // The Web Forms grid built "Last, First MI." - the middle
+                    // initial is part of the printed requester name.
+                    RequesterName = r.Student.LastName + ", " + r.Student.FirstName
+                                  + ((r.Student.MI == null || r.Student.MI == "")
+                                        ? "" : " " + r.Student.MI + "."),
                     RequesterType = r.Student.RequesterType,
                     Program = r.Student.Program,
                     NumberOfMembers = r.NumberOfMembers,
@@ -137,7 +141,7 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
             if (data == null)
             {
                 vm.Found = false;
-                vm.ErrorMessage = "That booking could not be found.";
+                vm.ErrorMessage = "That reservation could not be found.";
                 return vm;
             }
 

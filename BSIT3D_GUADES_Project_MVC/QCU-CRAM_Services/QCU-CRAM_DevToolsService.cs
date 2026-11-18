@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Generic;
 using System.Configuration;
 using System.Globalization;
+using System.Web;
 using BSIT3D_GUADES_Project_MVC.QCUCRAM_Data;
 using BSIT3D_GUADES_Project_MVC.QCUCRAM_Helpers;
 using BSIT3D_GUADES_Project_MVC.QCUCRAM_ViewModels;
@@ -10,6 +12,10 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
     /// <summary>
     /// Phase 08 - the Developer Tools screen.
     ///
+    /// Port of Guades_QCUCram_Admin/Guades_QCUCram_DevTools.aspx.cs. Every
+    /// message string is copied verbatim from the original page so the MVC
+    /// screen reads exactly like the Web Forms screen.
+    ///
     /// Everything here exists for demonstration and grading only. In a real
     /// deployment set QCU-CRAM_DevToolsEnabled to false in Web.config and the
     /// controller will answer 404.
@@ -17,7 +23,9 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
     public static class QCUCRAMDevToolsService
     {
         public const string OffsetKey = "DevTimeOffsetMinutes";
-        public const int MaxOffset = 1000000;
+        public const int MaxOffset = 1000000;   // same limit as the Settings page
+
+        private static readonly CultureInfo Inv = CultureInfo.InvariantCulture;
 
         /// <summary>Reads QCU-CRAM_DevToolsEnabled from Web.config (default true).</summary>
         public static bool Enabled
@@ -31,9 +39,10 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
             }
         }
 
+        // ------------------------------------------------------------------ page state
         public static QCUCRAMDevToolsViewModel Load()
         {
-            int offset = 0;
+            int offset;
 
             using (QCUCRAM_Db db = new QCUCRAM_Db())
             {
@@ -49,35 +58,35 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
                 OffsetMinutes = offset
             };
 
-            QCUCRAM_SampleData.Counts counts = QCUCRAM_SampleData.GetCounts();
+            QCUCRAM_SampleData.Counts c = QCUCRAM_SampleData.GetCounts();
 
-            vm.Students = counts.Students;
-            vm.SampleStudents = counts.SampleStudents;
-            vm.SampleRestricted = counts.SampleRestricted;
-            vm.SampleOneStrikeAway = counts.SampleOneStrikeAway;
-            vm.Reservations = counts.Reservations;
-            vm.SampleReservations = counts.SampleReservations;
-            vm.Notifications = counts.Notifications;
+            vm.Students = c.Students;
+            vm.SampleStudents = c.SampleStudents;
+            vm.SampleRestricted = c.SampleRestricted;
+            vm.SampleOneStrikeAway = c.SampleOneStrikeAway;
+            vm.Reservations = c.Reservations;
+            vm.SampleReservations = c.SampleReservations;
+            vm.Notifications = c.Notifications;
 
             return vm;
         }
 
+        // ------------------------------------------------------------------ clock
         public static string ShiftClock(string command)
         {
             if (string.Equals(command, "reset", StringComparison.OrdinalIgnoreCase))
             {
                 SetOffset(0);
-                return "Clock reset to real time.";
+                return Message("Clock reset to real time.", false);
             }
 
             int delta;
-            if (!int.TryParse(command, NumberStyles.Integer,
-                              CultureInfo.InvariantCulture, out delta))
+            if (!int.TryParse(command, NumberStyles.Integer, Inv, out delta))
             {
-                return "Unknown clock command.";
+                return Message("Unknown clock command.", true);
             }
 
-            int current = 0;
+            int current;
             using (QCUCRAM_Db db = new QCUCRAM_Db())
             {
                 current = new QCUCRAM_ContentRepository(db).GetSettingInt(OffsetKey, 0);
@@ -88,7 +97,7 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
             if (next > MaxOffset) { next = MaxOffset; }
 
             SetOffset((int)next);
-            return "Clock moved. The offset is now " + next + " minute(s).";
+            return Message("Clock moved forward. The offset is now " + next + " minute(s).", false);
         }
 
         private static void SetOffset(int minutes)
@@ -96,44 +105,59 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
             using (QCUCRAM_Db db = new QCUCRAM_Db())
             {
                 new QCUCRAM_ContentRepository(db).SetSetting(
-                    OffsetKey, minutes.ToString(CultureInfo.InvariantCulture));
+                    OffsetKey, minutes.ToString(Inv));
             }
 
             QCUCRAM_Clock.Invalidate();
         }
 
+        // ------------------------------------------------------------------ sweep
         public static string RunSweep()
         {
             try
             {
                 QCUCRAM_MaintenanceService.SweepResult result =
                     QCUCRAM_MaintenanceService.RunSweep();
-                return result.Summary;
+
+                string css = result.Errors > 0
+                    ? "alert-danger"
+                    : (result.ChangedAnything ? "alert-success" : "alert-info");
+
+                return "<div class=\"alert " + css + "\">" +
+                       HttpUtility.HtmlEncode(result.Summary) + "</div>";
             }
             catch (Exception ex)
             {
-                return "The sweep failed: " + ex.Message;
+                return "<div class=\"alert alert-danger\">The sweep failed: " +
+                       HttpUtility.HtmlEncode(ex.Message) + "</div>";
             }
         }
 
+        // ------------------------------------------------------------------ sample data
         public static string GenerateStudents(int adminId)
         {
             try
             {
-                QCUCRAM_SampleData.StudentBatch batch =
+                QCUCRAM_SampleData.StudentBatch b =
                     QCUCRAM_SampleData.GenerateStudents(
                         QCUCRAM_SampleData.StudentsPerClick, adminId);
 
-                return batch.Created + " students added (" +
-                       batch.Clean + " clean, " +
-                       batch.OneStrikeAway + " one strike away, " +
-                       batch.RestrictedNow + " restricted now). " +
-                       "Log in with any of: " + string.Join(", ", batch.Numbers.ToArray()) +
-                       " / password " + QCUCRAM_SampleData.SamplePassword;
+                return Message(
+                    "<strong>" + b.Created + " students added</strong> (" +
+                    b.Clean + " clean &middot; " + b.OneStrikeAway + " one strike away &middot; " +
+                    b.RestrictedNow + " restricted now &middot; " + b.ExpiredRestriction +
+                    " expired restriction; " +
+                    (b.Created - b.Faculty - b.Visitors) + " students, " +
+                    b.Faculty + " faculty, " + b.Visitors + " visitor). " +
+                    "Matching forfeited reservations added: " + b.StrikeReservations + ".<br />" +
+                    "Log in with: " + HttpUtility.HtmlEncode(string.Join(", ", b.Numbers.ToArray())) +
+                    " &middot; password <code>" +
+                    HttpUtility.HtmlEncode(QCUCRAM_SampleData.SamplePassword) + "</code>",
+                    false);
             }
             catch (Exception)
             {
-                return "Could not create the sample students.";
+                return Message("Could not create the sample students.", true);
             }
         }
 
@@ -141,22 +165,51 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
         {
             try
             {
-                QCUCRAM_SampleData.ReservationBatch batch =
+                QCUCRAM_SampleData.ReservationBatch b =
                     QCUCRAM_SampleData.GenerateReservations(daysBack, daysAhead, adminId);
 
-                if (batch.Created == 0)
+                string[] order =
                 {
-                    return "No sample reservations were added. Add sample students and make sure " +
-                           "at least one room and one time slot are active.";
+                    "Pending", "Approved", "Reassigned", "Declined",
+                    "Cancelled", "CheckedIn", "Completed", "Forfeited"
+                };
+
+                List<string> parts = new List<string>();
+                foreach (string s in order) { parts.Add(s + " " + b.Count(s)); }
+
+                string dates = (b.FirstDate.HasValue && b.LastDate.HasValue)
+                    ? ", " + b.FirstDate.Value.ToString("MMM d", Inv) +
+                      " to " + b.LastDate.Value.ToString("MMM d, yyyy", Inv)
+                    : "";
+
+                string html =
+                    "<strong>" + b.Created + " sample reservations added</strong> (" +
+                    string.Join(" &middot; ", parts.ToArray()) + "). " +
+                    b.RoomsCovered + " of " + b.RoomsTotal + " rooms covered" + dates + ".";
+
+                if (b.StrikeReservations > 0)
+                {
+                    html += " " + b.StrikeReservations +
+                            " of them are forfeited reservations that back the students' strikes.";
                 }
 
-                return batch.Created + " sample reservation(s) added across " +
-                       daysBack + " day(s) back and " + daysAhead + " day(s) ahead, " +
-                       "covering " + batch.RoomsCovered + " of " + batch.RoomsTotal + " room(s).";
+                if (b.CheckedInSkipped)
+                {
+                    html += "<br /><strong>No CheckedIn reservation was made:</strong> " +
+                            "no time slot is running right now. Move the clock into library " +
+                            "hours (clock buttons above) and click again.";
+                }
+
+                return Message(html, false);
+            }
+            catch (InvalidOperationException ex)
+            {
+                // "Generate the sample students first." / "There are no active rooms ..."
+                return Message(HttpUtility.HtmlEncode(ex.Message), true);
             }
             catch (Exception)
             {
-                return "Could not create the sample reservations.";
+                return Message("Could not create the sample reservations.", true);
             }
         }
 
@@ -164,12 +217,12 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
         {
             try
             {
-                int removed = QCUCRAM_SampleData.ClearSampleReservations();
-                return removed + " sample reservation(s) removed.";
+                int n = QCUCRAM_SampleData.ClearSampleReservations();
+                return Message(n + " sample reservations deleted.", false);
             }
             catch (Exception)
             {
-                return "Could not remove the sample reservations.";
+                return Message("Could not delete the sample reservations.", true);
             }
         }
 
@@ -177,26 +230,55 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
         {
             try
             {
-                int removed = QCUCRAM_SampleData.DeleteSampleStudents();
-                return removed + " sample student account(s) removed.";
+                int n = QCUCRAM_SampleData.DeleteSampleStudents();
+                return Message(n + " sample students deleted.", false);
             }
             catch (Exception)
             {
-                return "Could not remove the sample students. Clear their reservations first.";
+                return Message("Could not delete the sample students.", true);
             }
         }
 
-        public static string ClearAllReservations()
+        // ------------------------------------------------------------------ danger zone
+        /// <summary>
+        /// Mirrors btnClearAll_Click: the box must read DELETE (all capitals) and
+        /// the "I understand" check must be ticked before anything is removed.
+        /// </summary>
+        public static string ClearAllReservations(string confirmText, bool confirmCheck)
         {
+            if (!string.Equals((confirmText ?? string.Empty).Trim(), "DELETE", StringComparison.Ordinal))
+            {
+                return Message(
+                    "Type DELETE (all capitals) in the box to confirm. Nothing was deleted.", true);
+            }
+
+            if (!confirmCheck)
+            {
+                return Message(
+                    "Tick \u201cI understand this cannot be undone.\u201d to confirm. Nothing was deleted.", true);
+            }
+
             try
             {
-                int removed = QCUCRAM_SampleData.ClearAllReservations();
-                return removed + " reservation(s) removed. Rooms, slots, and accounts were kept.";
+                int n = QCUCRAM_SampleData.ClearAllReservations();
+                return Message(
+                    "Deleted " + n + " reservation(s). Strikes and restrictions were reset.", false);
             }
             catch (Exception)
             {
-                return "Could not clear the reservations.";
+                return Message("Could not clear the data.", true);
             }
+        }
+
+        // ------------------------------------------------------------------ helper
+        /// <summary>Same wrapper the original ShowResult() / ShowMessage() produce.</summary>
+        private static string Message(string html, bool isError)
+        {
+            string css = isError
+                ? "alert alert-danger py-2 small"
+                : "alert alert-success py-2 small";
+
+            return "<div class=\"" + css + "\">" + html + "</div>";
         }
     }
 }

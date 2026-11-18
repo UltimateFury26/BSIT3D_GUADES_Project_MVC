@@ -32,12 +32,12 @@
 
 <form method="get" action="@Url.Action("Analytics", "Reports")" class="qcu-toolbar">
     <label>
-        From
+        From date
         <input type="date" name="from" class="qcu-input"
                value="@Model.From.ToString("yyyy-MM-dd", inv)" />
     </label>
     <label>
-        To
+        To date
         <input type="date" name="to" class="qcu-input"
                value="@Model.To.ToString("yyyy-MM-dd", inv)" />
     </label>
@@ -68,7 +68,6 @@
         <div class="qcu-stat">
             <span class="qcu-stat__label">Total bookings</span>
             <span class="qcu-stat__value">@Model.TotalBookings.ToString("N0", inv)</span>
-            <span class="qcu-stat__hint">Reservations dated in the range</span>
         </div>
 
         <div class="qcu-stat is-warn">
@@ -96,25 +95,21 @@
                       ? Model.AverageGroupSize.Value.ToString("0.0", inv)
                       : "\u2014")
             </span>
-            <span class="qcu-stat__hint">Members per booking</span>
         </div>
 
         <div class="qcu-stat">
             <span class="qcu-stat__label">Most booked room</span>
             <span class="qcu-stat__value qcu-stat__value--sm">@Model.MostRoom</span>
-            <span class="qcu-stat__hint">Highest utilization</span>
         </div>
 
         <div class="qcu-stat">
             <span class="qcu-stat__label">Least booked room</span>
             <span class="qcu-stat__value qcu-stat__value--sm">@Model.LeastRoom</span>
-            <span class="qcu-stat__hint">Lowest utilization (with bookings)</span>
         </div>
 
         <div class="qcu-stat is-warn">
             <span class="qcu-stat__label">Peak time slot</span>
             <span class="qcu-stat__value qcu-stat__value--sm">@Model.PeakSlot</span>
-            <span class="qcu-stat__hint">Busiest hour in the range</span>
         </div>
     </div>
 
@@ -142,15 +137,15 @@
 
             @if (Model.NoShowsPerStudent == null || Model.NoShowsPerStudent.Count == 0)
             {
-                <p class="qcu-empty">No forfeited bookings in this range.</p>
+                <p class="qcu-empty">No forfeited reservations in this range.</p>
             }
             else
             {
                 <table class="qcu-table">
                     <thead>
                         <tr>
-                            <th>Student number</th>
-                            <th>Student</th>
+                            <th>ID / Student No.</th>
+                            <th>Name</th>
                             <th class="qcu-num">Forfeitures</th>
                         </tr>
                     </thead>
@@ -170,20 +165,20 @@
 
         <section class="qcu-panel">
             <header class="qcu-panel__head">
-                <h2>Top repeat bookers</h2>
+                <h2>Top repeat bookers (top 10)</h2>
             </header>
 
             @if (Model.TopRepeatBookers == null || Model.TopRepeatBookers.Count == 0)
             {
-                <p class="qcu-empty">No bookings in this range.</p>
+                <p class="qcu-empty">No reservations in this range.</p>
             }
             else
             {
                 <table class="qcu-table">
                     <thead>
                         <tr>
-                            <th>Student number</th>
-                            <th>Student</th>
+                            <th>ID / Student No.</th>
+                            <th>Name</th>
                             <th class="qcu-num">Bookings</th>
                         </tr>
                     </thead>

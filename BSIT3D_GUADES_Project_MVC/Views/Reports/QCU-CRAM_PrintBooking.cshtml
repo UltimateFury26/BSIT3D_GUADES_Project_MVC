@@ -20,6 +20,10 @@
 
     CultureInfo inv = CultureInfo.InvariantCulture;
     string dash = "\u2014";
+
+    // The Web Forms report printed "Checked In" everywhere, never the raw
+    // "CheckedIn" status key. Same helper as Guades_QCUCram_PrintBooking.
+    Func<string, string> statusLabel = st => st == "CheckedIn" ? "Checked In" : st;
 }
 
 @section head {
@@ -50,7 +54,7 @@ else
 
         <p class="qcu-report__sub">
             <strong>Reservation #@Model.ReservationId</strong> |
-            Status: @Html.Partial("_QCU-CRAM_StatusBadge", Model.Status)
+            Status: <strong>@statusLabel(Model.Status)</strong>
         </p>
 
         <h2 class="qcu-report__section">Requester</h2>
@@ -60,7 +64,7 @@ else
                 <td>@Model.RequesterName</td>
             </tr>
             <tr>
-                <th>ID</th>
+                <th>ID / Student Number</th>
                 <td>@Model.StudentNumber</td>
             </tr>
             <tr>
@@ -118,12 +122,18 @@ else
         }
         else
         {
-            <table class="qcu-kv">
+            <table class="qcu-table">
+                <thead>
+                    <tr>
+                        <th style="width: 50px;">No.</th>
+                        <th>Name (Last, First MI)</th>
+                    </tr>
+                </thead>
                 <tbody>
                     @for (int i = 0; i < Model.Members.Count; i++)
                     {
                         <tr>
-                            <th>@(i + 1)</th>
+                            <td>@(i + 1)</td>
                             <td>@Model.Members[i].FullName</td>
                         </tr>
                     }
@@ -153,8 +163,8 @@ else
                         <tr>
                             <td class="qcu-nowrap">@h.ChangedAt.ToString("MMM d, yyyy h:mm tt", inv)</td>
                             <td>
-                                @(string.IsNullOrEmpty(h.OldStatus) ? "New" : h.OldStatus)
-                                &rarr; @h.NewStatus
+                                @(string.IsNullOrEmpty(h.OldStatus) ? "New" : statusLabel(h.OldStatus))
+                                &rarr; @statusLabel(h.NewStatus)
                             </td>
                             <td>@h.ChangedByText</td>
                             <td>@h.Notes</td>
@@ -172,7 +182,7 @@ else
         <p class="qcu-qcid">QCID verified &#9744;</p>
 
         <p class="qcu-muted qcu-small">
-            Printed @Model.PrintedAt.ToString("MMM d, yyyy h:mm tt", inv)
+            Printed on @Model.PrintedAt.ToString("MMM d, yyyy h:mm tt", inv)
         </p>
     </article>
 }

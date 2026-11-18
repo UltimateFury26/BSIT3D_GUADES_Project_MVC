@@ -128,7 +128,7 @@ namespace BSIT3D_GUADES_Project_MVC.Controllers
         public ActionResult Students(string q, string program, int? page, int? edit)
         {
             QCUCRAMStudentsViewModel vm =
-                QCUCRAMSetupService.Students(q, program, page ?? 1, 10);
+                QCUCRAMSetupService.Students(q, program, page ?? 1, 20);
 
             // edit absent -> plain list; edit = 0 -> "Add student"; edit > 0 -> "Edit student"
             if (edit.HasValue)
@@ -359,11 +359,16 @@ namespace BSIT3D_GUADES_Project_MVC.Controllers
             return RedirectToAction("DevTools");
         }
 
+        /// <summary>
+        /// Port of btnClearAll_Click: the box must read DELETE (all capitals) and the
+        /// "I understand this cannot be undone." check must be ticked. Anything else
+        /// changes nothing and shows the original refusal message.
+        /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult ClearAllReservations()
+        public ActionResult ClearAllReservations(string confirmText, bool confirmCheck)
         {
-            TempData[DevResultKey] = QCUCRAMDevToolsService.ClearAllReservations();
+            TempData[DevResultKey] = QCUCRAMDevToolsService.ClearAllReservations(confirmText, confirmCheck);
             return RedirectToAction("DevTools");
         }
 

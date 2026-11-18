@@ -37,7 +37,7 @@
 <div class="qcu-page-head qcu-no-print">
     <div>
         <h1 class="qcu-page-title">Daily Schedule</h1>
-        <p class="qcu-page-sub">Confirmed room bookings for one day</p>
+        <p class="qcu-page-sub">Confirmed bookings for the day, ready to print for the front desk</p>
     </div>
 </div>
 
@@ -50,9 +50,9 @@
 
     <span class="qcu-btn-row">
         <a class="qcu-btn qcu-btn--ghost"
-           href="@Url.Action("DailySchedule", "Reports", new { date = day(Model.PreviousDay) })">&larr; Previous day</a>
+           href="@Url.Action("DailySchedule", "Reports", new { date = day(Model.PreviousDay) })">&laquo; Previous day</a>
         <a class="qcu-btn qcu-btn--ghost"
-           href="@Url.Action("DailySchedule", "Reports", new { date = day(Model.NextDay) })">Next day &rarr;</a>
+           href="@Url.Action("DailySchedule", "Reports", new { date = day(Model.NextDay) })">Next day &raquo;</a>
         <a class="qcu-btn qcu-btn--ghost"
            href="@Url.Action("DailySchedule", "Reports", new { date = day(today) })">Today</a>
         <a class="qcu-btn qcu-btn--ghost"
@@ -81,7 +81,7 @@
     @Model.ConfirmedCount confirmed booking(s).
     @if (Model.PendingCount > 0)
     {
-        <span class="qcu-no-print">@Model.PendingCount request(s) still pending.</span>
+        <span class="qcu-no-print">@Model.PendingCount pending request(s) for this date are not listed.</span>
     }
 </p>
 
@@ -102,7 +102,7 @@
             @if (Model.Rows == null || Model.Rows.Count == 0)
             {
                 <tr>
-                    <td colspan="7" class="qcu-empty">No confirmed bookings for this day.</td>
+                    <td colspan="7" class="qcu-empty">No confirmed bookings for this date.</td>
                 </tr>
             }
             else

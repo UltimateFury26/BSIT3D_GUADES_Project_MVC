@@ -121,12 +121,17 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
 
             if (bookedRooms.Count > 0)
             {
-                vm.MostRoom = bookedRooms[0].RoomName;
-                vm.LeastRoom = bookedRooms[bookedRooms.Count - 1].RoomName;
+                // The Web Forms page printed "Room (N)" - name plus the booking
+                // count - and only when the room had at least one booking.
+                vm.MostRoom = bookedRooms[0].RoomName
+                            + " (" + bookedRooms[0].Booked.ToString("N0", CultureInfo.InvariantCulture) + ")";
+                vm.LeastRoom = bookedRooms[bookedRooms.Count - 1].RoomName
+                             + " (" + bookedRooms[bookedRooms.Count - 1].Booked.ToString("N0", CultureInfo.InvariantCulture) + ")";
             }
 
             vm.RoomUtilization = new QCUCRAMBarTable();
-            vm.RoomUtilization.Title = "Room utilization";
+            vm.RoomUtilization.Title = "Room utilization (confirmed bookings vs. available slots)";
+            vm.RoomUtilization.EmptyText = "No rooms found.";
             vm.RoomUtilization.LabelHeader = "Room";
             vm.RoomUtilization.ValueHeader = "Booked";
             vm.RoomUtilization.BarHeader = "Utilization";
@@ -167,14 +172,15 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
             vm.BookingsPerWeekday = Bars("Bookings per weekday", "Day",
                 _reports.BookingsPerWeekday(from, to).Select(r => Row(r.Day, r.Total)));
 
-            vm.PeakTimeSlots = Bars("Peak time slots", "Time slot",
-                slots.Select(r => Row(r.Label, r.Total)));
+            vm.PeakTimeSlots = Bars("Peak time slots (booked or forfeited)", "Time slot",
+                slots.Select(r => Row(r.Label, r.Total)), "No time slots found.");
 
             vm.BookingsPerProgram = Bars("Bookings per program", "Program",
                 _reports.BookingsPerProgram(from, to).Select(r => Row(r.Program, r.Total)));
 
-            vm.AdminDecisions = Bars("Admin decisions", "Decision",
-                _reports.AdminDecisions(from, to).Select(r => Row(r.NewStatus, r.Total)));
+            vm.AdminDecisions = Bars("Library assistant decisions", "Decision",
+                _reports.AdminDecisions(from, to).Select(r => Row(r.NewStatus, r.Total)),
+                "No assistant decisions in this range.");
 
             // ---- the two plain tables ----
             vm.NoShowsPerStudent = _reports.NoShowsPerStudent(from, to);
@@ -205,10 +211,12 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
         /// The Web Forms page did this in RowDataBound with a Dictionary lookup;
         /// doing it once here means the view has no arithmetic in it at all.
         /// </summary>
-        private static QCUCRAMBarTable Bars(string title, string labelHeader, IEnumerable<QCUCRAMBarRow> rows)
+        private static QCUCRAMBarTable Bars(string title, string labelHeader, IEnumerable<QCUCRAMBarRow> rows,
+                                            string emptyText = "No reservations in this range.")
         {
             QCUCRAMBarTable table = new QCUCRAMBarTable();
             table.Title = title;
+            table.EmptyText = emptyText;
             table.LabelHeader = labelHeader;
             table.ValueHeader = "Total";
             table.BarHeader = "Share";
