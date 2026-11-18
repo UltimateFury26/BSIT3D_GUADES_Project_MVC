@@ -282,16 +282,17 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Data
         /// </summary>
         public bool EnsureDefaultAdmin()
         {
-            if (Count() > 0) { return false; }
-
-            _db.Execute(
-                @"INSERT INTO AdminUsers (Username, PasswordHash, FullName, IsActive)
+            // One statement, exactly like DbSeeder.EnsureDefaultAdmin, so two app instances
+            // starting together cannot both insert (a separate Count() then INSERT could).
+            int inserted = _db.Execute(
+                @"IF NOT EXISTS (SELECT 1 FROM AdminUsers)
+                  INSERT INTO AdminUsers (Username, PasswordHash, FullName, IsActive)
                   VALUES (@u, @h, @n, 1)",
                 QCUCRAM_Db.P("@u", "admin"),
                 QCUCRAM_Db.P("@h", QCUCRAM_PasswordHash.Hash("admin123")),
                 QCUCRAM_Db.P("@n", "Library Assistant"));
 
-            return true;
+            return inserted > 0;
         }
     }
 }

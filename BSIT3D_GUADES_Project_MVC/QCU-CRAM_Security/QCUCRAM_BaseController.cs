@@ -53,7 +53,9 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Security
             ViewBag.QCUCRAM_UnreadCount = UnreadCount();
 
             // The clock banner in the layout (only when Dev Tools has shifted the clock).
-            ViewBag.QCUCRAM_ClockOffset = QCUCRAM_AppSettings.EnableDevClock ? QCUCRAM_Clock.OffsetMinutes : 0;
+            // Phase 05: Site.Master showed the banner whenever the offset was not 0. QCUCRAM_Clock.Now
+            // applies the offset regardless of QCU-CRAM_EnableDevClock, so the banner must too.
+            ViewBag.QCUCRAM_ClockOffset = QCUCRAM_Clock.OffsetMinutes;
         }
 
         /// <summary>Unread notifications for the signed-in student; 0 for guests and admins.</summary>

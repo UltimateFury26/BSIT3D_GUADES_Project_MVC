@@ -54,10 +54,16 @@ namespace BSIT3D_GUADES_Project_MVC
             bundles.Add(new ScriptBundle("~/bundles/QCU-CRAM_reserve")
                 .Include("~/Scripts/QCU-CRAM_reserve.js"));
 
+            // Phase 05: Include() takes FILE paths. The old version listed the three
+            // bundle paths above, which are not files, so jQuery, Bootstrap and
+            // jquery.validate were silently left out of the layout bundle (no navbar
+            // collapse/dropdowns, no qcuConfirm modal, no client validation).
+            // Order matters: jQuery, Bootstrap, validate, then the site scripts.
             bundles.Add(new ScriptBundle("~/bundles/QCU-CRAM_js")
-                .Include("~/bundles/QCU-CRAM_jquery")
-                .Include("~/bundles/QCU-CRAM_bootstrap")
-                .Include("~/bundles/QCU-CRAM_validate")
+                .Include("~/Scripts/jquery-3.7.0.js")
+                .Include("~/Scripts/bootstrap.bundle.js")
+                .Include("~/Scripts/jquery.validate.js")
+                .Include("~/Scripts/jquery.validate.unobtrusive.js")
                 .Include("~/Scripts/QCU-CRAM_site.js")
                 .Include("~/Scripts/QCU-CRAM_ui.js"));
 

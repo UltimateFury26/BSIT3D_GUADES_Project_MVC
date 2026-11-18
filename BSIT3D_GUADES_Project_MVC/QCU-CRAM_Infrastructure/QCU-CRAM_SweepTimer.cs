@@ -27,6 +27,7 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Infrastructure
         private readonly object _gate = new object();
         private Timer _timer;
         private int _ticking;
+        private int _minGapSeconds = 30;
         private bool _registered;
 
         public static QCUCRAMSweepTimer Instance { get { return _instance.Value; } }
@@ -68,9 +69,10 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Infrastructure
                     }
                 }
 
-                // First tick after one period, then every period.
+                // Web Forms StartBackgroundTimer: first tick after 5 seconds, then every period.
+                _minGapSeconds = Math.Max(5, seconds / 2);
                 TimeSpan period = TimeSpan.FromSeconds(seconds);
-                _timer = new Timer(Tick, null, period, period);
+                _timer = new Timer(Tick, null, TimeSpan.FromSeconds(5), period);
             }
         }
 
@@ -101,7 +103,9 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Infrastructure
 
             try
             {
-                QCUCRAM_MaintenanceService.SweepResult result = QCUCRAM_MaintenanceService.RunSweep();
+                // Same gate as the Web Forms timer (TryRunIfDue(minGap)): skip when the request-driven
+                // sweep or an earlier tick ran recently.
+                QCUCRAM_MaintenanceService.SweepResult result = QCUCRAM_MaintenanceService.RunIfDue(_minGapSeconds);
                 if (result != null && result.ChangedAnything)
                 {
                     Trace.TraceInformation("QCU-CRAM sweep (timer): " + result.Summary);

@@ -65,8 +65,10 @@ namespace BSIT3D_GUADES_Project_MVC
 
         /// <summary>
         /// No-cache for authenticated HTML so the browser Back button never shows a stale
-        /// dashboard after a reservation changed. The login page is exempt so the logo and
-        /// CSS still come from the browser cache on a repeat visit.
+        /// dashboard after a reservation changed. The login page is exempt, and so are
+        /// static files and bundles: Web.config gives them a 7-day client cache and the
+        /// Web Forms site only ever sent no-cache from SecurePage (pages), never for
+        /// CSS/JS/images.
         /// </summary>
         protected void Application_BeginRequest(object sender, EventArgs e)
         {
@@ -78,6 +80,7 @@ namespace BSIT3D_GUADES_Project_MVC
 
                 string path = request.AppRelativeCurrentExecutionFilePath ?? string.Empty;
                 if (path.IndexOf("/login", StringComparison.OrdinalIgnoreCase) >= 0) { return; }
+                if (IsStaticAsset(path)) { return; }
 
                 response.Cache.SetCacheability(HttpCacheability.NoCache);
                 response.Cache.SetExpires(DateTime.UtcNow.AddDays(-1));
@@ -90,14 +93,29 @@ namespace BSIT3D_GUADES_Project_MVC
             }
         }
 
+        private static bool IsStaticAsset(string appRelativePath)
+        {
+            if (string.IsNullOrEmpty(appRelativePath)) { return false; }
+
+            // Bundles have no file extension, so they are listed by prefix.
+            if (appRelativePath.StartsWith("~/content/", StringComparison.OrdinalIgnoreCase)
+                || appRelativePath.StartsWith("~/scripts/", StringComparison.OrdinalIgnoreCase)
+                || appRelativePath.StartsWith("~/bundles/", StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            return System.IO.Path.HasExtension(appRelativePath);
+        }
+
         /// <summary>
         /// Rebuilds HttpContext.User from the session identity so User.IsInRole("Admin")
         /// works in views and controllers.
         ///
-        /// This is the MVC replacement for Global.Application_PostAuthenticateRequest in the
-        /// Web Forms project. It runs at PostAcquireRequestState rather than
-        /// PostAuthenticateRequest because Session state is not readable until the session
-        /// module has run - reading it earlier throws "Session state is not available".
+        /// The Web Forms Global.asax had no principal step (its pages read Session directly),
+        /// so this is an MVC-side convenience, not a port. It runs at PostAcquireRequestState
+        /// rather than PostAuthenticateRequest because Session state is not readable until the
+        /// session module has run - reading it earlier throws "Session state is not available".
         /// </summary>
         protected void Application_PostAcquireRequestState(object sender, EventArgs e)
         {

@@ -70,6 +70,21 @@ namespace BSIT3D_GUADES_Project_MVC
             //  keep the Web Forms folder split (Guades_QCUCram_Admin,
             //  Guades_QCUCram_Student) so a role mistake is visible in the URL.
             // ------------------------------------------------------------------
+            // ------------------------------------------------------------------
+            //  Phase 05: AdminSetupController (Rooms, TimeSlots, Students, AdminUsers,
+            //  Settings, DevTools) lives in the ROOT Controllers namespace and has no
+            //  [Route] attributes. The generic "QCU-CRAM_Admin" route below is limited
+            //  to Controllers.Admin, so Url.Action("Rooms", "AdminSetup") produced
+            //  /admin/adminsetup/rooms but the request could not find the controller
+            //  (404). This route keeps the same URL shape and points it at the right
+            //  namespace. It must stay above "QCU-CRAM_Admin".
+            // ------------------------------------------------------------------
+            routes.MapRoute(
+                name: "QCU-CRAM_AdminSetup",
+                url: "admin/adminsetup/{action}/{id}",
+                defaults: new { controller = "AdminSetup", action = "Rooms", id = UrlParameter.Optional },
+                namespaces: new[] { "BSIT3D_GUADES_Project_MVC.Controllers" });
+
             routes.MapRoute(
                 name: "QCU-CRAM_Admin",
                 url: "admin/{controller}/{action}/{id}",

@@ -75,17 +75,6 @@
 <body class="qcu-app">
     <div class="qcu-app-shell">
 
-        @* ---- Dev clock banner (master: phDevClock, visible only when the offset is not 0) ---- *@
-        @if (devOffset != 0)
-        {
-            <div class="alert alert-danger text-center rounded-0 mb-0 qcu-devclock" role="status">
-                <strong>Dev clock active:</strong>
-                system time is shifted by @devOffset minute(s). It is now
-                @QCUCRAM_Clock.Now.ToString("MMM d, yyyy h:mm tt").
-                Set it back to 0 in Settings or Dev Tools.
-            </div>
-        }
-
         @* ---- White logo strip (master: header.qcu-header) ---- *@
         <header class="qcu-header">
             <div class="qcu-header-inner">
@@ -112,6 +101,17 @@
                 </div>
             </div>
         </nav>
+
+        @* ---- Dev clock banner (master: phDevClock, sits BETWEEN the nav bar and the page content; visible only when the offset is not 0) ---- *@
+        @if (devOffset != 0)
+        {
+            <div class="alert alert-danger text-center rounded-0 mb-0 qcu-devclock" role="status">
+                <strong>Dev clock active:</strong>
+                system time is shifted by @devOffset minute(s). It is now
+                @QCUCRAM_Clock.Now.ToString("MMM d, yyyy h:mm tt").
+                Set it back to 0 in Settings or Dev Tools.
+            </div>
+        }
 
         @* ---- Page content (master: ContentPlaceHolder MainContent) ---- *@
         <div class="container body-content">
@@ -185,11 +185,20 @@
     @* master: highlight the current page in the nav (orange, like "Home" on qcu.edu.ph) *@
     <script>
         (function () {
-            var path = location.pathname.toLowerCase();
+            var norm = function (s) { return (s || '').toLowerCase().replace(/[?#].*$/, '').replace(/\/+$/, ''); };
+            var path = norm(location.pathname);
             document.querySelectorAll('.qcu-nav a.nav-link, .qcu-nav a.dropdown-item').forEach(function (a) {
                 var p = a.getAttribute('href');
                 var also = (a.getAttribute('data-qcu-also') || '').toLowerCase();
-                var hit = p && p !== '#' && path.endsWith(p.split('/').pop().toLowerCase());
+                var hit = false;
+                if (p && p !== '#') {
+                    var target = norm(p);
+                    var last = target.split('/').pop();
+                    hit = !!last && path.endsWith(last);
+                    // Phase 05: /student and /student/dashboard (and /admin, /admin/dashboard) are the same page.
+                    if (!hit && path === target + '/dashboard') { hit = true; }
+                    if (!hit && last === 'dashboard' && path === target.replace(/\/[^\/]*$/, '')) { hit = true; }
+                }
                 if (!hit && also && path.indexOf(also) !== -1) { hit = true; }
                 if (hit && !a.classList.contains('qcu-nav-logout')) {
                     a.classList.add('active');

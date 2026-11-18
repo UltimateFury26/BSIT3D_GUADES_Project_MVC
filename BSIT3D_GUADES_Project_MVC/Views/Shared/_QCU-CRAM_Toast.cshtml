@@ -1,9 +1,17 @@
 @using System
+@using System.Web
 @{
     /* =====================================================================
        QCU-CRAM  |  Views/Shared/_QCU-CRAM_Toast.cshtml
        ---------------------------------------------------------------------
-       Replaces Guades_QCUCram_SecurePage.ShowMessage / Guades_QCUCram_Toast.
+       Replaces Guades_QCUCram_SecurePage.ShowMessage / QueueToast.
+
+       The Web Forms page registered a startup script that pushed the message
+       onto window.qcuQueue and called window.qcuFlush(), and Scripts/
+       qcu-ui.js drew the upper-right pop-out toast (slides in, 5-second
+       countdown bar, slides out). QCU-CRAM_ui.js already contains the same
+       qcuToast / qcuQueue / qcuFlush code, so this partial now emits the
+       identical queue call instead of a static Bootstrap alert.
 
        Two sources, in this order:
          1. ViewBag.QCUCRAM_NoticeText / QCUCRAM_NoticeKind
@@ -36,15 +44,14 @@
         }
     }
 
-    var css = kind == "success" ? "alert-success"
-            : kind == "error" ? "alert-danger"
-            : "alert-info";
+    var isError = string.Equals(kind, "error", StringComparison.OrdinalIgnoreCase);
 }
 
 @if (!string.IsNullOrWhiteSpace(message))
 {
-    <div class="alert @css alert-dismissible fade show qcu-toast" role="alert">
-        @message
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
+    @* JavaScriptStringEncode(..., true) quotes the text and escapes < > ' " \ so it cannot break out of the script. *@
+    <script>
+        (window.qcuQueue = window.qcuQueue || []).push({ m: @Html.Raw(HttpUtility.JavaScriptStringEncode(message, true)), e: @(isError ? "true" : "false") });
+        if (window.qcuFlush) { window.qcuFlush(); }
+    </script>
 }
