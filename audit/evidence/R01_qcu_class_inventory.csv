@@ -1,0 +1,237 @@
+qcu_class,referenced_by (static search of Views/Scripts/*.cs),note
+qcu-actions,Views/Admin/QCU-CRAM_CheckIn.cshtml; Views/Admin/QCU-CRAM_Queue.cshtml; Views/Admin/QCU-CRAM_Restrictions.cshtml,
+qcu-actions-cell,Views/Admin/QCU-CRAM_CheckIn.cshtml; Views/Admin/QCU-CRAM_Queue.cshtml; Views/Admin/QCU-CRAM_Restrictions.cshtml,
+qcu-actions-narrow,,no static reference - R13 candidate (re-search before deleting)
+qcu-actions-stack,,no static reference - R13 candidate (re-search before deleting)
+qcu-add-btn,,no static reference - R13 candidate (re-search before deleting)
+qcu-admin-table,Views/Admin/QCU-CRAM_CheckIn.cshtml; Views/Admin/QCU-CRAM_Queue.cshtml; Views/Admin/QCU-CRAM_Records.cshtml; Views/Admin/QCU-CRAM_Restrictions.cshtml,
+qcu-alert,Views/Admin/QCU-CRAM_AdminUsers.cshtml; Views/Admin/QCU-CRAM_DevTools.cshtml; Views/Admin/QCU-CRAM_Settings.cshtml; Views/Admin/QCU-CRAM_Students.cshtml; Views/Admin/QCU-CRAM_TimeSlots.cshtml; Views/Admin/_QCU-CRAM_SetupModal.cshtml; Views/Reports/QCU-CRAM_Analytics.cshtml; Views/Reports/QCU-CRAM_DailySchedule.cshtml; Views/Reports/QCU-CRAM_PrintBooking.cshtml,
+qcu-alert--error,Views/Admin/QCU-CRAM_Settings.cshtml; Views/Admin/_QCU-CRAM_SetupModal.cshtml; Views/Reports/QCU-CRAM_Analytics.cshtml; Views/Reports/QCU-CRAM_DailySchedule.cshtml; Views/Reports/QCU-CRAM_PrintBooking.cshtml,
+qcu-alert--info,Views/Admin/QCU-CRAM_AdminUsers.cshtml; Views/Admin/QCU-CRAM_Students.cshtml; Views/Admin/QCU-CRAM_TimeSlots.cshtml,
+qcu-alert--success,,no static reference - R13 candidate (re-search before deleting)
+qcu-app-shell,Views/Shared/_QCU-CRAM_Layout.cshtml,
+qcu-auth,Views/Account/Login.cshtml; Views/Shared/_QCU-CRAM_LoginLayout.cshtml,
+qcu-auth-body,Views/Account/ChangePassword.cshtml; Views/Account/Login.cshtml; Views/Account/Register.cshtml,
+qcu-auth-card,Views/Account/ChangePassword.cshtml; Views/Account/Login.cshtml; Views/Account/Register.cshtml,
+qcu-auth-head,Views/Account/ChangePassword.cshtml; Views/Account/Login.cshtml; Views/Account/Register.cshtml,
+qcu-auth-univ,Views/Account/ChangePassword.cshtml; Views/Account/Login.cshtml; Views/Account/Register.cshtml,
+qcu-availability,,no static reference - R13 candidate (re-search before deleting)
+qcu-badge,QCU-CRAM_Helpers/QCU-CRAM_Status.cs; Views/Admin/QCU-CRAM_AdminUsers.cshtml; Views/Admin/QCU-CRAM_Rooms.cshtml; Views/Admin/QCU-CRAM_Students.cshtml; Views/Admin/QCU-CRAM_TimeSlots.cshtml; Views/Shared/_QCU-CRAM_StatusBadge.cshtml,
+qcu-badge--approved,,built at runtime by _QCU-CRAM_StatusBadge slug - KEEP
+qcu-badge--cancelled,,built at runtime by _QCU-CRAM_StatusBadge slug - KEEP
+qcu-badge--checkedin,Views/Shared/_QCU-CRAM_StatusBadge.cshtml,
+qcu-badge--completed,,built at runtime by _QCU-CRAM_StatusBadge slug - KEEP
+qcu-badge--declined,,built at runtime by _QCU-CRAM_StatusBadge slug - KEEP
+qcu-badge--forfeited,,built at runtime by _QCU-CRAM_StatusBadge slug - KEEP
+qcu-badge--pending,Views/Shared/_QCU-CRAM_StatusBadge.cshtml,
+qcu-badge--reassigned,,built at runtime by _QCU-CRAM_StatusBadge slug - KEEP
+qcu-badge--unknown,Views/Shared/_QCU-CRAM_StatusBadge.cshtml,
+qcu-bar,Views/Reports/_QCU-CRAM_BarTable.cshtml,
+qcu-bar-col,Views/Reports/_QCU-CRAM_BarTable.cshtml,
+qcu-bar__fill,Views/Reports/_QCU-CRAM_BarTable.cshtml,
+qcu-brand-name,Views/Shared/_QCU-CRAM_Layout.cshtml,
+qcu-brand-sub,Views/Shared/_QCU-CRAM_Layout.cshtml,
+qcu-btn,Views/Admin/QCU-CRAM_AdminUsers.cshtml; Views/Admin/QCU-CRAM_DevTools.cshtml; Views/Admin/QCU-CRAM_Rooms.cshtml; Views/Admin/QCU-CRAM_Settings.cshtml; Views/Admin/QCU-CRAM_Students.cshtml; Views/Admin/QCU-CRAM_TimeSlots.cshtml; Views/Admin/_QCU-CRAM_SetupModal.cshtml; Views/Reports/QCU-CRAM_Analytics.cshtml; Views/Reports/QCU-CRAM_DailySchedule.cshtml; Views/Reports/QCU-CRAM_PrintBooking.cshtml,
+qcu-btn--danger,Views/Admin/QCU-CRAM_DevTools.cshtml; Views/Admin/QCU-CRAM_Rooms.cshtml; Views/Admin/QCU-CRAM_Students.cshtml; Views/Admin/QCU-CRAM_TimeSlots.cshtml,
+qcu-btn--ghost,Views/Admin/QCU-CRAM_Settings.cshtml; Views/Admin/QCU-CRAM_Students.cshtml; Views/Admin/_QCU-CRAM_SetupModal.cshtml; Views/Reports/QCU-CRAM_Analytics.cshtml; Views/Reports/QCU-CRAM_DailySchedule.cshtml; Views/Reports/QCU-CRAM_PrintBooking.cshtml,
+qcu-btn--primary,Views/Admin/QCU-CRAM_AdminUsers.cshtml; Views/Admin/QCU-CRAM_DevTools.cshtml; Views/Admin/QCU-CRAM_Rooms.cshtml; Views/Admin/QCU-CRAM_Settings.cshtml; Views/Admin/QCU-CRAM_Students.cshtml; Views/Admin/QCU-CRAM_TimeSlots.cshtml; Views/Admin/_QCU-CRAM_SetupModal.cshtml; Views/Reports/QCU-CRAM_Analytics.cshtml; Views/Reports/QCU-CRAM_DailySchedule.cshtml; Views/Reports/QCU-CRAM_PrintBooking.cshtml,
+qcu-btn--sm,Views/Admin/QCU-CRAM_AdminUsers.cshtml; Views/Admin/QCU-CRAM_DevTools.cshtml; Views/Admin/QCU-CRAM_Rooms.cshtml; Views/Admin/QCU-CRAM_Students.cshtml; Views/Admin/QCU-CRAM_TimeSlots.cshtml,
+qcu-btn-row,Views/Admin/QCU-CRAM_AdminUsers.cshtml; Views/Admin/QCU-CRAM_DevTools.cshtml; Views/Admin/QCU-CRAM_Rooms.cshtml; Views/Admin/QCU-CRAM_Students.cshtml; Views/Admin/QCU-CRAM_TimeSlots.cshtml; Views/Reports/QCU-CRAM_Analytics.cshtml; Views/Reports/QCU-CRAM_DailySchedule.cshtml,
+qcu-btn-row--danger,,no static reference - R13 candidate (re-search before deleting)
+qcu-cal,QCU-CRAM_ViewModels/QCU-CRAM_CalendarCell.cs; Views/Shared/_QCU-CRAM_Calendar.cshtml,
+qcu-cal-blank,Views/Shared/_QCU-CRAM_Calendar.cshtml,
+qcu-cal-count,,no static reference - R13 candidate (re-search before deleting)
+qcu-cal-day,Views/Shared/_QCU-CRAM_Calendar.cshtml,
+qcu-cal-legend,Views/Shared/_QCU-CRAM_Calendar.cshtml,
+qcu-cal-nav,Views/Shared/_QCU-CRAM_Calendar.cshtml,
+qcu-cal-num,Views/Shared/_QCU-CRAM_Calendar.cshtml,
+qcu-cal-title,Views/Shared/_QCU-CRAM_Calendar.cshtml,
+qcu-cal-today,Views/Shared/_QCU-CRAM_Calendar.cshtml,
+qcu-card,,no static reference - R13 candidate (re-search before deleting)
+qcu-card-grid,Views/Reports/QCU-CRAM_Analytics.cshtml,
+qcu-cell,Views/Availability/QCU-CRAM_Index.cshtml,
+qcu-cell--closed,QCU-CRAM_Services/QCU-CRAM_AvailabilityService.cs,
+qcu-cell--highlight,,no static reference - R13 candidate (re-search before deleting)
+qcu-cell--mine,QCU-CRAM_Services/QCU-CRAM_AvailabilityService.cs,
+qcu-cell--open,QCU-CRAM_Services/QCU-CRAM_AvailabilityService.cs; QCU-CRAM_ViewModels/QCU-CRAM_AvailabilityViewModel.cs,
+qcu-cell--pending,QCU-CRAM_Services/QCU-CRAM_AvailabilityService.cs,
+qcu-cell--taken,QCU-CRAM_Services/QCU-CRAM_AvailabilityService.cs,
+qcu-cell--unavailable,QCU-CRAM_Services/QCU-CRAM_AvailabilityService.cs; QCU-CRAM_ViewModels/QCU-CRAM_AvailabilityViewModel.cs,
+qcu-closed,QCU-CRAM_Services/QCU-CRAM_AvailabilityService.cs,
+qcu-compact,,no static reference - R13 candidate (re-search before deleting)
+qcu-content-body,Scripts/QCU-CRAM_ui.js,
+qcu-content-foot,Scripts/QCU-CRAM_ui.js,
+qcu-content-head,Scripts/QCU-CRAM_ui.js,
+qcu-content-loading,Scripts/QCU-CRAM_ui.js,
+qcu-content-modal,Scripts/QCU-CRAM_ui.js,
+qcu-content-overlay,Scripts/QCU-CRAM_ui.js,
+qcu-content-title,Scripts/QCU-CRAM_ui.js,
+qcu-cta,,no static reference - R13 candidate (re-search before deleting)
+qcu-day-title,Views/Reports/QCU-CRAM_DailySchedule.cshtml,
+qcu-detail__grid,,no static reference - R13 candidate (re-search before deleting)
+qcu-empty,Views/Admin/QCU-CRAM_AdminUsers.cshtml; Views/Admin/QCU-CRAM_Rooms.cshtml; Views/Admin/QCU-CRAM_Settings.cshtml; Views/Admin/QCU-CRAM_Students.cshtml; Views/Admin/QCU-CRAM_TimeSlots.cshtml; Views/Reports/QCU-CRAM_Analytics.cshtml; Views/Reports/QCU-CRAM_DailySchedule.cshtml; Views/Reports/_QCU-CRAM_BarTable.cshtml,
+qcu-error,Views/Shared/QCU-CRAM_Error.cshtml,
+qcu-error__code,Views/Shared/QCU-CRAM_Error.cshtml,
+qcu-error__detail,Views/Shared/QCU-CRAM_Error.cshtml,
+qcu-error__message,Views/Shared/QCU-CRAM_Error.cshtml,
+qcu-error__ref,Views/Shared/QCU-CRAM_Error.cshtml,
+qcu-error__title,Views/Shared/QCU-CRAM_Error.cshtml,
+qcu-filter,Views/Admin/QCU-CRAM_Students.cshtml,
+qcu-filterbar,,no static reference - R13 candidate (re-search before deleting)
+qcu-footer,Views/Shared/_QCU-CRAM_Layout.cshtml,
+qcu-footer-bar,Views/Shared/_QCU-CRAM_Layout.cshtml,
+qcu-footer-brand,Views/Shared/_QCU-CRAM_Layout.cshtml,
+qcu-footer-col,Views/Shared/_QCU-CRAM_Layout.cshtml,
+qcu-footer-head,Views/Shared/_QCU-CRAM_Layout.cshtml,
+qcu-footer-inner,Views/Shared/_QCU-CRAM_Layout.cshtml,
+qcu-footer-line,Views/Shared/_QCU-CRAM_Layout.cshtml,
+qcu-footer-sys,Views/Shared/_QCU-CRAM_Layout.cshtml,
+qcu-footer-title,Views/Shared/_QCU-CRAM_Layout.cshtml,
+qcu-form,Views/Admin/QCU-CRAM_Settings.cshtml,
+qcu-form-body,Views/Admin/QCU-CRAM_Queue.cshtml; Views/Admin/QCU-CRAM_Records.cshtml; Views/Admin/QCU-CRAM_Restrictions.cshtml; Views/Admin/_QCU-CRAM_SetupModal.cshtml,
+qcu-form-close,Scripts/QCU-CRAM_ui.js; Views/Admin/QCU-CRAM_Queue.cshtml; Views/Admin/QCU-CRAM_Records.cshtml; Views/Admin/QCU-CRAM_Restrictions.cshtml; Views/Admin/_QCU-CRAM_SetupModal.cshtml,
+qcu-form-foot,Views/Admin/QCU-CRAM_Queue.cshtml; Views/Admin/QCU-CRAM_Records.cshtml; Views/Admin/QCU-CRAM_Restrictions.cshtml; Views/Admin/_QCU-CRAM_SetupModal.cshtml,
+qcu-form-head,Views/Admin/QCU-CRAM_Queue.cshtml; Views/Admin/QCU-CRAM_Records.cshtml; Views/Admin/QCU-CRAM_Restrictions.cshtml; Views/Admin/_QCU-CRAM_SetupModal.cshtml,
+qcu-form-modal,Scripts/QCU-CRAM_ui.js; Views/Admin/QCU-CRAM_Queue.cshtml; Views/Admin/QCU-CRAM_Records.cshtml; Views/Admin/QCU-CRAM_Restrictions.cshtml; Views/Admin/_QCU-CRAM_SetupModal.cshtml,
+qcu-form-modal-lg,Views/Admin/QCU-CRAM_Queue.cshtml; Views/Admin/QCU-CRAM_Records.cshtml,
+qcu-form-overlay,Scripts/QCU-CRAM_ui.js; Views/Admin/QCU-CRAM_Queue.cshtml; Views/Admin/QCU-CRAM_Records.cshtml; Views/Admin/QCU-CRAM_Restrictions.cshtml; Views/Admin/_QCU-CRAM_SetupModal.cshtml,
+qcu-form-title,Views/Admin/QCU-CRAM_Queue.cshtml; Views/Admin/QCU-CRAM_Records.cshtml; Views/Admin/QCU-CRAM_Restrictions.cshtml; Views/Admin/_QCU-CRAM_SetupModal.cshtml,
+qcu-form__actions,Views/Admin/QCU-CRAM_Settings.cshtml,
+qcu-form__row,Views/Admin/QCU-CRAM_AdminUsers.cshtml; Views/Admin/QCU-CRAM_Rooms.cshtml; Views/Admin/QCU-CRAM_Students.cshtml; Views/Admin/QCU-CRAM_TimeSlots.cshtml,
+qcu-form__row--narrow,Views/Admin/QCU-CRAM_Students.cshtml,
+qcu-form__row--split,Views/Admin/QCU-CRAM_Rooms.cshtml; Views/Admin/QCU-CRAM_Students.cshtml; Views/Admin/QCU-CRAM_TimeSlots.cshtml,
+qcu-formcard,Views/Student/QCU-CRAM_Profile.cshtml,
+qcu-glance,,no static reference - R13 candidate (re-search before deleting)
+qcu-grid,Views/Availability/QCU-CRAM_Index.cshtml,
+qcu-header,Views/Shared/_QCU-CRAM_Layout.cshtml,
+qcu-header-inner,Views/Shared/_QCU-CRAM_Layout.cshtml,
+qcu-hint,Views/Admin/QCU-CRAM_AdminUsers.cshtml; Views/Admin/QCU-CRAM_DevTools.cshtml; Views/Admin/QCU-CRAM_Rooms.cshtml; Views/Admin/QCU-CRAM_Settings.cshtml; Views/Admin/QCU-CRAM_Students.cshtml; Views/Admin/QCU-CRAM_TimeSlots.cshtml,
+qcu-ico,Views/Shared/_QCU-CRAM_LoginPartial.cshtml,
+qcu-inline-form,Views/Admin/QCU-CRAM_DevTools.cshtml,
+qcu-input,Views/Reports/QCU-CRAM_Analytics.cshtml; Views/Reports/QCU-CRAM_DailySchedule.cshtml,
+qcu-input--num,Views/Admin/QCU-CRAM_DevTools.cshtml; Views/Admin/QCU-CRAM_Rooms.cshtml; Views/Admin/QCU-CRAM_Settings.cshtml; Views/Admin/QCU-CRAM_TimeSlots.cshtml,
+qcu-kv,Views/Reports/QCU-CRAM_PrintBooking.cshtml,
+qcu-label,,no static reference - R13 candidate (re-search before deleting)
+qcu-legend,Views/Availability/QCU-CRAM_Index.cshtml,
+qcu-link,,no static reference - R13 candidate (re-search before deleting)
+qcu-match,Scripts/QCU-CRAM_site.js; Views/Account/ChangePassword.cshtml; Views/Account/Register.cshtml,
+qcu-member-list,,no static reference - R13 candidate (re-search before deleting)
+qcu-member-list__name,,no static reference - R13 candidate (re-search before deleting)
+qcu-member-num,Scripts/QCU-CRAM_reserve.js; Views/Student/QCU-CRAM_Reserve.cshtml,
+qcu-member-row,Scripts/QCU-CRAM_reserve.js; Views/Student/QCU-CRAM_Reserve.cshtml,
+qcu-modal,Scripts/QCU-CRAM_ui.js,
+qcu-modal-actions,Scripts/QCU-CRAM_ui.js,
+qcu-modal-check,Scripts/QCU-CRAM_ui.js,
+qcu-modal-error,Scripts/QCU-CRAM_ui.js,
+qcu-modal-extra,Scripts/QCU-CRAM_ui.js,
+qcu-modal-field,Scripts/QCU-CRAM_ui.js,
+qcu-modal-icon,Scripts/QCU-CRAM_ui.js,
+qcu-modal-msg,Scripts/QCU-CRAM_ui.js,
+qcu-modal-ok,Scripts/QCU-CRAM_ui.js,
+qcu-modal-open,Scripts/QCU-CRAM_ui.js,
+qcu-modal-overlay,Scripts/QCU-CRAM_ui.js,
+qcu-modal-title,Scripts/QCU-CRAM_ui.js,
+qcu-modal__body,,no static reference - R13 candidate (re-search before deleting)
+qcu-modal__box,,no static reference - R13 candidate (re-search before deleting)
+qcu-modal__box--wide,,no static reference - R13 candidate (re-search before deleting)
+qcu-modal__close,,no static reference - R13 candidate (re-search before deleting)
+qcu-modal__foot,,no static reference - R13 candidate (re-search before deleting)
+qcu-modal__head,,no static reference - R13 candidate (re-search before deleting)
+qcu-muted,Views/Reports/QCU-CRAM_DailySchedule.cshtml; Views/Reports/QCU-CRAM_PrintBooking.cshtml,
+qcu-nav,Views/Shared/_QCU-CRAM_Layout.cshtml,
+qcu-nav-badge,Views/Shared/_QCU-CRAM_LoginPartial.cshtml,
+qcu-nav-hidden,Views/Shared/_QCU-CRAM_Layout.cshtml; Views/Shared/_QCU-CRAM_LoginLayout.cshtml,
+qcu-nav-icon,Views/Shared/_QCU-CRAM_LoginPartial.cshtml,
+qcu-nav-label,Views/Shared/_QCU-CRAM_LoginPartial.cshtml,
+qcu-nav-logout,Views/Shared/_QCU-CRAM_Layout.cshtml; Views/Shared/_QCU-CRAM_LoginPartial.cshtml,
+qcu-nav-right,Views/Shared/_QCU-CRAM_LoginPartial.cshtml,
+qcu-nav-user,Views/Shared/_QCU-CRAM_LoginPartial.cshtml,
+qcu-note,Views/Reports/_QCU-CRAM_BarTable.cshtml,
+qcu-nowrap,Views/Reports/QCU-CRAM_Analytics.cshtml; Views/Reports/QCU-CRAM_DailySchedule.cshtml; Views/Reports/QCU-CRAM_PrintBooking.cshtml,
+qcu-num,Views/Reports/QCU-CRAM_Analytics.cshtml; Views/Reports/QCU-CRAM_DailySchedule.cshtml; Views/Reports/_QCU-CRAM_BarTable.cshtml,
+qcu-page-actions,Views/Admin/QCU-CRAM_AdminUsers.cshtml; Views/Admin/QCU-CRAM_Rooms.cshtml; Views/Admin/QCU-CRAM_Students.cshtml; Views/Admin/QCU-CRAM_TimeSlots.cshtml,
+qcu-page-bar,,no static reference - R13 candidate (re-search before deleting)
+qcu-page-bar-search,,no static reference - R13 candidate (re-search before deleting)
+qcu-page-head,Views/Admin/QCU-CRAM_AdminUsers.cshtml; Views/Admin/QCU-CRAM_CheckIn.cshtml; Views/Admin/QCU-CRAM_Dashboard.cshtml; Views/Admin/QCU-CRAM_DevTools.cshtml; Views/Admin/QCU-CRAM_Queue.cshtml; Views/Admin/QCU-CRAM_Records.cshtml; Views/Admin/QCU-CRAM_Restrictions.cshtml; Views/Admin/QCU-CRAM_Rooms.cshtml; Views/Admin/QCU-CRAM_Settings.cshtml; Views/Admin/QCU-CRAM_Students.cshtml; Views/Admin/QCU-CRAM_TimeSlots.cshtml; Views/Availability/QCU-CRAM_Index.cshtml; Views/Reports/QCU-CRAM_Analytics.cshtml; Views/Reports/QCU-CRAM_DailySchedule.cshtml; Views/Student/QCU-CRAM_Dashboard.cshtml; Views/Student/QCU-CRAM_MyReservations.cshtml; Views/Student/QCU-CRAM_Notifications.cshtml; Views/Student/QCU-CRAM_Profile.cshtml; Views/Student/QCU-CRAM_Reserve.cshtml,
+qcu-page-sub,Views/Admin/QCU-CRAM_AdminUsers.cshtml; Views/Admin/QCU-CRAM_DevTools.cshtml; Views/Admin/QCU-CRAM_Rooms.cshtml; Views/Admin/QCU-CRAM_Settings.cshtml; Views/Admin/QCU-CRAM_Students.cshtml; Views/Admin/QCU-CRAM_TimeSlots.cshtml; Views/Reports/QCU-CRAM_Analytics.cshtml; Views/Reports/QCU-CRAM_DailySchedule.cshtml,
+qcu-page-title,Views/Admin/QCU-CRAM_AdminUsers.cshtml; Views/Admin/QCU-CRAM_DevTools.cshtml; Views/Admin/QCU-CRAM_Rooms.cshtml; Views/Admin/QCU-CRAM_Settings.cshtml; Views/Admin/QCU-CRAM_Students.cshtml; Views/Admin/QCU-CRAM_TimeSlots.cshtml; Views/Reports/QCU-CRAM_Analytics.cshtml; Views/Reports/QCU-CRAM_DailySchedule.cshtml,
+qcu-pager,Views/Student/QCU-CRAM_MyReservations.cshtml; Views/Student/QCU-CRAM_Notifications.cshtml,
+qcu-panel,Views/Admin/QCU-CRAM_AdminUsers.cshtml; Views/Admin/QCU-CRAM_DevTools.cshtml; Views/Admin/QCU-CRAM_Rooms.cshtml; Views/Admin/QCU-CRAM_Settings.cshtml; Views/Admin/QCU-CRAM_Students.cshtml; Views/Admin/QCU-CRAM_TimeSlots.cshtml; Views/Reports/QCU-CRAM_Analytics.cshtml; Views/Reports/_QCU-CRAM_BarTable.cshtml; Views/Shared/QCU-CRAM_Error.cshtml,
+qcu-panel--danger,Views/Admin/QCU-CRAM_DevTools.cshtml,
+qcu-panel--warn,,no static reference - R13 candidate (re-search before deleting)
+qcu-panel__body,Views/Admin/QCU-CRAM_AdminUsers.cshtml; Views/Admin/QCU-CRAM_DevTools.cshtml; Views/Admin/QCU-CRAM_Rooms.cshtml; Views/Admin/QCU-CRAM_Students.cshtml; Views/Admin/QCU-CRAM_TimeSlots.cshtml,
+qcu-panel__head,Views/Admin/QCU-CRAM_DevTools.cshtml; Views/Admin/QCU-CRAM_Students.cshtml; Views/Reports/QCU-CRAM_Analytics.cshtml; Views/Reports/_QCU-CRAM_BarTable.cshtml,
+qcu-pill,Views/Admin/QCU-CRAM_AdminUsers.cshtml,
+qcu-print-head,,no static reference - R13 candidate (re-search before deleting)
+qcu-print-only,Views/Reports/QCU-CRAM_DailySchedule.cshtml,
+qcu-purpose,,no static reference - R13 candidate (re-search before deleting)
+qcu-pw-toggle,Scripts/QCU-CRAM_site.js,
+qcu-pw-wrap,Scripts/QCU-CRAM_site.js,
+qcu-qcid,Views/Reports/QCU-CRAM_PrintBooking.cshtml; Views/Shared/QCU-CRAM_Error.cshtml,
+qcu-range,Views/Reports/QCU-CRAM_Analytics.cshtml,
+qcu-refreshing,Scripts/QCU-CRAM_ui.js,
+qcu-report,Views/Reports/QCU-CRAM_PrintBooking.cshtml,
+qcu-report-grid,Views/Reports/QCU-CRAM_Analytics.cshtml,
+qcu-report-grid--wide,Views/Reports/QCU-CRAM_Analytics.cshtml,
+qcu-report__head,Views/Reports/QCU-CRAM_PrintBooking.cshtml,
+qcu-report__seal,Views/Reports/QCU-CRAM_PrintBooking.cshtml,
+qcu-report__section,Views/Reports/QCU-CRAM_PrintBooking.cshtml,
+qcu-report__sub,Views/Reports/QCU-CRAM_PrintBooking.cshtml,
+qcu-rules,Views/Student/QCU-CRAM_Reserve.cshtml,
+qcu-rules-list,QCU-CRAM_Data/QCUCRAM_ContentRepository.cs,
+qcu-rules-modal,Views/Availability/QCU-CRAM_Index.cshtml,
+qcu-section,Views/Student/QCU-CRAM_Reserve.cshtml,
+qcu-select,,no static reference - R13 candidate (re-search before deleting)
+qcu-sign,,no static reference - R13 candidate (re-search before deleting)
+qcu-site-footer,Views/Shared/_QCU-CRAM_Layout.cshtml,
+qcu-small,Views/Reports/QCU-CRAM_DailySchedule.cshtml; Views/Reports/QCU-CRAM_PrintBooking.cshtml,
+qcu-soft,Views/Student/QCU-CRAM_Reserve.cshtml,
+qcu-stat,Views/Reports/QCU-CRAM_Analytics.cshtml,
+qcu-stat-blue,,no static reference - R13 candidate (re-search before deleting)
+qcu-stat-green,,no static reference - R13 candidate (re-search before deleting)
+qcu-stat-grey,,no static reference - R13 candidate (re-search before deleting)
+qcu-stat-orange,,no static reference - R13 candidate (re-search before deleting)
+qcu-stat-red,,no static reference - R13 candidate (re-search before deleting)
+qcu-stat__hint,Views/Reports/QCU-CRAM_Analytics.cshtml,
+qcu-stat__label,Views/Reports/QCU-CRAM_Analytics.cshtml,
+qcu-stat__value,Views/Reports/QCU-CRAM_Analytics.cshtml,
+qcu-stat__value--sm,Views/Reports/QCU-CRAM_Analytics.cshtml,
+qcu-steps,Views/Student/QCU-CRAM_Reserve.cshtml,
+qcu-strength,Scripts/QCU-CRAM_site.js; Scripts/QCU-CRAM_ui.js,
+qcu-strength-bar,Scripts/QCU-CRAM_site.js,
+qcu-strength-fill,Scripts/QCU-CRAM_site.js,
+qcu-strength-label,Scripts/QCU-CRAM_site.js,
+qcu-strength-list,Scripts/QCU-CRAM_site.js,
+qcu-strength-need,Scripts/QCU-CRAM_site.js,
+qcu-strength-top,Scripts/QCU-CRAM_site.js,
+qcu-subhead,Views/Admin/QCU-CRAM_CheckIn.cshtml; Views/Admin/QCU-CRAM_DevTools.cshtml; Views/Admin/QCU-CRAM_Queue.cshtml; Views/Admin/QCU-CRAM_Restrictions.cshtml,
+qcu-sw,Views/Availability/QCU-CRAM_Index.cshtml,
+qcu-switch,Views/Admin/QCU-CRAM_Rooms.cshtml; Views/Admin/QCU-CRAM_TimeSlots.cshtml,
+qcu-table,Views/Admin/QCU-CRAM_AdminUsers.cshtml; Views/Admin/QCU-CRAM_DevTools.cshtml; Views/Admin/QCU-CRAM_Rooms.cshtml; Views/Admin/QCU-CRAM_Settings.cshtml; Views/Admin/QCU-CRAM_Students.cshtml; Views/Admin/QCU-CRAM_TimeSlots.cshtml; Views/Reports/QCU-CRAM_Analytics.cshtml; Views/Reports/QCU-CRAM_DailySchedule.cshtml; Views/Reports/QCU-CRAM_PrintBooking.cshtml; Views/Reports/_QCU-CRAM_BarTable.cshtml,
+qcu-table--bars,Views/Reports/_QCU-CRAM_BarTable.cshtml,
+qcu-table--kv,Views/Admin/QCU-CRAM_DevTools.cshtml; Views/Admin/QCU-CRAM_Settings.cshtml,
+qcu-table--records,,no static reference - R13 candidate (re-search before deleting)
+qcu-table-wrap,Views/Reports/QCU-CRAM_DailySchedule.cshtml,
+qcu-table__actions,Views/Admin/QCU-CRAM_AdminUsers.cshtml; Views/Admin/QCU-CRAM_Rooms.cshtml; Views/Admin/QCU-CRAM_Students.cshtml; Views/Admin/QCU-CRAM_TimeSlots.cshtml,
+qcu-tag,,no static reference - R13 candidate (re-search before deleting)
+qcu-temp-note,,no static reference - R13 candidate (re-search before deleting)
+qcu-textarea,,no static reference - R13 candidate (re-search before deleting)
+qcu-timeline,,no static reference - R13 candidate (re-search before deleting)
+qcu-timeline__note,,no static reference - R13 candidate (re-search before deleting)
+qcu-timeline__when,,no static reference - R13 candidate (re-search before deleting)
+qcu-toast,Scripts/QCU-CRAM_ui.js,
+qcu-toast-bar,Scripts/QCU-CRAM_ui.js,
+qcu-toast-body,Scripts/QCU-CRAM_ui.js,
+qcu-toast-close,Scripts/QCU-CRAM_ui.js,
+qcu-toast-icon,Scripts/QCU-CRAM_ui.js,
+qcu-toast-msg,Scripts/QCU-CRAM_ui.js,
+qcu-toast-stack,Scripts/QCU-CRAM_ui.js,
+qcu-toast-success,,no static reference - R13 candidate (re-search before deleting)
+qcu-toast-title,Scripts/QCU-CRAM_ui.js,
+qcu-toolbar,Views/Admin/QCU-CRAM_CheckIn.cshtml; Views/Admin/QCU-CRAM_Records.cshtml; Views/Availability/QCU-CRAM_Index.cshtml; Views/Reports/QCU-CRAM_Analytics.cshtml; Views/Reports/QCU-CRAM_DailySchedule.cshtml; Views/Reports/QCU-CRAM_PrintBooking.cshtml; Views/Shared/QCU-CRAM_Error.cshtml; Views/Student/QCU-CRAM_MyReservations.cshtml; Views/Student/QCU-CRAM_Notifications.cshtml,
+qcu-user-name,Views/Shared/_QCU-CRAM_LoginPartial.cshtml,
+qcu-user-role,Views/Shared/_QCU-CRAM_LoginPartial.cshtml,
+qcu-validation-summary,Views/Shared/_QCU-CRAM_ValidationSummary.cshtml,
+qcu-welcome,Views/Admin/QCU-CRAM_Dashboard.cshtml; Views/Student/QCU-CRAM_Dashboard.cshtml,
+qcu-welcome-link,,no static reference - R13 candidate (re-search before deleting)
+qcu-welcome-sub,Views/Admin/QCU-CRAM_Dashboard.cshtml,
