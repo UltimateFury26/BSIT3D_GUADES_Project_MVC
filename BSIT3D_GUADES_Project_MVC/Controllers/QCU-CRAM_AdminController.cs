@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Web.Mvc;
 using BSIT3D_GUADES_Project_MVC.QCUCRAM_Helpers;
 using BSIT3D_GUADES_Project_MVC.QCUCRAM_Security;
@@ -203,7 +203,18 @@ namespace BSIT3D_GUADES_Project_MVC.Controllers
         [Route("restrictions")]
         public ActionResult Restrictions(int? lift)
         {
-            return View("QCU-CRAM_Restrictions", _service.Restrictions(lift ?? 0));
+            QCUCRAMRestrictionsViewModel model = _service.Restrictions(lift ?? 0);
+
+            // Restrictions.aspx.cs used ShowMessage for a stale lift row; surface
+            // the equivalent MVC message through the shared toast, not an inline alert.
+            if (!string.IsNullOrWhiteSpace(model.Message))
+            {
+                FlashError(model.Message);
+                model.Message = null;
+                model.MessageIsError = false;
+            }
+
+            return View("QCU-CRAM_Restrictions", model);
         }
 
         [HttpPost]

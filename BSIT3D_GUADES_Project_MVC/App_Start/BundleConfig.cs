@@ -12,14 +12,6 @@ namespace BSIT3D_GUADES_Project_MVC
     ///     @Styles.Render("~/Content/QCU-CRAM_css")     in &lt;head&gt;
     ///     @Scripts.Render("~/bundles/QCU-CRAM_js")     before &lt;/body&gt;
     ///
-    /// The print stylesheet is deliberately NOT in the screen bundle; a print
-    /// view renders it with
-    ///
-    ///     @Styles.RenderFormat("&lt;link rel=\"stylesheet\" href=\"{0}\" media=\"print\" /&gt;",
-    ///                          "~/Content/QCU-CRAM_print")
-    ///
-    /// so it never affects the on-screen page.
-    ///
     /// Do not add the .min.js files explicitly - the bundler minifies in
     /// Release, and including both copies duplicates every definition.
     /// </summary>
@@ -35,9 +27,6 @@ namespace BSIT3D_GUADES_Project_MVC
             bundles.Add(new StyleBundle("~/Content/QCU-CRAM_css")
                 .Include("~/Content/bootstrap.css")
                 .Include("~/Content/QCU-CRAM_Site.css"));
-
-            bundles.Add(new StyleBundle("~/Content/QCU-CRAM_print")
-                .Include("~/Content/QCU-CRAM_Print.css"));
 
             // ------------------------------------------------------------------- JS
             bundles.Add(new ScriptBundle("~/bundles/QCU-CRAM_jquery")
