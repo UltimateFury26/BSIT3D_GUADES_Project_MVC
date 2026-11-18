@@ -70,7 +70,27 @@ namespace BSIT3D_GUADES_Project_MVC.Controllers
             string preset;
             string error;
 
-            if (!TryResolveRange(from, to, range, out start, out end, out preset, out error))
+            bool validRange;
+            try
+            {
+                // The "all time" preset reads the earliest/latest reservation dates.
+                // Keep that database lookup inside the same guarded path as the report
+                // queries so a database failure cannot escape as an unhandled 500.
+                validRange = TryResolveRange(from, to, range, out start, out end, out preset, out error);
+            }
+            catch (Exception ex)
+            {
+                Trace.TraceError("QCUCRAM analytics date-range resolution failed: " + ex);
+
+                DateTime today = QCUCRAM_Clock.Today;
+                start = today.AddDays(-29);
+                end = today;
+                preset = string.Equals(range, "all", StringComparison.OrdinalIgnoreCase) ? "all" : "last30";
+                error = LoadFailedMessage;
+                validRange = false;
+            }
+
+            if (!validRange)
             {
                 QCUCRAMAnalyticsViewModel invalid = new QCUCRAMAnalyticsViewModel();
                 invalid.From = start;

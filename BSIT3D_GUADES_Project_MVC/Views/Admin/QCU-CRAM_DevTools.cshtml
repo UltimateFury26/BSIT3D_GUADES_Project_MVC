@@ -48,11 +48,11 @@
     <table class="table table-sm table-bordered w-auto"><tr><th>Real time</th><td>@Model.RealNow.ToString(stamp, inv)</td></tr><tr><th>Offset</th><td>@Model.OffsetMinutes minute(s)</td></tr><tr><th>System time (used by CRAM)</th><td><strong>@Model.SimulatedNow.ToString(stamp, inv)</strong></td></tr></table>
 
     <div class="mb-4">
-        <button type="submit" name="command" value="15" formaction="@Url.Action("ShiftClock")" class="btn btn-outline-primary">+15 minutes</button>
-        <button type="submit" name="command" value="60" formaction="@Url.Action("ShiftClock")" class="btn btn-outline-primary">+1 hour</button>
-        <button type="submit" name="command" value="1440" formaction="@Url.Action("ShiftClock")" class="btn btn-outline-primary">+1 day</button>
-        <button type="submit" name="command" value="10080" formaction="@Url.Action("ShiftClock")" class="btn btn-outline-primary">+1 week</button>
-        <button type="submit" name="command" value="reset" formaction="@Url.Action("ShiftClock")" class="btn btn-danger">Reset clock</button>
+        <button type="submit" name="command" value="15" formaction="@Url.Action("ShiftClock", "AdminSetup")" class="btn btn-outline-primary">+15 minutes</button>
+        <button type="submit" name="command" value="60" formaction="@Url.Action("ShiftClock", "AdminSetup")" class="btn btn-outline-primary">+1 hour</button>
+        <button type="submit" name="command" value="1440" formaction="@Url.Action("ShiftClock", "AdminSetup")" class="btn btn-outline-primary">+1 day</button>
+        <button type="submit" name="command" value="10080" formaction="@Url.Action("ShiftClock", "AdminSetup")" class="btn btn-outline-primary">+1 week</button>
+        <button type="submit" name="command" value="reset" formaction="@Url.Action("ShiftClock", "AdminSetup")" class="btn btn-danger">Reset clock</button>
     </div>
 
     @* ================= Sweep ================= *@
@@ -61,7 +61,7 @@
         Runs: expire unreviewed pending requests, forfeit unclaimed bookings (adds strikes and restrictions),
         complete finished sessions, and lift expired restrictions.
     </p>
-    <button type="submit" formaction="@Url.Action("RunSweep")" class="btn btn-primary">Run sweep now</button>
+    <button type="submit" formaction="@Url.Action("RunSweep", "AdminSetup")" class="btn btn-primary">Run sweep now</button>
     <div class="mt-3 mb-4">
         @if (!string.IsNullOrWhiteSpace(Model.LastSweepSummary))
         {
@@ -79,7 +79,7 @@
     }
 
     <div class="mb-3">
-        <button type="submit" formaction="@Url.Action("GenerateStudents")" class="btn btn-outline-primary">Generate 10 sample students</button>
+        <button type="submit" formaction="@Url.Action("GenerateStudents", "AdminSetup")" class="btn btn-outline-primary">Generate 10 sample students</button>
         <span class="text-muted small ms-2">
             Each click adds 10 <strong>new</strong> students (no limit). IDs look real: <code>24-0153</code>
             (Faculty <code>FAC-0123</code>, Visitor <code>VIS-0123</code>). Password for all: <code>Test1234!</code>
@@ -108,7 +108,7 @@
             </select>
         </div>
         <div class="col-auto">
-            <button type="submit" formaction="@Url.Action("GenerateReservations")" class="btn btn-outline-primary">Generate sample reservations</button>
+            <button type="submit" formaction="@Url.Action("GenerateReservations", "AdminSetup")" class="btn btn-outline-primary">Generate sample reservations</button>
         </div>
     </div>
     <div class="text-muted small mb-3">
@@ -117,9 +117,9 @@
     </div>
 
     <div class="mb-4">
-        <button type="submit" formaction="@Url.Action("ClearSampleReservations")" class="btn btn-outline-secondary"
+        <button type="submit" formaction="@Url.Action("ClearSampleReservations", "AdminSetup")" class="btn btn-outline-secondary"
                 onclick="return qcuConfirm(this, { tone: 'warning', title: 'Clear sample reservations?', message: 'Every SAMPLE reservation is deleted. Your own bookings are kept.', confirmText: 'Clear' });">Clear sample reservations</button>
-        <button type="submit" formaction="@Url.Action("DeleteSampleStudents")" class="btn btn-outline-secondary"
+        <button type="submit" formaction="@Url.Action("DeleteSampleStudents", "AdminSetup")" class="btn btn-outline-secondary"
                 onclick="return qcuConfirm(this, { tone: 'danger', title: 'Delete sample students?', message: 'Every SAMPLE student and everything that belongs to them is deleted.', confirmText: 'Delete' });">Delete sample students and their data</button>
     </div>
 
@@ -137,7 +137,7 @@
                     <input type="text" id="confirmText" name="confirmText" class="form-control" autocomplete="off" />
                 </div>
                 <div class="col-auto">
-                    <button type="submit" formaction="@Url.Action("ClearAllReservations")" class="btn btn-danger"
+                    <button type="submit" formaction="@Url.Action("ClearAllReservations", "AdminSetup")" class="btn btn-danger"
                             onclick="return qcuConfirm(this, { tone: 'danger', title: 'Clear ALL reservations?', message: 'This deletes every reservation and every notification, and resets all strikes and restrictions. Accounts are kept.', confirmText: 'Clear everything', requireCheck: 'I understand this cannot be undone.' });">Clear ALL reservations and notifications</button>
                 </div>
             </div>
