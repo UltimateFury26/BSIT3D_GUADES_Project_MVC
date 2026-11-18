@@ -72,9 +72,12 @@ body {
 }
 
 /* ---- Tables ----
-   The Daily Schedule sheet marks its grid .qcu-table--print while the older
-   reports use .qcu-print-table; the booking report's history/member grids use
-   the plain .qcu-table. All three must print with the same ruled look. */
+   Phase 34: three class names end up on a printed table, and only one of them had
+   rules. QCU-CRAM_PrintBooking.cshtml uses .qcu-print-table, QCU-CRAM_DailySchedule.cshtml
+   uses .qcu-table--print, and the on-screen .qcu-table is reused by both. The daily
+   schedule therefore printed as an unruled, un-padded grid. All three now share the
+   same print treatment; the selector list is additive so nothing that already worked
+   changes. */
 table.qcu-print-table,
 table.qcu-table--print,
 table.qcu-table {
@@ -112,71 +115,12 @@ table.qcu-table {
         page-break-inside: avoid;
     }
 
-/* ---- Booking report sheet (Views/Reports/QCU-CRAM_PrintBooking) ---- */
-.qcu-report {
-    color: #000;
-}
-
-.qcu-report__head {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    border-bottom: 2px solid #00509e;
-    padding-bottom: 8px;
-    margin-bottom: 12px;
-}
-
-.qcu-report__seal {
-    height: 56px;
-    width: auto;
-}
-
-.qcu-report__head h1 {
-    font-size: 15pt;
-    font-weight: 700;
-    margin: 0;
-}
-
-.qcu-report__sub {
-    font-size: 10pt;
-    margin: 0;
-}
-
-.qcu-report__section {
-    font-size: 11pt;
-    font-weight: 700;
-    margin: 14px 0 6px;
-}
-
-table.qcu-kv {
-    width: 100%;
-    border-collapse: collapse;
-}
-
-    table.qcu-kv th,
-    table.qcu-kv td {
-        border: 1px solid #999;
-        padding: 5px 8px;
-        vertical-align: top;
-        text-align: left;
+    /* The on-screen zebra/hover tints are meaningless on paper and cost toner. */
+    table.qcu-table tbody tr:hover,
+    table.qcu-table tr.is-now,
+    table.qcu-table tr.is-today {
+        background: transparent !important;
     }
-
-    table.qcu-kv th {
-        width: 34%;
-        background: #f0f0f0;
-        font-weight: 600;
-    }
-
-.qcu-day-title {
-    font-size: 14pt;
-    font-weight: 700;
-    margin: 12px 0 6px;
-}
-
-.qcu-qcid {
-    margin-top: 18px;
-    font-size: 10pt;
-}
 
 /* ---- Signatures ---- */
 .qcu-print-signature {

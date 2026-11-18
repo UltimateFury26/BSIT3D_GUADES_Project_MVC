@@ -183,19 +183,11 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
                     return QCUCRAMOperationResult.Failure("That room no longer exists.");
                 }
 
-                int used;
-                ReservationCountsBy(db, "RoomID").TryGetValue(roomId, out used);
-                if (used > 0)
-                {
-                    return QCUCRAMOperationResult.Failure(
-                        "This room has reservations and cannot be deleted. Disable it instead.");
-                }
-
                 int code = content.DeleteRoom(roomId);
                 if (code == -1)
                 {
                     return QCUCRAMOperationResult.Failure(
-                        "This room is still in use and cannot be deleted. Disable it instead.");
+                        "This room has reservations and cannot be deleted. Disable it instead.");
                 }
 
                 return QCUCRAMOperationResult.Success("Room deleted.");
@@ -292,49 +284,25 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
             {
                 QCUCRAM_ContentRepository content = new QCUCRAM_ContentRepository(db);
 
-                List<QCUCRAM_TimeSlot> others = content.GetTimeSlots(false);
-
-                // Duplicate start time (the source checks this before overlap).
-                foreach (QCUCRAM_TimeSlot other in others)
-                {
-                    if (other.TimeSlotID == model.TimeSlotID) { continue; }
-                    if (other.StartTime == start)
-                    {
-                        return Retry("A time slot starting at " + FormatTime(start) +
-                                     " already exists.");
-                    }
-                }
-
-                // A slot may touch another one but may not overlap it.
-                foreach (QCUCRAM_TimeSlot other in others)
-                {
-                    if (other.TimeSlotID == model.TimeSlotID) { continue; }
-                    if (start < other.EndTime && end > other.StartTime)
-                    {
-                        return Retry("This time overlaps with the existing slot " +
-                                     QCUCRAM_ReservationInfo.FormatSlot(other.StartTime, other.EndTime) + ".");
-                    }
-                }
-
                 if (model.TimeSlotID > 0)
                 {
+                    // A slot that already holds a reservation has frozen times.
+                    int used;
+                    ReservationCountsBy(db, "TimeSlotID")
+                        .TryGetValue(model.TimeSlotID, out used);
+
                     QCUCRAM_TimeSlot existing = content.GetTimeSlot(model.TimeSlotID);
                     if (existing == null)
                     {
                         return QCUCRAMOperationResult.Failure("That time slot no longer exists.");
                     }
 
-                    // A slot that already holds a reservation has frozen times.
-                    int used;
-                    ReservationCountsBy(db, "TimeSlotID")
-                        .TryGetValue(model.TimeSlotID, out used);
-
                     if (used > 0 &&
                         (existing.StartTime != start || existing.EndTime != end))
                     {
                         return Retry(
-                            "This slot has reservations, so its times cannot be changed. " +
-                            "Disable it and add a new slot instead.");
+                            "This time slot already has reservations, so its times can no longer be changed. " +
+                            "Only its active flag may be switched.");
                     }
 
                     if (used > 0)
@@ -345,13 +313,20 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
 
                     int code = content.UpdateTimeSlot(model.TimeSlotID, start, end, model.IsActive);
                     if (code == 0) { return QCUCRAMOperationResult.Success("Time slot updated."); }
-                    if (code == 1)
-                    {
-                        return Retry("A time slot starting at " + FormatTime(start) + " already exists.");
-                    }
+                    if (code == 1) { return Retry("Another slot already starts at that time."); }
                     if (code == 2) { return QCUCRAMOperationResult.Failure("That time slot no longer exists."); }
 
                     return Retry("Sorry, the time slot could not be saved. Please try again.");
+                }
+
+                // New slot: it may not overlap any existing slot.
+                foreach (QCUCRAM_TimeSlot other in content.GetTimeSlots(false))
+                {
+                    if (start < other.EndTime && end > other.StartTime)
+                    {
+                        return Retry("That time range overlaps the existing slot " +
+                                     QCUCRAM_ReservationInfo.FormatSlot(other.StartTime, other.EndTime) + ".");
+                    }
                 }
 
                 int newId;
@@ -362,10 +337,7 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
                     if (!model.IsActive) { content.SetTimeSlotActive(newId, false); }
                     return QCUCRAMOperationResult.Success("Time slot added.");
                 }
-                if (created == 1)
-                {
-                    return Retry("A time slot starting at " + FormatTime(start) + " already exists.");
-                }
+                if (created == 1) { return Retry("Another slot already starts at that time."); }
 
                 return Retry("Sorry, the time slot could not be saved. Please try again.");
             }
@@ -403,19 +375,11 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
                     return QCUCRAMOperationResult.Failure("That time slot no longer exists.");
                 }
 
-                int used;
-                ReservationCountsBy(db, "TimeSlotID").TryGetValue(timeSlotId, out used);
-                if (used > 0)
-                {
-                    return QCUCRAMOperationResult.Failure(
-                        "This time slot has reservations and cannot be deleted. Disable it instead.");
-                }
-
                 int code = content.DeleteTimeSlot(timeSlotId);
                 if (code == -1)
                 {
                     return QCUCRAMOperationResult.Failure(
-                        "This time slot is still in use and cannot be deleted. Disable it instead.");
+                        "This time slot is used by a reservation and cannot be deleted. Disable it instead.");
                 }
 
                 return QCUCRAMOperationResult.Success("Time slot deleted.");
@@ -430,8 +394,8 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
         {
             QCUCRAMStudentsViewModel vm = new QCUCRAMStudentsViewModel();
             vm.Search = (search ?? "").Trim();
-            vm.Program = "";
-            vm.PageSize = pageSize < 1 ? 10 : pageSize;
+            vm.Program = (program ?? "").Trim();
+            vm.PageSize = pageSize < 1 ? 20 : pageSize;
 
             foreach (string p in QCUCRAM_Programs.All) { vm.ProgramOptions.Add(p); }
             foreach (string t in QCUCRAM_Programs.RequesterTypes) { vm.RequesterTypes.Add(t); }
@@ -440,9 +404,27 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
             {
                 QCUCRAM_StudentRepository students = new QCUCRAM_StudentRepository(db);
 
-                // Source search: LIKE-escaped across number, names, e-mail and program,
-                // ordered by last name, first name, StudentID.
-                List<QCUCRAM_Student> all = students.SearchAdmin(vm.Search);
+                // QCUCRAM_StudentRepository.Search filters on text and requester type only,
+                // so the program filter is applied here. The list is already ordered by
+                // last name, so filtering in memory keeps that order.
+                List<QCUCRAM_Student> all = students.Search(
+                    vm.Search.Length == 0 ? null : vm.Search,
+                    null,
+                    null);
+
+                if (vm.Program.Length > 0)
+                {
+                    List<QCUCRAM_Student> filtered = new List<QCUCRAM_Student>();
+                    foreach (QCUCRAM_Student candidate in all)
+                    {
+                        if (string.Equals(candidate.Program, vm.Program,
+                                          StringComparison.OrdinalIgnoreCase))
+                        {
+                            filtered.Add(candidate);
+                        }
+                    }
+                    all = filtered;
+                }
 
                 vm.TotalRows = all.Count;
 
@@ -518,12 +500,12 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
 
             if (!QCUCRAM_Programs.IsValidRequesterType(type))
             {
-                return Retry("Please select a valid requester type.");
+                return Retry("Choose a requester type of Student, Faculty or Visitor.");
             }
 
             if (!QCUCRAM_Programs.IsValidProgram(program))
             {
-                return Retry("Please select a valid program.");
+                return Retry("Choose a program from the list.");
             }
 
             if (last.Length == 0 || first.Length == 0 || last.Length > 60 || first.Length > 60)
@@ -531,27 +513,9 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
                 return Retry("Last name and first name are required (maximum 60 characters each).");
             }
 
-            if (mi.Length > 5)
-            {
-                return Retry("Middle initial is too long.");
-            }
-
             if (!EmailPattern.IsMatch(email) || email.Length > 120)
             {
-                return Retry("Please enter a valid email address.");
-            }
-
-            if (type == "Student")
-            {
-                number = QCUCRAM_Programs.NormalizeStudentNumber(number);
-                if (!StudentNumberPattern.IsMatch(number))
-                {
-                    return Retry("Student number must look like 23-0001.");
-                }
-            }
-            else if (!LooseNumberPattern.IsMatch(number))
-            {
-                return Retry("ID number must be 3-20 letters, numbers, or dashes only.");
+                return Retry("Enter a valid e-mail address (maximum 120 characters).");
             }
 
             using (QCUCRAM_Db db = new QCUCRAM_Db())
@@ -560,15 +524,25 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
 
                 if (model.StudentID > 0)
                 {
-                    int code = students.UpdateAdminProfile(
-                        model.StudentID, number, last, first, mi, email, program, type);
+                    int code = students.UpdateProfile(model.StudentID, last, first, mi, email, program);
 
-                    if (code == 0) { return QCUCRAMOperationResult.Success("Student updated."); }
-                    if (code == 1) { return Retry("Another account already uses that email address."); }
-                    if (code == 2) { return QCUCRAMOperationResult.Failure("That student no longer exists."); }
-                    if (code == 4) { return Retry("Another account already uses that ID / Student Number."); }
+                    if (code == 0) { return QCUCRAMOperationResult.Success("Account updated."); }
+                    if (code == 1) { return Retry("That e-mail address is already registered."); }
+                    if (code == 2) { return QCUCRAMOperationResult.Failure("That account no longer exists."); }
 
-                    return Retry("Sorry, the account could not be saved. Please check the details and try again.");
+                    return Retry("Sorry, the account could not be saved. Please try again.");
+                }
+
+                if (type == "Student")
+                {
+                    if (!StudentNumberPattern.IsMatch(number))
+                    {
+                        return Retry("A student number must look like 23-0001.");
+                    }
+                }
+                else if (!LooseNumberPattern.IsMatch(number))
+                {
+                    return Retry("An ID must be 3-20 letters, numbers or dashes.");
                 }
 
                 string temporary = QCUCRAM_PasswordHash.StudentTemporaryPassword(number);
@@ -584,11 +558,11 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
 
                 if (result.ResultCode == 1)
                 {
-                    return Retry("Another account already uses that ID / Student Number.");
+                    return Retry("That ID / student number is already registered.");
                 }
                 if (result.ResultCode == 2)
                 {
-                    return Retry("Another account already uses that email address.");
+                    return Retry("That e-mail address is already registered.");
                 }
 
                 return Retry("Sorry, the account could not be saved. Please check the details and try again.");
@@ -629,18 +603,13 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
                 }
 
                 int code = students.Delete(studentId);
-                if (code == -2)
-                {
-                    return QCUCRAMOperationResult.Failure(
-                        "This student has reservations and cannot be deleted. Their history must be kept.");
-                }
                 if (code == -1)
                 {
                     return QCUCRAMOperationResult.Failure(
-                        "This student is still in use and cannot be deleted.");
+                        "This account has reservations and cannot be deleted.");
                 }
 
-                return QCUCRAMOperationResult.Success("Student account deleted.");
+                return QCUCRAMOperationResult.Success("Account " + student.StudentNumber + " deleted.");
             }
         }
 
@@ -712,8 +681,7 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
                     return Retry("Sorry, the account could not be saved. Please try again.");
                 }
 
-                // The source only lets an existing account's full name change.
-                int updated = admins.UpdateFullName(model.AdminID, fullName);
+                int updated = admins.Update(model.AdminID, username, fullName);
 
                 if (updated == 0)
                 {
@@ -723,6 +691,7 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
                     }
                     return QCUCRAMOperationResult.Success("Admin account updated.");
                 }
+                if (updated == 1) { return Retry("That username is already taken."); }
                 if (updated == 2) { return QCUCRAMOperationResult.Failure("That account no longer exists."); }
 
                 return Retry("Sorry, the account could not be saved. Please try again.");
@@ -889,7 +858,7 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
 
                 if (value < range[0] || value > range[1])
                 {
-                    errors.Add(key + " must be from " + range[0] + " to " + range[1] + ".");
+                    errors.Add(key + " must be between " + range[0] + " and " + range[1] + ".");
                     continue;
                 }
 
@@ -905,42 +874,18 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
             {
                 QCUCRAM_ContentRepository content = new QCUCRAM_ContentRepository(db);
 
-                // Only write values that actually changed, like the source.
-                Dictionary<string, string> current =
-                    new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-
-                foreach (QCUCRAM_Setting row in content.GetAllSettings())
-                {
-                    if (row.SettingKey != null) { current[row.SettingKey] = row.SettingValue; }
-                }
-
-                int changed = 0;
                 foreach (KeyValuePair<string, int> pair in parsed)
                 {
-                    string next = pair.Value.ToString(CultureInfo.InvariantCulture);
-
-                    string previous;
-                    if (current.TryGetValue(pair.Key, out previous) &&
-                        string.Equals((previous ?? "").Trim(), next, StringComparison.Ordinal))
-                    {
-                        continue;
-                    }
-
-                    content.SetSetting(pair.Key, next);
-                    changed++;
+                    content.SetSetting(pair.Key,
+                        pair.Value.ToString(CultureInfo.InvariantCulture));
                 }
-
-                // SetSetting already drops the clock cache; do it again so the very next
-                // request is guaranteed to see the new offset.
-                QCUCRAM_Clock.Invalidate();
-
-                if (changed == 0)
-                {
-                    return QCUCRAMOperationResult.Success("No changes to save.");
-                }
-
-                return QCUCRAMOperationResult.Success("Settings saved (" + changed + " changed).");
             }
+
+            // SetSetting already drops the clock cache; do it again so the very next
+            // request is guaranteed to see the new offset.
+            QCUCRAM_Clock.Invalidate();
+
+            return QCUCRAMOperationResult.Success("Settings saved.");
         }
 
         // =================================================================
@@ -951,45 +896,23 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
             return new QCUCRAMOperationResult { Ok = false, Message = message, Retry = true };
         }
 
-        /// <summary>"h:mm tt" for messages, e.g. "8:00 AM".</summary>
-        private static string FormatTime(TimeSpan time)
-        {
-            return DateTime.Today.Add(time).ToString("h:mm tt", CultureInfo.InvariantCulture);
-        }
-
-        /// <summary>
-        /// Counts only reservations that still matter: today or later and not in a
-        /// closed state. Used by the "N upcoming reservation(s) still use it." note.
-        /// </summary>
-        private static Dictionary<int, int> UpcomingReservationCountsBy(QCUCRAM_Db db, string column)
-        {
-            Dictionary<int, int> map = new Dictionary<int, int>();
-
-            string sql = "SELECT " + column + " AS KeyId, COUNT(*) AS Total " +
-                         "FROM Reservations " +
-                         "WHERE ReservationDate >= @today " +
-                         "AND Status NOT IN ('Declined', 'Cancelled', 'Forfeited') " +
-                         "GROUP BY " + column;
-
-            foreach (CountRow row in db.Query<CountRow>(sql,
-                         QCUCRAM_Db.P("@today", QCUCRAM_Clock.Today)))
-            {
-                map[row.KeyId] = row.Total;
-            }
-
-            return map;
-        }
-
         /// <summary>
         /// "SELECT &lt;column&gt;, COUNT(*) ... GROUP BY &lt;column&gt;" as a dictionary.
         /// Used to show how many reservations each room, slot or student holds.
+        ///
+        /// Phase 31: the column name is a whitelisted identifier, not a string spliced
+        /// into SQL. Every caller passes a literal today, but a column name is the one
+        /// thing a parameter cannot carry - so it is checked against a fixed set instead.
+        /// Anything else throws rather than reaching the database.
         /// </summary>
         private static Dictionary<int, int> ReservationCountsBy(QCUCRAM_Db db, string column)
         {
             Dictionary<int, int> map = new Dictionary<int, int>();
 
-            string sql = "SELECT " + column + " AS KeyId, COUNT(*) AS Total " +
-                         "FROM Reservations GROUP BY " + column;
+            string safeColumn = SafeCountColumn(column);
+
+            string sql = "SELECT " + safeColumn + " AS KeyId, COUNT(*) AS Total " +
+                         "FROM Reservations GROUP BY " + safeColumn;
 
             foreach (CountRow row in db.Query<CountRow>(sql))
             {
@@ -997,6 +920,25 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
             }
 
             return map;
+        }
+
+        /// <summary>
+        /// The only columns ReservationCountsBy may group on. Kept in one place so adding
+        /// a fourth caller is a deliberate edit here, not an accidental injection point.
+        /// </summary>
+        private static string SafeCountColumn(string column)
+        {
+            switch (column)
+            {
+                case "RoomID":
+                case "TimeSlotID":
+                case "StudentID":
+                    return column;
+                default:
+                    throw new ArgumentException(
+                        "ReservationCountsBy does not support the column '" + column + "'.",
+                        "column");
+            }
         }
 
         /// <summary>

@@ -68,6 +68,22 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_ViewModels
     {
         public int ReservationID { get; set; }
         public DateTime ReservationDate { get; set; }
+
+        /// <summary>
+        /// Phase 31: the raw slot boundaries, not just the formatted label.
+        ///
+        /// Records.aspx.cs sorted on ts.StartTime (a TimeSpan) and wrote the two CSV
+        /// columns from the same values. The MVC row only carried the combined
+        /// "9:00 AM - 10:00 AM" string, so sorting compared 12-hour text ("10:00 AM"
+        /// sorts before "9:00 AM") and the export had to split the label back apart.
+        /// Keeping the TimeSpans makes both operations exact.
+        /// </summary>
+        public TimeSpan StartTime { get; set; }
+
+        /// <summary>End of the slot; the CSV "End Time" column.</summary>
+        public TimeSpan EndTime { get; set; }
+
+        /// <summary>Display label built from StartTime/EndTime: "9:00 AM - 10:00 AM".</summary>
         public string SlotLabel { get; set; }
         public string RoomName { get; set; }
         public string Requester { get; set; }

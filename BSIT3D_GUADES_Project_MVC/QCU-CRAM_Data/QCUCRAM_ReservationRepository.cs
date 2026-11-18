@@ -786,7 +786,11 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Data
                 p.Add(QCUCRAM_Db.P("@today", SqlDbType.Date, QCUCRAM_Clock.Today));
             }
 
-            sql += " ORDER BY r.ReservationDate DESC, ts.StartTime DESC";
+            // Phase 31: total ordering. Two bookings in the same slot on the same day used
+            // to come back in whatever order the plan produced, so the paged "My Reservations"
+            // list could show the same row on two pages. ReservationID is the tiebreaker the
+            // Web Forms page used.
+            sql += " ORDER BY r.ReservationDate DESC, ts.StartTime DESC, r.ReservationID DESC";
             return _db.Query<QCUCRAM_ReservationListItem>(sql, p.ToArray());
         }
 
@@ -906,7 +910,14 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Data
                 p.Add(QCUCRAM_Db.P("@q", "%" + term + "%"));
             }
 
-            sql += " ORDER BY r.ReservationDate DESC, ts.StartTime DESC";
+            // Phase 31: the ORDER BY must be total, not just "mostly right".
+            //
+            // Records.aspx.cs appended ", r.ReservationDate DESC, r.ReservationID DESC" to
+            // every order it built, so two bookings in the same slot always came back in the
+            // same order. Without the ReservationID tiebreaker SQL Server is free to return
+            // equal-keyed rows in any order, which made the paged Records grid shuffle rows
+            // between pages (a row could appear twice, or not at all, while paging).
+            sql += " ORDER BY r.ReservationDate DESC, ts.StartTime DESC, r.ReservationID DESC";
             return _db.Query<QCUCRAM_ReservationListItem>(sql, p.ToArray());
         }
 

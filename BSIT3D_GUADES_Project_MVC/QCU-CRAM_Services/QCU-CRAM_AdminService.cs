@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -987,17 +987,13 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
             {
                 QCUCRAM_Student owner = FindStudent(map, row.StudentNumber);
 
-                // The list DTO carries the combined "9:00 AM - 10:00 AM" label, so the
-                // export splits it back into the two columns the original page wrote.
-                string slot = row.SlotLabel ?? string.Empty;
-                string start = slot;
-                string end = string.Empty;
-                int dash = slot.IndexOf(" - ", StringComparison.Ordinal);
-                if (dash > 0)
-                {
-                    start = slot.Substring(0, dash).Trim();
-                    end = slot.Substring(dash + 3).Trim();
-                }
+                // Phase 31: the two time columns come from the real slot boundaries.
+                //
+                // This used to split SlotLabel on " - ", which is a display string: it
+                // would quietly produce a blank End Time if the separator ever changed,
+                // and it re-parsed text the database had already given us as TimeSpans.
+                string start = FormatTimeOfDay(row.StartTime);
+                string end = FormatTimeOfDay(row.EndTime);
 
                 string status = row.Status == QCUCRAM_Status.CheckedIn ? "Checked In" : row.Status;
 
@@ -1161,6 +1157,8 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
             {
                 ReservationID = x.ReservationId,
                 ReservationDate = x.ReservationDate,
+                StartTime = x.StartTime,
+                EndTime = x.EndTime,
                 SlotLabel = x.SlotLabel,
                 RoomName = x.RoomName,
                 Requester = DisplayName(map, x.StudentId),
@@ -1177,6 +1175,17 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
             bool asc = string.Equals(filter.Dir, "asc", StringComparison.OrdinalIgnoreCase);
             string sort = QCUCRAMRecordsFilter.IsSortKey(filter.Sort) ? filter.Sort : "ReservationDate";
 
+            // Phase 31: sort the way Records.aspx.cs sorted.
+            //
+            // Two things were wrong before:
+            //   * "StartTime" compared SlotLabel, a 12-hour string, so "10:00 AM" sorted
+            //     before "9:00 AM". The source ordered on ts.StartTime, a TimeSpan.
+            //   * every order the source built ended with ", r.ReservationDate DESC,
+            //     r.ReservationID DESC" so equal keys had a stable, total order. Without
+            //     that tail the paged grid could repeat or skip rows between pages.
+            //
+            // The tail is always descending, exactly as the source had it, regardless of
+            // the direction of the leading column.
             switch (sort)
             {
                 case "ReservationID":
@@ -1184,32 +1193,68 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
                                : rows.OrderByDescending(r => r.ReservationID).ToList();
                     break;
                 case "StartTime":
-                    rows = asc ? rows.OrderBy(r => r.SlotLabel, StringComparer.Ordinal).ToList()
-                               : rows.OrderByDescending(r => r.SlotLabel, StringComparer.Ordinal).ToList();
+                    rows = asc
+                        ? rows.OrderBy(r => r.StartTime)
+                              .ThenByDescending(r => r.ReservationDate)
+                              .ThenByDescending(r => r.ReservationID).ToList()
+                        : rows.OrderByDescending(r => r.StartTime)
+                              .ThenByDescending(r => r.ReservationDate)
+                              .ThenByDescending(r => r.ReservationID).ToList();
                     break;
                 case "RoomName":
-                    rows = asc ? rows.OrderBy(r => r.RoomName, StringComparer.OrdinalIgnoreCase).ToList()
-                               : rows.OrderByDescending(r => r.RoomName, StringComparer.OrdinalIgnoreCase).ToList();
+                    rows = asc
+                        ? rows.OrderBy(r => r.RoomName, StringComparer.OrdinalIgnoreCase)
+                              .ThenByDescending(r => r.ReservationDate)
+                              .ThenByDescending(r => r.ReservationID).ToList()
+                        : rows.OrderByDescending(r => r.RoomName, StringComparer.OrdinalIgnoreCase)
+                              .ThenByDescending(r => r.ReservationDate)
+                              .ThenByDescending(r => r.ReservationID).ToList();
                     break;
                 case "Requester":
-                    rows = asc ? rows.OrderBy(r => r.Requester, StringComparer.OrdinalIgnoreCase).ToList()
-                               : rows.OrderByDescending(r => r.Requester, StringComparer.OrdinalIgnoreCase).ToList();
+                    rows = asc
+                        ? rows.OrderBy(r => r.Requester, StringComparer.OrdinalIgnoreCase)
+                              .ThenByDescending(r => r.ReservationDate)
+                              .ThenByDescending(r => r.ReservationID).ToList()
+                        : rows.OrderByDescending(r => r.Requester, StringComparer.OrdinalIgnoreCase)
+                              .ThenByDescending(r => r.ReservationDate)
+                              .ThenByDescending(r => r.ReservationID).ToList();
                     break;
                 case "Program":
-                    rows = asc ? rows.OrderBy(r => r.Program, StringComparer.OrdinalIgnoreCase).ToList()
-                               : rows.OrderByDescending(r => r.Program, StringComparer.OrdinalIgnoreCase).ToList();
+                    rows = asc
+                        ? rows.OrderBy(r => r.Program, StringComparer.OrdinalIgnoreCase)
+                              .ThenByDescending(r => r.ReservationDate)
+                              .ThenByDescending(r => r.ReservationID).ToList()
+                        : rows.OrderByDescending(r => r.Program, StringComparer.OrdinalIgnoreCase)
+                              .ThenByDescending(r => r.ReservationDate)
+                              .ThenByDescending(r => r.ReservationID).ToList();
                     break;
                 case "NumberOfMembers":
-                    rows = asc ? rows.OrderBy(r => r.NumberOfMembers).ToList()
-                               : rows.OrderByDescending(r => r.NumberOfMembers).ToList();
+                    rows = asc
+                        ? rows.OrderBy(r => r.NumberOfMembers)
+                              .ThenByDescending(r => r.ReservationDate)
+                              .ThenByDescending(r => r.ReservationID).ToList()
+                        : rows.OrderByDescending(r => r.NumberOfMembers)
+                              .ThenByDescending(r => r.ReservationDate)
+                              .ThenByDescending(r => r.ReservationID).ToList();
                     break;
                 case "Status":
-                    rows = asc ? rows.OrderBy(r => r.Status, StringComparer.OrdinalIgnoreCase).ToList()
-                               : rows.OrderByDescending(r => r.Status, StringComparer.OrdinalIgnoreCase).ToList();
+                    rows = asc
+                        ? rows.OrderBy(r => r.Status, StringComparer.OrdinalIgnoreCase)
+                              .ThenByDescending(r => r.ReservationDate)
+                              .ThenByDescending(r => r.ReservationID).ToList()
+                        : rows.OrderByDescending(r => r.Status, StringComparer.OrdinalIgnoreCase)
+                              .ThenByDescending(r => r.ReservationDate)
+                              .ThenByDescending(r => r.ReservationID).ToList();
                     break;
                 default:
-                    rows = asc ? rows.OrderBy(r => r.ReservationDate).ThenBy(r => r.SlotLabel).ToList()
-                               : rows.OrderByDescending(r => r.ReservationDate).ThenByDescending(r => r.SlotLabel).ToList();
+                    // Source default: r.ReservationDate, ts.StartTime, r.ReservationID.
+                    rows = asc
+                        ? rows.OrderBy(r => r.ReservationDate)
+                              .ThenBy(r => r.StartTime)
+                              .ThenBy(r => r.ReservationID).ToList()
+                        : rows.OrderByDescending(r => r.ReservationDate)
+                              .ThenByDescending(r => r.StartTime)
+                              .ThenByDescending(r => r.ReservationID).ToList();
                     break;
             }
 
@@ -1342,6 +1387,16 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
             if (span.TotalDays < 1) { return (int)span.TotalHours + " hr " + span.Minutes + " min"; }
 
             return (int)span.TotalDays + " day(s) " + span.Hours + " hr";
+        }
+
+        /// <summary>
+        /// One TimeSpan as "9:00 AM" - the same text QCUCRAM_ReservationInfo.FormatSlot
+        /// puts on either side of its " - ". Invariant culture so the CSV reads the same
+        /// on a machine set to a 24-hour locale.
+        /// </summary>
+        private static string FormatTimeOfDay(TimeSpan value)
+        {
+            return DateTime.MinValue.Add(value).ToString("h:mm tt", CultureInfo.InvariantCulture);
         }
 
         /// <summary>

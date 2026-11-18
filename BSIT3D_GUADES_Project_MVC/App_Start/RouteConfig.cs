@@ -42,6 +42,30 @@ namespace BSIT3D_GUADES_Project_MVC
                 defaults: new { controller = "Error", action = "Index" });
 
             // ------------------------------------------------------------------
+            //  Phase 33: the error pages Web.config redirects to, spelled out.
+            //
+            //  ~/error/notfound worked through the generic {controller}/{action} route,
+            //  but only by accident of ordering - and it silently broke if anyone added a
+            //  route above it. These three are declared here so the customErrors targets
+            //  are guaranteed to resolve, and so /error/forbidden and /error/unauthorized
+            //  exist for the 403/401 paths added in Phase 32.
+            // ------------------------------------------------------------------
+            routes.MapRoute(
+                name: "QCU-CRAM_Error_NotFound",
+                url: "error/notfound",
+                defaults: new { controller = "Error", action = "NotFound" });
+
+            routes.MapRoute(
+                name: "QCU-CRAM_Error_Forbidden",
+                url: "error/forbidden",
+                defaults: new { controller = "Error", action = "Forbidden" });
+
+            routes.MapRoute(
+                name: "QCU-CRAM_Error_Unauthorized",
+                url: "error/unauthorized",
+                defaults: new { controller = "Error", action = "Unauthorized" });
+
+            // ------------------------------------------------------------------
             //  Phase 04: the two signed-in shells. /admin/... and /student/...
             //  keep the Web Forms folder split (Guades_QCUCram_Admin,
             //  Guades_QCUCram_Student) so a role mistake is visible in the URL.

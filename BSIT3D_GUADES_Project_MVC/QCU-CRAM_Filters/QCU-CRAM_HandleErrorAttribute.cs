@@ -29,7 +29,19 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Filters
 
             int status = 500;
             HttpException httpEx = ex as HttpException;
-            if (httpEx != null && httpEx.GetHttpCode() == 404) { status = 404; }
+            if (httpEx != null)
+            {
+                // Phase 32: keep the code the exception already carries.
+                //
+                // This used to downgrade everything except 404 to 500. An HttpException
+                // thrown with 403 (an access check inside an action, or a request the
+                // server refused) then reached the browser as "Internal Server Error",
+                // which is both wrong for the user and wrong for any monitoring that
+                // watches the status code. 401/403/404 are preserved; anything else
+                // still becomes 500 because an unhandled 5xx has no better answer.
+                int code = httpEx.GetHttpCode();
+                if (code == 401 || code == 403 || code == 404) { status = code; }
+            }
 
             string area = DescribeArea(filterContext);
             string reference = QCUCRAMErrorLog.Write(ex, area, null);
@@ -54,7 +66,7 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Filters
                     {
                         ok = false,
                         status = status,
-                        message = "Something went wrong. Reference " + reference + ".",
+                        message = MessageFor(status) + " Reference " + reference + ".",
                         reference = reference
                     }
                 };
@@ -72,17 +84,8 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Filters
                     : null
             };
 
-            if (status == 404)
-            {
-                vm.Title = "Page not found";
-                vm.Message = "That page does not exist, or it has moved. Check the address and try again.";
-            }
-            else
-            {
-                vm.Title = "Something went wrong";
-                vm.Message = "An unexpected error stopped that page from loading. Please try again, "
-                           + "and quote the reference below if you contact the library.";
-            }
+            vm.Title = TitleFor(status);
+            vm.Message = MessageFor(status);
 
             // Copy the controller's ViewData so the shared layout still sees
             // ViewBag.Title / the notice keys, then put our model on top.

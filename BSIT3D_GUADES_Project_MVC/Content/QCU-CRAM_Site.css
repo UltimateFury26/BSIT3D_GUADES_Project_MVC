@@ -2944,6 +2944,17 @@ main > .qcu-toast {
     vertical-align: middle;
 }
 
+/* Phase 34: the <tr> class on every member row (Views/Student/QCU-CRAM_Reserve.cshtml).
+   Without it the four inputs in a row sat at different heights once a validation
+   message appeared under one of them. */
+.qcu-member-row td {
+    vertical-align: top;
+}
+
+.qcu-member-row td:first-child {
+    padding-top: .55rem;
+}
+
 .qcu-member-num {
     font-weight: 600;
     color: var(--qcu-muted);
