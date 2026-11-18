@@ -47,12 +47,6 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_ViewModels
         /// <summary>True when the date is after the booking day (read-only preview).</summary>
         public bool IsFuture { get; set; }
 
-        /// <summary>?room= from the query string - the cell the Reserve page linked back to.</summary>
-        public int? HighlightRoomId { get; set; }
-
-        /// <summary>?slot= from the query string.</summary>
-        public int? HighlightSlotId { get; set; }
-
         /// <summary>The booking rules as an &lt;ol&gt;, straight from Settings (BuildRulesHtml).</summary>
         public string RulesHtml { get; set; }
 
@@ -193,8 +187,5 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_ViewModels
 
         /// <summary>True when the cell belongs to the signed-in student.</summary>
         public bool IsMine { get; set; }
-
-        /// <summary>True when the cell should be highlighted because Reserve linked back to it.</summary>
-        public bool IsHighlighted { get; set; }
     }
 }

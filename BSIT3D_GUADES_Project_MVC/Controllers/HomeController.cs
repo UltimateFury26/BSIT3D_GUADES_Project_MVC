@@ -22,12 +22,14 @@ namespace BSIT3D_GUADES_Project_MVC.Controllers
     {
         public ActionResult Index()
         {
-            if (QCUCRAM_Session.IsAdmin)
+            // Source: loggedIn = (session id is an int > 0), THEN the role is compared.
+            // IsAuthenticated is the same test (role present and UserId > 0).
+            if (QCUCRAM_Session.IsAuthenticated && QCUCRAM_Session.IsAdmin)
             {
                 return Redirect(Url.Content(QCUCRAM_Constants.Paths.AdminHome));
             }
 
-            if (QCUCRAM_Session.IsStudent)
+            if (QCUCRAM_Session.IsAuthenticated && QCUCRAM_Session.IsStudent)
             {
                 return Redirect(Url.Content(QCUCRAM_Constants.Paths.StudentHome));
             }

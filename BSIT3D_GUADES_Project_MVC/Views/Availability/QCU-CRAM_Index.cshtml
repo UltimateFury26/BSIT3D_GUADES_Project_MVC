@@ -13,7 +13,8 @@
        room x slot pair, looking the cell up in Model.Cells.
 
        Cell states, tested in the original order:
-         held cell        -> mine / pending / taken
+         held cell        -> mine / pending / taken   (Phase 09: markup now mirrors the source cell-for-cell;
+                              the Phase 06 qcu-cell / capacity / tooltip / highlight extras were removed)
          room or slot off -> unavailable
          date closed      -> closed
          otherwise        -> open (a link only on the booking day, for a student)
@@ -31,98 +32,90 @@
     <p>See which rooms and time slots are open</p>
 </div>
 
-<div class="qcu-toolbar row g-2 align-items-end mb-3">
-
-    <div class="col-auto">
-        <label class="form-label" for="qcuAvailDate">Date</label>
-        <form method="get" action="@Url.Action("Index", "Availability")" class="d-flex gap-2">
-            <input type="date" id="qcuAvailDate" name="date" class="form-control"
-                   value="@dateText" />
-            <button type="submit" class="btn btn-primary">Show</button>
-        </form>
+@* ---- Toolbar. One GET form: the buttons carry nav=show|prev|next|booking and the controller
+        redirects to /availability?date=... . data-live-btn="btnShow" makes the date box re-run
+        Show ~350 ms after it changes (Scripts/QCU-CRAM_ui.js), like the Web Forms live box. ---- *@
+<form method="get" action="@Url.Action("Index", "Availability")">
+    <div class="qcu-toolbar row g-2 align-items-end mb-3">
+        <div class="col-auto">
+            <label class="form-label" for="txtDate">Date</label>
+            <input type="date" id="txtDate" name="date" class="form-control"
+                   value="@dateText" data-live-btn="btnShow" />
+        </div>
+        <div class="col-auto">
+            <button type="submit" id="btnShow" name="nav" value="show" class="btn btn-primary">Show</button>
+        </div>
+        <div class="col-auto">
+            <button type="submit" name="nav" value="prev" class="btn btn-outline-secondary">&laquo; Previous day</button>
+            <button type="submit" name="nav" value="next" class="btn btn-outline-secondary">Next day &raquo;</button>
+        </div>
+        <div class="col-auto">
+            <button type="submit" name="nav" value="booking" class="btn btn-outline-primary">Booking day</button>
+        </div>
+        <div class="col-auto ms-md-auto">
+            <button type="button" class="btn btn-outline-secondary"
+                    data-bs-toggle="modal" data-bs-target="#rulesModal">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+                     stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"
+                     aria-hidden="true" style="vertical-align:-3px;margin-right:6px">
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="12" y1="11" x2="12" y2="17" />
+                    <line x1="12" y1="7.5" x2="12.01" y2="7.5" />
+                </svg>Booking Rules
+            </button>
+        </div>
     </div>
+</form>
 
-    <div class="col-auto">
-        <a class="btn btn-outline-secondary"
-           href="@Url.Action("Index", "Availability", new { date = Model.PreviousDay.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) })">
-            &laquo; Previous day
-        </a>
-        <a class="btn btn-outline-secondary"
-           href="@Url.Action("Index", "Availability", new { date = Model.NextDay.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) })">
-            Next day &raquo;
-        </a>
-    </div>
-
-    <div class="col-auto">
-        <a class="btn btn-outline-primary"
-           href="@Url.Action("Index", "Availability", new { date = Model.BookingDay.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) })">
-            Booking day
-        </a>
-    </div>
-
-    <div class="col-auto ms-md-auto">
-        <button type="button" class="btn btn-outline-secondary"
-                data-bs-toggle="modal" data-bs-target="#rulesModal">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
-                 stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"
-                 aria-hidden="true" style="vertical-align:-3px;margin-right:6px">
-                <circle cx="12" cy="12" r="10" />
-                <line x1="12" y1="11" x2="12" y2="17" />
-                <line x1="12" y1="7.5" x2="12.01" y2="7.5" />
-            </svg>Booking Rules
-        </button>
-    </div>
-</div>
-
-@* ---- Info above the grid (master: litInfo) ---- *@
-<p class="lead mb-1">@Model.DateLabel</p>
-
-<p class="mb-2">
-    Open: <strong>@Model.OpenCount</strong> &middot;
-    Pending: <strong>@Model.PendingCount</strong> &middot;
-    Taken: <strong>@Model.TakenCount</strong> &middot;
-    Closed: <strong>@Model.ClosedCount</strong>
-</p>
-
-@if (isStudent)
+@if (!hasGrid)
 {
-    if (Model.CanBook)
-    {
-        <p class="text-success">
-            You can book open slots on this date. Click an <em>Open - Book</em> cell.
-        </p>
-    }
-    else
-    {
-        <p class="text-muted">
-            Bookings are only accepted for @Model.BookingDayLabel.
-            Click <em>Booking day</em> to go there.
-        </p>
-    }
+    @* Source: no rooms or no slots -> info line is blank and only this warning is drawn. *@
+    <div class="qcu-grid"><div class="alert alert-warning">No active rooms or time slots are set up yet.</div></div>
 }
+else
+{
+    @* ---- Info above the grid (litInfo) ---- *@
+    <p class="lead mb-1">@Model.DateLabel</p>
 
-@* ---- The grid ---- *@
-<div class="qcu-grid qcu-availability">
-    @if (!hasGrid)
+    <p class="mb-2">
+        Open: <strong>@Model.OpenCount</strong> &middot;
+        Pending: <strong>@Model.PendingCount</strong> &middot;
+        Taken: <strong>@Model.TakenCount</strong> &middot;
+        Closed: <strong>@Model.ClosedCount</strong>
+    </p>
+
+    if (isStudent)
     {
-        <div class="alert alert-warning">No active rooms or time slots are set up yet.</div>
+        if (Model.CanBook)
+        {
+            <p class="text-success">
+                You can book open slots on this date. Click an <em>Open - Book</em> cell.
+            </p>
+        }
+        else
+        {
+            <p class="text-muted">
+                Bookings are only accepted for @Model.BookingDayLabel.
+                Click <em>Booking day</em> to go there.
+            </p>
+        }
     }
-    else
-    {
+
+    @* ---- The grid (litGrid). Cell markup mirrors the source: <td class="table-success"> etc. ---- *@
+    <div class="qcu-grid">
         <div class="table-responsive">
             <table class="table table-bordered text-center align-middle">
                 <thead class="table-light">
                     <tr>
-                        <th scope="col">Time</th>
+                        <th>Time</th>
                         @foreach (var room in Model.Rooms)
                         {
-                            <th scope="col">
+                            <th>
                                 @room.RoomName
                                 @if (!room.IsActive)
                                 {
                                     <small class="text-muted">(disabled)</small>
                                 }
-                                <div class="small text-muted fw-normal">@room.CapacityLabel</div>
                             </th>
                         }
                     </tr>
@@ -131,7 +124,7 @@
                     @foreach (var slot in Model.Slots)
                     {
                         <tr>
-                            <th scope="row" class="text-nowrap">
+                            <th class="text-nowrap">
                                 @slot.Label
                                 @if (!slot.IsActive)
                                 {
@@ -142,9 +135,6 @@
                             @foreach (var room in Model.Rooms)
                             {
                                 var cell = Model.Cell(room.RoomId, slot.TimeSlotId);
-                                var classes = "qcu-cell " + cell.StateClass +
-                                              (string.IsNullOrEmpty(cell.CssClass) ? string.Empty : " " + cell.CssClass) +
-                                              (cell.IsHighlighted ? " qcu-cell--highlight" : string.Empty);
 
                                 if (cell.IsBookable)
                                 {
@@ -155,20 +145,11 @@
                                         date = dateText
                                     });
 
-                                    <td class="@classes">
-                                        <a href="@url" title="Book @room.RoomName, @slot.Label on @Model.ShortDateLabel">
-                                            @cell.Text
-                                        </a>
-                                        @if (!string.IsNullOrWhiteSpace(cell.Detail))
-                                        {
-                                            <br /><small>@cell.Detail</small>
-                                        }
-                                    </td>
+                                    <td class="@cell.CssClass"><a href="@url">@cell.Text</a></td>
                                 }
                                 else
                                 {
-                                    <td class="@classes"
-                                        title="@(string.IsNullOrWhiteSpace(cell.Detail) ? null : cell.Detail)">
+                                    <td class="@cell.CssClass">
                                         @cell.Text
                                         @if (!string.IsNullOrWhiteSpace(cell.Detail))
                                         {
@@ -182,8 +163,8 @@
                 </tbody>
             </table>
         </div>
-    }
-</div>
+    </div>
+}
 
 <div class="qcu-legend">
     <strong>Legend:</strong>

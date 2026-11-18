@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using BSIT3D_GUADES_Project_MVC.QCUCRAM_Data;
 using BSIT3D_GUADES_Project_MVC.QCUCRAM_Helpers;
 using BSIT3D_GUADES_Project_MVC.QCUCRAM_Models;
@@ -15,13 +16,14 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
     /// reservations on the chosen date) and then walked every room x slot pair filling
     /// a byCell dictionary. The same reads happen here through the repositories:
     ///
-    ///   QCUCRAM_ContentRepository.GetRooms()          - every room, active or not
-    ///   QCUCRAM_ContentRepository.GetTimeSlots()      - every slot, active or not
+    ///   QCUCRAM_ContentRepository.GetRooms()          - every room (filtered here to active + held)
+    ///   QCUCRAM_ContentRepository.GetTimeSlots()      - every slot (filtered here to active + held)
     ///   QCUCRAM_ContentRepository.GetAvailability()   - the held cells (room + slot + status)
-    ///   QCUCRAM_ReservationRepository.GetByDate()     - the requester names an admin sees
+    ///   QCUCRAM_ReservationRepository.GetByDate()     - who holds each cell (admin names; a student's own cells)
     ///
     /// A disabled room or slot still shows a booking if one already exists in it, exactly
-    /// like the original page, because the booking must not vanish from the grid.
+    /// like the original page, because the booking must not vanish from the grid. A
+    /// disabled room or slot with NO booking on the date is left out, as in the original.
     /// </summary>
     public class QCUCRAMAvailabilityService
     {
@@ -52,33 +54,45 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
         /// Builds the whole grid for one date.
         /// </summary>
         /// <param name="date">The date to show; normalised to midnight.</param>
-        /// <param name="studentId">The signed-in student, or null for a guest / admin.</param>
+        /// <param name="studentId">The signed-in student, or null for an admin.</param>
         /// <param name="isAdmin">True when an admin is looking (adds requester names to the cells).</param>
-        /// <param name="highlightRoomId">?room= from the query string.</param>
-        /// <param name="highlightSlotId">?slot= from the query string.</param>
-        public QCUCRAMAvailabilityViewModel Build(DateTime date, int? studentId, bool isAdmin,
-                                                  int? highlightRoomId, int? highlightSlotId)
+        public QCUCRAMAvailabilityViewModel Build(DateTime date, int? studentId, bool isAdmin)
         {
             DateTime bookingDay = BookingDay;
             DateTime day = date.Date;
+            bool isStudent = studentId.HasValue && studentId.Value > 0;
 
             QCUCRAMAvailabilityViewModel vm = new QCUCRAMAvailabilityViewModel
             {
                 Date = day,
                 BookingDay = bookingDay,
                 IsAdmin = isAdmin,
-                IsStudent = studentId.HasValue && studentId.Value > 0,
+                IsStudent = isStudent,
                 CanBook = day == bookingDay,
                 IsClosed = day < bookingDay,
                 IsFuture = day > bookingDay,
-                HighlightRoomId = highlightRoomId,
-                HighlightSlotId = highlightSlotId,
                 RulesHtml = _content.BuildRulesHtml()
             };
 
-            // ---- columns: every room, in the order the admin arranged them ----
-            foreach (QCUCRAM_Room room in _content.GetRooms())
+            // ---- the held cells, keyed room|slot ----
+            Dictionary<string, QCUCRAM_AvailabilityCell> held =
+                new Dictionary<string, QCUCRAM_AvailabilityCell>(StringComparer.Ordinal);
+            HashSet<int> heldRooms = new HashSet<int>();
+            HashSet<int> heldSlots = new HashSet<int>();
+
+            foreach (QCUCRAM_AvailabilityCell cell in _content.GetAvailability(day))
             {
+                held[QCUCRAMAvailabilityViewModel.Key(cell.RoomId, cell.TimeSlotId)] = cell;
+                heldRooms.Add(cell.RoomId);
+                heldSlots.Add(cell.TimeSlotId);
+            }
+
+            // ---- columns: ACTIVE rooms, plus disabled ones that still hold a booking on this
+            //      date (source query), ordered by RoomID like the source ----
+            foreach (QCUCRAM_Room room in _content.GetRooms().OrderBy(r => r.RoomID))
+            {
+                if (!room.IsActive && !heldRooms.Contains(room.RoomID)) { continue; }
+
                 vm.Rooms.Add(new QCUCRAMRoomColumn
                 {
                     RoomId = room.RoomID,
@@ -89,9 +103,11 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
                 });
             }
 
-            // ---- rows: every time slot ----
-            foreach (QCUCRAM_TimeSlot slot in _content.GetTimeSlots())
+            // ---- rows: ACTIVE slots, plus disabled ones that still hold a booking, by StartTime ----
+            foreach (QCUCRAM_TimeSlot slot in _content.GetTimeSlots().OrderBy(t => t.StartTime))
             {
+                if (!slot.IsActive && !heldSlots.Contains(slot.TimeSlotID)) { continue; }
+
                 vm.Slots.Add(new QCUCRAMSlotRow
                 {
                     TimeSlotId = slot.TimeSlotID,
@@ -103,20 +119,12 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
 
             vm.TotalCells = vm.Rooms.Count * vm.Slots.Count;
 
-            // ---- the held cells, keyed room|slot ----
-            Dictionary<string, QCUCRAM_AvailabilityCell> held =
-                new Dictionary<string, QCUCRAM_AvailabilityCell>(StringComparer.Ordinal);
-
-            foreach (QCUCRAM_AvailabilityCell cell in _content.GetAvailability(day))
-            {
-                held[QCUCRAMAvailabilityViewModel.Key(cell.RoomId, cell.TimeSlotId)] = cell;
-            }
-
-            // ---- requester names for the admin view, keyed by reservation id ----
+            // ---- who holds each cell, keyed by reservation id. A student needs it to know which
+            //      cells are theirs ("mine"); an admin needs it for the requester name. ----
             Dictionary<int, QCUCRAM_ReservationListItem> details =
                 new Dictionary<int, QCUCRAM_ReservationListItem>();
 
-            if (isAdmin)
+            if (isAdmin || isStudent)
             {
                 foreach (QCUCRAM_ReservationListItem item in _reservations.GetByDate(day))
                 {
@@ -137,8 +145,13 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
                         case "open": vm.OpenCount++; break;
                         case "pending": vm.PendingCount++; break;
                         case "taken": vm.TakenCount++; break;
-                        case "mine": vm.MineCount++; break;
                         case "closed": vm.ClosedCount++; break;
+                        case "mine":
+                            // Source: every held cell counts as Pending or Taken, the student's own included.
+                            vm.MineCount++;
+                            if (string.Equals(cell.Status, QCUCRAM_Status.Pending, StringComparison.Ordinal)) { vm.PendingCount++; }
+                            else { vm.TakenCount++; }
+                            break;
                     }
                 }
             }
@@ -161,10 +174,7 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
             QCUCRAMCell cell = new QCUCRAMCell
             {
                 RoomId = room.RoomId,
-                TimeSlotId = slot.TimeSlotId,
-                IsHighlighted = vm.HighlightRoomId.HasValue && vm.HighlightSlotId.HasValue
-                                && vm.HighlightRoomId.Value == room.RoomId
-                                && vm.HighlightSlotId.Value == slot.TimeSlotId
+                TimeSlotId = slot.TimeSlotId
             };
 
             QCUCRAM_AvailabilityCell taken;
@@ -241,8 +251,9 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
             cell.State = "open";
             cell.CssClass = "table-success";
             cell.StateClass = "qcu-cell--open";
-            cell.IsBookable = vm.CanBook;
-            cell.Text = vm.CanBook ? "Open - Book" : "Open";
+            // Source: canBook = isStudent && date == bookingDay. An admin only ever sees "Open".
+            cell.IsBookable = vm.IsStudent && vm.CanBook;
+            cell.Text = cell.IsBookable ? "Open - Book" : "Open";
 
             return cell;
         }

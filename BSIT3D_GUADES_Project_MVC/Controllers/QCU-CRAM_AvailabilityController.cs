@@ -1,7 +1,6 @@
 using System;
 using System.Globalization;
 using System.Web.Mvc;
-using BSIT3D_GUADES_Project_MVC.QCUCRAM_Helpers;
 using BSIT3D_GUADES_Project_MVC.QCUCRAM_Security;
 using BSIT3D_GUADES_Project_MVC.QCUCRAM_Services;
 using BSIT3D_GUADES_Project_MVC.QCUCRAM_ViewModels;
@@ -13,22 +12,25 @@ namespace BSIT3D_GUADES_Project_MVC.Controllers
     ///
     /// The original page inherited Guades_QCUCram_SecurePage, so it demanded a
     /// signed-in user of ANY role (student or library assistant) and bounced a
-    /// guest to the login page with ?msg=login. Phase 09 restores that: both
-    /// actions carry [QCUCRAM_RequireLogin], which is the MVC equivalent of the
-    /// SecurePage OnInit gate. The grid is not a public page.
+    /// guest to the login page with ?msg=login. [QCUCRAM_RequireLogin] is the MVC
+    /// equivalent of that OnInit gate. The grid is not a public page.
     ///
-    /// Signed-in users still get the extras:
+    /// Phase 09: the page now reads ONLY ?date=yyyy-MM-dd, like the original.
+    /// The MVC-only /availability/day/{id} URL and the ?room=&amp;slot= highlight
+    /// were not in the source and have been removed.
     ///
-    ///   * a student sees which held cells are their own ("mine");
-    ///   * an admin sees the requester name in the tooltip;
-    ///   * only a student on the exact booking day gets a working "Reserve" link.
-    ///
-    /// Query string, mirroring the Web Forms post-backs:
-    ///   ?date=yyyy-MM-dd   the day being looked at (defaults to the booking day)
-    ///   ?room=&amp;slot=       the cell to highlight after a redirect back from Reserve
+    /// The toolbar buttons were post-backs in Web Forms. Here they are GET submits
+    /// of one form (nav = show | prev | next | booking) that redirect to
+    /// /availability?date=..., so Previous / Next day still start from whatever is
+    /// in the date box, exactly like btnPrev_Click / btnNext_Click.
     /// </summary>
     public class AvailabilityController : QCUCRAM_BaseController
     {
+        private const string DateFormat = "yyyy-MM-dd";
+
+        // Wording copied from Guades_QCUCram_Availability.aspx.cs GetSelectedDate().
+        private const string InvalidDateMessage = "That date isn't valid, so the booking day is shown instead.";
+
         private readonly QCUCRAMAvailabilityService _service;
 
         public AvailabilityController()
@@ -42,69 +44,79 @@ namespace BSIT3D_GUADES_Project_MVC.Controllers
         }
 
         // ------------------------------------------------------------------
-        //  GET /availability
+        //  GET /availability?date=yyyy-MM-dd
         // ------------------------------------------------------------------
         [QCUCRAM_RequireLogin]
         [HttpGet]
-        public ActionResult Index(string date, int? room, int? slot)
+        public ActionResult Index(string date, string nav)
         {
-            DateTime day = ParseDate(date, _service.BookingDay);
+            if (!string.IsNullOrEmpty(nav))
+            {
+                return Navigate(date, nav);
+            }
+
+            // Page_Load: default = the booking day, or ?date= when it is an exact yyyy-MM-dd.
+            DateTime day;
+            if (!TryParseExact(date, out day))
+            {
+                day = _service.BookingDay;
+            }
 
             int? studentId = QCUCRAM_Session.IsStudent ? (int?)QCUCRAM_Session.UserId : null;
 
-            QCUCRAMAvailabilityViewModel model = _service.Build(
-                day,
-                studentId,
-                QCUCRAM_Session.IsAdmin,
-                room,
-                slot);
+            QCUCRAMAvailabilityViewModel model = _service.Build(day, studentId, QCUCRAM_Session.IsAdmin);
 
             return View("~/Views/Availability/QCU-CRAM_Index.cshtml", model);
         }
 
         // ------------------------------------------------------------------
-        //  GET /availability/day/2026-03-14  (optional friendly URL)
+        //  Show / Previous day / Next day / Booking day
         // ------------------------------------------------------------------
-        [QCUCRAM_RequireLogin]
-        [HttpGet]
-        public ActionResult Day(string id, int? room, int? slot)
+        private ActionResult Navigate(string date, string nav)
         {
-            return Index(id, room, slot);
+            DateTime bookingDay = _service.BookingDay;
+            DateTime target;
+
+            if (string.Equals(nav, "booking", StringComparison.OrdinalIgnoreCase))
+            {
+                // btnBookingDay_Click ignores the box.
+                target = bookingDay;
+            }
+            else
+            {
+                // GetSelectedDate(): an unreadable box falls back to the booking day and says so.
+                DateTime selected;
+                if (!TryParseExact(date, out selected))
+                {
+                    selected = bookingDay;
+                    FlashError(InvalidDateMessage);
+                }
+
+                if (string.Equals(nav, "prev", StringComparison.OrdinalIgnoreCase)) { target = selected.AddDays(-1); }
+                else if (string.Equals(nav, "next", StringComparison.OrdinalIgnoreCase)) { target = selected.AddDays(1); }
+                else { target = selected; }   // "show"
+            }
+
+            return RedirectToAction("Index", new { date = target.ToString(DateFormat, CultureInfo.InvariantCulture) });
         }
 
-        // ------------------------------------------------------------------
-        //  Helpers
-        // ------------------------------------------------------------------
-
         /// <summary>
-        /// Reads a yyyy-MM-dd date, falling back to <paramref name="fallback"/> when the
-        /// value is missing or unparseable. Invariant culture on purpose: the original
-        /// page used DateTime.ParseExact with "yyyy-MM-dd" so a dd/MM/yyyy browser could
-        /// never silently flip the month and the day.
+        /// Exact yyyy-MM-dd only (invariant culture), the same DateTime.TryParseExact the
+        /// original used, so a dd/MM/yyyy browser can never flip the month and the day and
+        /// free-text such as "March 5" is not accepted.
         /// </summary>
-        private static DateTime ParseDate(string value, DateTime fallback)
+        private static bool TryParseExact(string value, out DateTime date)
         {
-            if (string.IsNullOrWhiteSpace(value))
-            {
-                return fallback.Date;
-            }
-
             DateTime parsed;
-
-            if (DateTime.TryParseExact(value.Trim(), "yyyy-MM-dd",
-                                       CultureInfo.InvariantCulture,
-                                       DateTimeStyles.None, out parsed))
+            if (DateTime.TryParseExact((value ?? string.Empty).Trim(), DateFormat,
+                                       CultureInfo.InvariantCulture, DateTimeStyles.None, out parsed))
             {
-                return parsed.Date;
+                date = parsed.Date;
+                return true;
             }
 
-            if (DateTime.TryParse(value.Trim(), CultureInfo.InvariantCulture,
-                                  DateTimeStyles.None, out parsed))
-            {
-                return parsed.Date;
-            }
-
-            return fallback.Date;
+            date = DateTime.MinValue;
+            return false;
         }
     }
 }
