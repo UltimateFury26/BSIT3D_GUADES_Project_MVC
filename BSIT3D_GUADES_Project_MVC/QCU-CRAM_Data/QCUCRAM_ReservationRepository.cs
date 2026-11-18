@@ -135,7 +135,9 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Data
         public void ChangeStatus(int reservationId, string newStatus, string actorRole,
                                  int? actorId, string notes = null, string extraMessage = null)
         {
-            _db.RunInTransaction(IsolationLevel.Serializable, (con, tx) =>
+            // Web Forms used BeginTransaction() (READ COMMITTED); the UPDLOCK read plus the
+            // Status = @old compare-and-swap already protect the row, so no SERIALIZABLE here.
+            _db.RunInTransaction(IsolationLevel.ReadCommitted, (con, tx) =>
                 ChangeStatus(con, tx, reservationId, newStatus, actorRole, actorId, notes, extraMessage));
         }
 

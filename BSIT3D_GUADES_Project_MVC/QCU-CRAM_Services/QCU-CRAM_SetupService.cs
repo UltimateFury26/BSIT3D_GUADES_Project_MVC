@@ -404,13 +404,11 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
             {
                 QCUCRAM_StudentRepository students = new QCUCRAM_StudentRepository(db);
 
-                // QCUCRAM_StudentRepository.Search filters on text and requester type only,
-                // so the program filter is applied here. The list is already ordered by
-                // last name, so filtering in memory keeps that order.
-                List<QCUCRAM_Student> all = students.Search(
-                    vm.Search.Length == 0 ? null : vm.Search,
-                    null,
-                    null);
+                // SearchAdmin is the port of Students.aspx.cs BindGrid (LIKE ... ESCAPE across number,
+                // names, e-mail, program and the "First Last" / "Last, First" forms). The program
+                // dropdown filter is applied below, in memory, so the list order is kept.
+                List<QCUCRAM_Student> all = students.SearchAdmin(
+                    vm.Search.Length == 0 ? null : vm.Search);
 
                 if (vm.Program.Length > 0)
                 {

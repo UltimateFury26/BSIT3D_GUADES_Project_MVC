@@ -4,6 +4,7 @@ using System.Data;
 using System.Data.Entity;
 using System.Data.SqlClient;
 using System.Linq;
+using System.Runtime.ExceptionServices;
 using BSIT3D_GUADES_Project_MVC.QCUCRAM_Helpers;
 
 namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Data
@@ -39,28 +40,57 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Data
         /// <summary>Runs a SELECT and materialises every row. Property names bind by column name.</summary>
         public List<T> Query<T>(string sql, params SqlParameter[] parameters)
         {
-            return _context.Database.SqlQuery<T>(sql, ToObjects(parameters)).ToList();
+            return Run(() => _context.Database.SqlQuery<T>(sql, ToObjects(parameters)).ToList());
         }
 
         /// <summary>Runs a SELECT that must return exactly one row (throws otherwise).</summary>
         public T QuerySingle<T>(string sql, params SqlParameter[] parameters)
         {
-            return _context.Database.SqlQuery<T>(sql, ToObjects(parameters)).Single();
+            return Run(() => _context.Database.SqlQuery<T>(sql, ToObjects(parameters)).Single());
         }
 
         /// <summary>Runs a SELECT and returns the first row, or default(T) when there is none.</summary>
         public T QueryFirstOrDefault<T>(string sql, params SqlParameter[] parameters)
         {
-            return _context.Database.SqlQuery<T>(sql, ToObjects(parameters)).FirstOrDefault();
+            return Run(() => _context.Database.SqlQuery<T>(sql, ToObjects(parameters)).FirstOrDefault());
         }
 
         /// <summary>Runs INSERT / UPDATE / DELETE and returns the rows affected.</summary>
         public int Execute(string sql, params SqlParameter[] parameters)
         {
-            return _context.Database.ExecuteSqlCommand(sql, ToObjects(parameters));
+            return Run(() => _context.Database.ExecuteSqlCommand(sql, ToObjects(parameters)));
         }
 
         /// <summary>SELECT COUNT(*) ... AS Total, returned as an int.</summary>
+        // ------------------------------------------------------------------
+        //  Exception parity: the Web Forms helper let a raw SqlException escape, and the
+        //  repositories test SqlException.Number (547 FK, 2601/2627 unique, 1205 deadlock).
+        //  If EF ever wraps the provider error, hand the original SqlException back.
+        // ------------------------------------------------------------------
+
+        private static T Run<T>(Func<T> work)
+        {
+            try
+            {
+                return work();
+            }
+            catch (SqlException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                SqlException inner = null;
+                for (Exception e = ex.InnerException; e != null && inner == null; e = e.InnerException)
+                {
+                    inner = e as SqlException;
+                }
+                if (inner == null) { throw; }
+                ExceptionDispatchInfo.Capture(inner).Throw();
+                throw;
+            }
+        }
+
         public int Count(string sql, params SqlParameter[] parameters)
         {
             return QuerySingle<QCUCRAM_CountResult>(sql, parameters).Total;

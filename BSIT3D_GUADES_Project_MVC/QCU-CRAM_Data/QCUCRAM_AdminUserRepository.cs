@@ -233,10 +233,22 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Data
         {
             if (!active)
             {
-                int activeOthers = _db.Count(
-                    "SELECT COUNT(*) AS Total FROM AdminUsers WHERE IsActive = 1 AND AdminID <> @id",
+                // Port of AdminUsers.aspx.cs ToggleAdmin: the "at least one active admin" check and
+                // the UPDATE run in ONE locked transaction, so two admins cannot disable each other
+                // at the same moment and leave nobody able to sign in.
+                _db.Execute(
+                    @"SET XACT_ABORT ON;
+                      BEGIN TRAN;
+                      DECLARE @n INT = (SELECT COUNT(*) FROM AdminUsers WITH (UPDLOCK, HOLDLOCK) WHERE IsActive = 1);
+                      UPDATE AdminUsers SET IsActive = 0
+                       WHERE AdminID = @id AND IsActive = 1 AND @n > 1;
+                      COMMIT;",
                     QCUCRAM_Db.P("@id", adminId));
-                if (activeOthers == 0) { return 4; }   // would leave nobody able to sign in
+
+                bool stillActive = _db.Any(
+                    "SELECT COUNT(*) AS Total FROM AdminUsers WHERE AdminID = @id AND IsActive = 1",
+                    QCUCRAM_Db.P("@id", adminId));
+                return stillActive ? 4 : 1;   // 4 = would leave nobody able to sign in
             }
 
             return _db.Execute("UPDATE AdminUsers SET IsActive = @a WHERE AdminID = @id",
