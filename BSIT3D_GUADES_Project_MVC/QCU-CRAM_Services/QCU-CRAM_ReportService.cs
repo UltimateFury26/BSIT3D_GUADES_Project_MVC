@@ -110,7 +110,7 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
         {
             QCUCRAMPrintBookingViewModel vm = new QCUCRAMPrintBookingViewModel();
             vm.IsAdmin = isAdmin;
-            vm.BackUrl = isAdmin ? "/admin/records" : "/student/reservations";
+            vm.BackUrl = isAdmin ? "/admin/records" : "/student/my-reservations";
             vm.PrintedAt = QCUCRAM_Clock.Now;
 
             var data = _db.Context.Reservations
