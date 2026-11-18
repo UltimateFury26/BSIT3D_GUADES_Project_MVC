@@ -34,7 +34,7 @@
 <div class="alert @standingClass">
     @if (Model.Standing == "restricted")
     {
-        <strong>You are restricted from booking until @Model.RestrictionLiftLabel.</strong>
+        <strong>You are restricted from booking until @(Model.RestrictionLiftDate.HasValue ? Model.RestrictionLiftLabel : "further notice").</strong>
         <text>Strikes: @Model.NoShowCount of @Model.NoShowThreshold (forfeited reservations).</text>
     }
     else if (Model.Standing == "warning")
@@ -142,35 +142,35 @@
                     <table class="table table-sm table-bordered align-middle mb-0">
                         <tbody>
                             <tr>
-                                <th scope="row"><strong>Total reservations</strong></th>
+                                <td><strong>Total reservations</strong></td>
                                 <td class="text-end"><strong>@stats.Total</strong></td>
                             </tr>
                             <tr>
-                                <th scope="row">Pending</th>
+                                <td>Pending</td>
                                 <td class="text-end">@stats.Pending</td>
                             </tr>
                             <tr>
-                                <th scope="row">Approved / Reassigned</th>
+                                <td>Approved / Reassigned</td>
                                 <td class="text-end">@stats.Approved</td>
                             </tr>
                             <tr>
-                                <th scope="row">Checked in</th>
+                                <td>Checked in</td>
                                 <td class="text-end">@stats.CheckedIn</td>
                             </tr>
                             <tr>
-                                <th scope="row">Completed</th>
+                                <td>Completed</td>
                                 <td class="text-end">@stats.Completed</td>
                             </tr>
                             <tr>
-                                <th scope="row">Forfeited (no-show)</th>
+                                <td>Forfeited (no-show)</td>
                                 <td class="text-end">@stats.Forfeited</td>
                             </tr>
                             <tr>
-                                <th scope="row">Cancelled</th>
+                                <td>Cancelled</td>
                                 <td class="text-end">@stats.Cancelled</td>
                             </tr>
                             <tr>
-                                <th scope="row">Declined</th>
+                                <td>Declined</td>
                                 <td class="text-end">@stats.Declined</td>
                             </tr>
                         </tbody>
@@ -196,7 +196,7 @@
                     <div class="text-muted small">Change it regularly and never share it with anyone.</div>
                 </div>
                 <a class="btn btn-outline-primary" href="@Url.Action("ChangePassword", "Account")"
-                   onclick="return confirm('Change your password?\n\nYou will be taken to the Change Password page.');">
+                   onclick="return qcuConfirm(this, { tone: 'primary', title: 'Change your password?', message: 'You will be taken to the Change Password page.', confirmText: 'Continue' });">
                     Change Password
                 </a>
             </div>

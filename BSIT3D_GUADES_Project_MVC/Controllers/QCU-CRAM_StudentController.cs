@@ -252,17 +252,32 @@ namespace BSIT3D_GUADES_Project_MVC.Controllers.Student
                 return View("~/Views/Student/QCU-CRAM_Profile.cshtml", model);
             }
 
-            int code = _service.UpdateProfile(
-                CurrentUserId,
-                model.LastName,
-                model.FirstName,
-                model.MI,
-                model.Email,
-                model.Program);
+            int code;
+            try
+            {
+                code = _service.UpdateProfile(
+                    CurrentUserId,
+                    model.LastName,
+                    model.FirstName,
+                    model.MI,
+                    model.Email,
+                    model.Program);
+            }
+            catch (System.Data.SqlClient.SqlException ex)
+            {
+                // 2601 / 2627 = unique constraint (someone took the e-mail a moment ago)
+                code = (ex.Number == 2601 || ex.Number == 2627) ? 1 : -1;
+            }
+            catch (Exception)
+            {
+                code = -1;
+            }
 
             switch (code)
             {
                 case 0:
+                    // Keep the "Logged in as ..." name in step with the new name (first + last, as Login does).
+                    QCUCRAM_Session.RefreshName((model.FirstName ?? string.Empty).Trim() + " " + (model.LastName ?? string.Empty).Trim());
                     Flash("Your profile has been updated.");
                     return RedirectToAction("Profile");
 
@@ -274,8 +289,12 @@ namespace BSIT3D_GUADES_Project_MVC.Controllers.Student
                     FlashError("Your account could not be found. Please sign in again.");
                     return RedirectToAction("Logout", "Account");
 
-                default:
+                case 3:
                     ModelState.AddModelError(string.Empty, "Some of the details were not accepted. Please check them and try again.");
+                    break;
+
+                default:
+                    ModelState.AddModelError(string.Empty, "Sorry, your changes could not be saved. Please try again.");
                     break;
             }
 

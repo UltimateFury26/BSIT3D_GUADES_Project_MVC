@@ -25,26 +25,26 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_ViewModels
 
         // ---- editable fields ----
 
-        [Required(ErrorMessage = "Please enter your last name.")]
-        [StringLength(60, ErrorMessage = "The last name is at most 60 characters.")]
+        [Required(ErrorMessage = "Last name is required.")]
+        [StringLength(60, ErrorMessage = "Last name and first name are required (maximum 60 characters each).")]
         [Display(Name = "Last Name")]
         public string LastName { get; set; }
 
-        [Required(ErrorMessage = "Please enter your first name.")]
-        [StringLength(60, ErrorMessage = "The first name is at most 60 characters.")]
+        [Required(ErrorMessage = "First name is required.")]
+        [StringLength(60, ErrorMessage = "Last name and first name are required (maximum 60 characters each).")]
         [Display(Name = "First Name")]
         public string FirstName { get; set; }
 
         [Display(Name = "M.I.")]
-        [StringLength(2, ErrorMessage = "The middle initial is at most 2 letters.")]
+        [StringLength(5, ErrorMessage = "Middle initial is too long.")]
         public string MI { get; set; }
 
-        [Required(ErrorMessage = "Please enter your e-mail address.")]
-        [StringLength(120, ErrorMessage = "The e-mail address is at most 120 characters.")]
-        [EmailAddress(ErrorMessage = "That does not look like an e-mail address.")]
+        [Required(ErrorMessage = "Email is required.")]
+        [StringLength(120, ErrorMessage = "Please enter a valid email address.")]
+        [RegularExpression(@"^\w+([-+.']\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*$", ErrorMessage = "Enter a valid email address.")]
         public string Email { get; set; }
 
-        [Required(ErrorMessage = "Please choose your program.")]
+        [Required(ErrorMessage = "Please select a program.")]
         public string Program { get; set; }
 
         // ---- standing ----
@@ -59,7 +59,17 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_ViewModels
         /// <summary>The drop-down source; QCUCRAM_Programs.All.</summary>
         public IEnumerable<string> ProgramChoices
         {
-            get { return QCUCRAM_Programs.All; }
+            get
+            {
+                // The original kept a saved program that is no longer in the list so nothing is lost.
+                if (!string.IsNullOrEmpty(Program) && Array.IndexOf(QCUCRAM_Programs.All, Program) < 0)
+                {
+                    List<string> list = new List<string>(QCUCRAM_Programs.All);
+                    list.Add(Program);
+                    return list;
+                }
+                return QCUCRAM_Programs.All;
+            }
         }
 
         public string FullName

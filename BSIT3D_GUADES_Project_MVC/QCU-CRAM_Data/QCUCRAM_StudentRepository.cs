@@ -291,16 +291,19 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Data
         {
             string last = (lastName ?? "").Trim();
             string first = (firstName ?? "").Trim();
-            string middle = (mi ?? "").Trim().TrimEnd('.').ToUpperInvariant();
+            string middle = (mi ?? "").Trim().TrimEnd('.');
             string mail = (email ?? "").Trim();
-
-            if (middle.Length > 2) { middle = middle.Substring(0, 2); }
-            if (last.Length == 0 || first.Length == 0 || last.Length > 60 || first.Length > 60) { return 3; }
-            if (mail.Length == 0 || mail.Length > 120) { return 3; }
-            if (!QCUCRAM_Programs.IsValidProgram(program)) { return 3; }
 
             QCUCRAM_Student existing = GetById(studentId);
             if (existing == null) { return 2; }
+
+            // Same server-side re-checks as btnSave_Click (browser checks can be bypassed).
+            if (last.Length == 0 || first.Length == 0 || last.Length > 60 || first.Length > 60) { return 3; }
+            if (middle.Length > 5) { return 3; }
+            if (mail.Length == 0 || mail.Length > 120) { return 3; }
+            // A saved program that has since left the list may be kept, nothing else.
+            if (!QCUCRAM_Programs.IsValidProgram(program) &&
+                !string.Equals(program, existing.Program, StringComparison.Ordinal)) { return 3; }
 
             if (!string.Equals(existing.Email, mail, StringComparison.OrdinalIgnoreCase))
             {

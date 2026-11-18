@@ -41,7 +41,7 @@
                 <text>further notice.</text>
             }
         </strong>
-        Reason: @Model.NoShowCount forfeited reservation@(Model.NoShowCount == 1 ? "" : "s").
+        Reason: @Model.NoShowCount forfeited reservation(s).
     </div>
 }
 
@@ -51,7 +51,7 @@
     <div>
         @if (Model.IsRestricted)
         {
-            <span class="btn btn-cta btn-lg me-2 disabled" aria-disabled="true">Quick Reserve (tomorrow)</span>
+            <a class="btn btn-cta btn-lg me-2 disabled" disabled="disabled" aria-disabled="true">Quick Reserve (tomorrow)</a>
         }
         else
         {
@@ -179,11 +179,7 @@
                             </li>
                         }
                     </ul>
-                    <p class="mt-3 mb-0">
-                        <a href="@Url.Action("Index", "Availability", new { date = bookingDayText })">
-                            See the full grid
-                        </a>
-                    </p>
+                    <a href="@Url.Action("Index", "Availability", new { date = bookingDayText })">See the full grid</a>
                 }
             </div>
         </div>
