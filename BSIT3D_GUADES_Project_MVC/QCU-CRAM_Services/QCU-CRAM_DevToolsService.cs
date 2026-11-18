@@ -150,8 +150,9 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
             }
             catch (Exception ex)
             {
-                return "<div class=\"alert alert-danger\">The sweep failed: " +
-                       HttpUtility.HtmlEncode(ex.Message) + "</div>";
+                string reference = QCUCRAMErrorLog.Write(ex, "DevTools.RunSweep", null);
+                return "<div class=\"alert alert-danger\">The maintenance sweep failed. Reference: " +
+                       HttpUtility.HtmlEncode(reference) + "</div>";
             }
         }
 
@@ -183,8 +184,8 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Trace.TraceError("QCUCRAM Dev Tools GenerateStudents failed: " + ex);
-                return QCUCRAMDevResult.ToastOnly("Could not create the sample students. Check the application log for details.", true);
+                string reference = QCUCRAMErrorLog.Write(ex, "DevTools.GenerateStudents", null);
+                return QCUCRAMDevResult.ToastOnly("Could not create the sample students. Reference: " + reference, true);
             }
         }
 
@@ -247,8 +248,8 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Trace.TraceError("QCUCRAM Dev Tools GenerateReservations failed: " + ex);
-                return QCUCRAMDevResult.ToastOnly("Could not create the sample reservations. Check the application log for details.", true);
+                string reference = QCUCRAMErrorLog.Write(ex, "DevTools.GenerateReservations", null);
+                return QCUCRAMDevResult.ToastOnly("Could not create the sample reservations. Reference: " + reference, true);
             }
         }
 
@@ -259,9 +260,10 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
                 int n = QCUCRAM_SampleData.ClearSampleReservations();
                 return QCUCRAMDevResult.ToastOnly(n + " sample reservations deleted.", false);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                return QCUCRAMDevResult.ToastOnly("Could not delete the sample reservations.", true);
+                string reference = QCUCRAMErrorLog.Write(ex, "DevTools.ClearSampleReservations", null);
+                return QCUCRAMDevResult.ToastOnly("Could not delete the sample reservations. Reference: " + reference, true);
             }
         }
 
@@ -274,8 +276,8 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Trace.TraceError("QCUCRAM Dev Tools DeleteSampleStudents failed: " + ex);
-                return QCUCRAMDevResult.ToastOnly("Could not delete the sample students. Check the application log for details.", true);
+                string reference = QCUCRAMErrorLog.Write(ex, "DevTools.DeleteSampleStudents", null);
+                return QCUCRAMDevResult.ToastOnly("Could not delete the sample students. Reference: " + reference, true);
             }
         }
 
@@ -301,8 +303,8 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Trace.TraceError("QCUCRAM Dev Tools ClearAllReservations failed: " + ex);
-                return QCUCRAMDevResult.ToastOnly("Could not clear the data. Check the application log for details.", true);
+                string reference = QCUCRAMErrorLog.Write(ex, "DevTools.ClearAllReservations", null);
+                return QCUCRAMDevResult.ToastOnly("Could not clear the data. Reference: " + reference, true);
             }
         }
 

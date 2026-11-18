@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Web.Mvc;
 using BSIT3D_GUADES_Project_MVC.QCUCRAM_Security;
@@ -360,13 +360,13 @@ namespace BSIT3D_GUADES_Project_MVC.Controllers
             {
                 // Do not let an initial Dev Tools read crash the whole MVC page.
                 // The exception detail is rendered as encoded text; the full stack is logged.
-                QCUCRAMErrorLog.Write(ex, "admin-setup-devtools-load", null);
+                string reference = QCUCRAMErrorLog.Write(ex, "AdminSetup.DevTools.InitialLoad", null);
                 vm = new QCUCRAMDevToolsViewModel
                 {
                     RealNow = DateTime.Now,
                     SimulatedNow = DateTime.Now,
                     OffsetMinutes = 0,
-                    LoadError = "Initial Dev Tools database load failed: " + ex.Message
+                    LoadError = "Dev Tools could not load its database information. Reference: " + reference
                 };
             }
 
@@ -387,7 +387,12 @@ namespace BSIT3D_GUADES_Project_MVC.Controllers
         {
             if (!QCUCRAMDevToolsService.Enabled) { return HttpNotFound(); }
 
-            ApplyDev(QCUCRAMDevToolsService.ShiftClock(command));
+            try { ApplyDev(QCUCRAMDevToolsService.ShiftClock(command)); }
+            catch (Exception ex)
+            {
+                string reference = QCUCRAMErrorLog.Write(ex, "AdminSetup.DevTools.ShiftClock", null);
+                FlashError("The clock could not be changed. Reference: " + reference);
+            }
             return RedirectToAction("DevTools");
         }
 
@@ -397,7 +402,13 @@ namespace BSIT3D_GUADES_Project_MVC.Controllers
         {
             if (!QCUCRAMDevToolsService.Enabled) { return HttpNotFound(); }
 
-            TempData[DevSweepKey] = QCUCRAMDevToolsService.RunSweep();
+            try { TempData[DevSweepKey] = QCUCRAMDevToolsService.RunSweep(); }
+            catch (Exception ex)
+            {
+                string reference = QCUCRAMErrorLog.Write(ex, "AdminSetup.DevTools.RunSweep", null);
+                TempData[DevSweepKey] = "<div class=\"alert alert-danger\">The maintenance sweep failed. Reference: " +
+                    System.Web.HttpUtility.HtmlEncode(reference) + "</div>";
+            }
             return RedirectToAction("DevTools");
         }
 

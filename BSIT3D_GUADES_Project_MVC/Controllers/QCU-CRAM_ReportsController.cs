@@ -87,13 +87,13 @@ namespace BSIT3D_GUADES_Project_MVC.Controllers
             }
             catch (Exception ex)
             {
-                Trace.TraceError("QCUCRAM analytics date-range resolution failed: " + ex);
+                string reference = QCUCRAMErrorLog.Write(ex, "Reports.Analytics.ResolveDateRange", null);
 
                 DateTime today = QCUCRAM_Clock.Today;
                 start = today.AddDays(-29);
                 end = today;
                 preset = string.Equals(range, "all", StringComparison.OrdinalIgnoreCase) ? "all" : "last30";
-                error = LoadFailedMessage;
+                error = LoadFailedMessage + " Reference: " + reference;
                 validRange = false;
             }
 
@@ -119,14 +119,14 @@ namespace BSIT3D_GUADES_Project_MVC.Controllers
             }
             catch (Exception ex)
             {
-                Trace.TraceError("QCUCRAM analytics failed: " + ex);
+                string reference = QCUCRAMErrorLog.Write(ex, "Reports.Analytics.Build", null);
 
                 QCUCRAMAnalyticsViewModel failed = new QCUCRAMAnalyticsViewModel();
                 failed.From = start;
                 failed.To = end;
                 failed.Preset = preset;
                 failed.HasResults = false;
-                FlashError(LoadFailedMessage);
+                FlashError(LoadFailedMessage + " Reference: " + reference);
 
                 return View("QCU-CRAM_Analytics", failed);
             }
