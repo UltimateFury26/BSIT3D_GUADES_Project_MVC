@@ -171,6 +171,16 @@ namespace BSIT3D_GUADES_Project_MVC.Controllers.Student
                 p => Url.Action("MyReservations", new { status, page = p }),
                 created);
 
+            // Phase 13: the Web Forms page showed this as the upper-right toast, only for the
+            // requester's own booking (the service already nulls CreatedId otherwise), and only
+            // on the first load. A flash/?msg= notice already queued by the filter is kept.
+            if (model.CreatedId.HasValue && ViewBag.QCUCRAM_NoticeText == null)
+            {
+                ViewBag.QCUCRAM_NoticeText = "Your request #" + model.CreatedId.Value +
+                                             " was submitted. You'll be notified once it's reviewed.";
+                ViewBag.QCUCRAM_NoticeKind = "success";
+            }
+
             ViewBag.Title = "My Reservations";
             return View("~/Views/Student/QCU-CRAM_MyReservations.cshtml", model);
         }
@@ -178,18 +188,24 @@ namespace BSIT3D_GUADES_Project_MVC.Controllers.Student
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Route("cancel")]
-        public ActionResult Cancel(int id, string status, int? page)
+        public ActionResult Cancel(int? id, string status, int? page)
         {
+            // Web Forms: a command argument that is not a number is ignored silently.
+            if (!id.HasValue)
+            {
+                return RedirectToAction("MyReservations", new { status, page = page ?? 1 });
+            }
+
             string error;
-            bool ok = _service.Cancel(id, CurrentUserId, out error);
+            bool ok = _service.Cancel(id.Value, CurrentUserId, out error);
 
             if (ok)
             {
-                Flash("Your reservation was cancelled.");
+                Flash("Reservation #" + id.Value + " was cancelled. The slot is open again.");
             }
             else
             {
-                FlashError(error ?? "That reservation could not be cancelled.");
+                FlashError(error ?? "Something went wrong while cancelling. Please try again.");
             }
 
             return RedirectToAction("MyReservations", new { status, page = page ?? 1 });

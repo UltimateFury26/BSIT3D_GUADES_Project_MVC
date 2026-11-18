@@ -1,37 +1,31 @@
 @model BSIT3D_GUADES_Project_MVC.QCUCRAM_ViewModels.QCUCRAMMyReservationsViewModel
 @using System
-@using System.Globalization
 @{
     /* =====================================================================
        QCU-CRAM  |  Views/Student/QCU-CRAM_MyReservations.cshtml
        ---------------------------------------------------------------------
        Port of Guades_QCUCram_Student/Guades_QCUCram_MyReservations.aspx.
 
-       Same pieces:
-         status filter drop-down   (ddlStatus, AutoPostBack)
-         "New reservation" button
-         ten-row GridView          (gvReservations, PageSize = 10)
-         Cancel button             (only while the booking can still be called off)
-         Print link                (reports/print-booking/{id})
+       Phase 13 corrections (all from the .aspx / .aspx.cs):
+         - date column  "ddd, MMM d, yyyy"; members column is the bare number
+         - status badge is  <span class="badge text-bg-*">  with the raw status text
+         - Cancel opens the qcuConfirm pop-up (not window.confirm)
+         - Print opens the content modal (data-qcu-load)
+         - "request #N was submitted" is a toast (set by the controller), not an inline alert
+         - empty state is the GridView EmptyDataText table
+         - numeric pager (10 page buttons, "..." blocks) in the qcu-pager row
        ===================================================================== */
 
     ViewBag.Title = "My Reservations";
 
     var pager = Model.Pager;
+    int colCount = 8;
 }
 
 <div class="qcu-page-head">
     <h2>My Reservations</h2>
     <p>Track, print or cancel your room requests</p>
 </div>
-
-@* ---- "Request #N was submitted" confirmation ---- *@
-@if (Model.CreatedId.HasValue && Model.CreatedId.Value > 0)
-{
-    <div class="alert alert-success">
-        Your request #@Model.CreatedId.Value was submitted. You'll be notified once it's reviewed.
-    </div>
-}
 
 <div class="qcu-toolbar row g-2 align-items-end mb-3">
 
@@ -57,12 +51,19 @@
 <div class="table-responsive">
     @if (Model.IsEmpty)
     {
-        <div class="alert alert-info mb-0">You have no reservations to show.</div>
+        @* GridView EmptyDataText: a one-cell table, no header row *@
+        <table class="table table-bordered table-striped align-middle">
+            <tbody>
+                <tr>
+                    <td>You have no reservations to show.</td>
+                </tr>
+            </tbody>
+        </table>
     }
     else
     {
         <table class="table table-bordered table-striped align-middle">
-            <thead class="table-light">
+            <thead>
                 <tr>
                     <th scope="col">#</th>
                     <th scope="col">Date</th>
@@ -82,39 +83,68 @@
 
                     <tr>
                         <td>@item.ReservationId</td>
-                        <td class="text-nowrap">@row.DateLabel</td>
-                        <td class="text-nowrap">@item.SlotLabel</td>
+                        <td>@row.DateLabel</td>
+                        <td>@item.SlotLabel</td>
                         <td>@item.RoomName</td>
-                        <td class="text-nowrap">@row.MembersLabel</td>
+                        <td>@row.MembersLabel</td>
                         <td>@item.Purpose</td>
-                        <td>@Html.Partial("_QCU-CRAM_StatusBadge", item.Status)</td>
-                        <td class="text-nowrap">
+                        <td><span class="badge @row.BadgeCss">@row.StatusLabel</span></td>
+                        <td>
                             @if (row.CanCancel)
                             {
-                                using (Html.BeginForm("Cancel", "Student", FormMethod.Post,
-                                                      new { @class = "d-inline" }))
+                                using (Html.BeginForm("Cancel", "Student", FormMethod.Post, new { @class = "d-inline" }))
                                 {
                                     @Html.AntiForgeryToken()
                                     <input type="hidden" name="id" value="@row.ReservationId" />
                                     <input type="hidden" name="status" value="@Model.StatusFilter" />
                                     <input type="hidden" name="page" value="@(pager == null ? 1 : pager.Page)" />
                                     <button type="submit" class="btn btn-sm btn-outline-danger"
-                                            onclick="return confirm('Cancel this reservation?\n\nThe room and time slot are released. This cannot be undone.');">
-                                        Cancel
-                                    </button>
+                                            onclick="return qcuConfirm(this, { tone: 'warning', title: 'Cancel this reservation?', message: 'The room and time slot are released. This cannot be undone.', confirmText: 'Cancel reservation', cancelText: 'Keep reservation' });">Cancel</button>
                                 }
                             }
-                            @* Reports/PrintBooking arrives in Phase 08. Url.Action returns null
-                               until then, so the button simply does not render - no dead link. *@
-                            string printUrl = Url.Action("PrintBooking", "Reports", new { id = row.ReservationId });
-                            if (!string.IsNullOrEmpty(printUrl))
-                            {
-                                <a class="btn btn-sm btn-outline-secondary"
-                                   href="@printUrl"
-                                   title="Print reservation #@row.ReservationId">
-                                    Print
-                                </a>
-                            }
+                            <a class="btn btn-sm btn-outline-secondary" data-qcu-load="1"
+                               data-qcu-load-title="Reservation #@row.ReservationId"
+                               href="@Url.Action("PrintBooking", "Reports", new { id = row.ReservationId })">Print</a>
+                        </td>
+                    </tr>
+                }
+
+                @if (pager != null && pager.HasPages)
+                {
+                    @* GridView numeric pager: PageButtonCount = 10, "..." jumps to the neighbouring block *@
+                    int total = pager.TotalPages;
+                    int current = pager.Page < 1 ? 1 : (pager.Page > total ? total : pager.Page);
+                    int blockSize = 10;
+                    int first = ((current - 1) / blockSize) * blockSize + 1;
+                    int last = Math.Min(first + blockSize - 1, total);
+
+                    <tr class="qcu-pager" align="center">
+                        <td colspan="@colCount">
+                            <table>
+                                <tbody>
+                                    <tr>
+                                        @if (first > 1)
+                                        {
+                                            <td><a href="@pager.UrlFor(first - 1)">...</a></td>
+                                        }
+                                        @for (int p = first; p <= last; p++)
+                                        {
+                                            if (p == current)
+                                            {
+                                                <td><span>@p</span></td>
+                                            }
+                                            else
+                                            {
+                                                <td><a href="@pager.UrlFor(p)">@p</a></td>
+                                            }
+                                        }
+                                        @if (last < total)
+                                        {
+                                            <td><a href="@pager.UrlFor(last + 1)">...</a></td>
+                                        }
+                                    </tr>
+                                </tbody>
+                            </table>
                         </td>
                     </tr>
                 }
@@ -122,10 +152,3 @@
         </table>
     }
 </div>
-
-@if (pager != null && pager.HasPages)
-{
-    <div class="mt-3">
-        @Html.Partial("_QCU-CRAM_Pager", pager)
-    </div>
-}

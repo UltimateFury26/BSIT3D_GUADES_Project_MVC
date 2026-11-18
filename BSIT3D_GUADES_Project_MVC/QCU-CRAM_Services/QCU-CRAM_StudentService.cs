@@ -396,7 +396,7 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
             QCUCRAMMyReservationsViewModel vm = new QCUCRAMMyReservationsViewModel
             {
                 StatusFilter = status,
-                CreatedId = createdId,
+                CreatedId = OwnsReservation(createdId, studentId) ? createdId : null,
                 TotalItems = total,
                 Pager = new QCUCRAMPagerViewModel
                 {
@@ -422,53 +422,60 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
         }
 
         /// <summary>
+        /// Phase 13: the ?created=N banner is only for the requester's own booking
+        /// (Guades_QCUCram_MyReservations.aspx.cs Page_Load checked info.StudentId).
+        /// </summary>
+        private bool OwnsReservation(int? reservationId, int studentId)
+        {
+            if (!reservationId.HasValue || reservationId.Value <= 0) { return false; }
+
+            QCUCRAM_ReservationInfo info = _reservations.GetInfo(reservationId.Value);
+            return info != null && info.StudentId == studentId;
+        }
+
+        /// <summary>
         /// Cancels one of the student's own bookings. Returns false and fills
         /// <paramref name="error"/> when the booking cannot be cancelled.
+        /// Port of gvReservations_RowCommand: same checks, same order, same wording.
         /// </summary>
         public bool Cancel(int reservationId, int studentId, out string error)
         {
             error = null;
 
+            // Never trust the button: re-check ownership and timing on the server.
             QCUCRAM_ReservationInfo info = _reservations.GetInfo(reservationId);
-
-            if (info == null)
+            if (info == null || info.StudentId != studentId)
             {
-                error = "That reservation no longer exists.";
-                return false;
-            }
-
-            if (info.StudentId != studentId)
-            {
-                error = "That reservation does not belong to you.";
-                return false;
-            }
-
-            if (info.Status != QCUCRAM_Status.Pending &&
-                info.Status != QCUCRAM_Status.Approved &&
-                info.Status != QCUCRAM_Status.Reassigned)
-            {
-                error = "Only a pending or approved booking can be cancelled. This one is " + info.Status + ".";
+                error = "That reservation could not be found.";
                 return false;
             }
 
             if (info.SlotStart <= QCUCRAM_Clock.Now)
             {
-                error = "This slot has already started, so it can no longer be cancelled.";
+                error = "Reservation #" + reservationId + " has already started and can no longer be cancelled.";
                 return false;
             }
 
             try
             {
+                // The status rule (Pending/Approved/Reassigned only) lives in ChangeStatus, exactly as
+                // in Web Forms; its message is shown as-is ("Reservation #5 is Declined and can't be
+                // changed to Cancelled.").
                 _reservations.ChangeStatus(
                     reservationId, QCUCRAM_Status.Cancelled,
                     QCUCRAM_ReservationRepository.ActorStudent, studentId,
-                    "Cancelled by the requester.");
+                    "Cancelled by the requester");
 
                 return true;
             }
             catch (InvalidOperationException ex)
             {
                 error = ex.Message;
+                return false;
+            }
+            catch (Exception)
+            {
+                error = "Something went wrong while cancelling. Please try again.";
                 return false;
             }
         }
