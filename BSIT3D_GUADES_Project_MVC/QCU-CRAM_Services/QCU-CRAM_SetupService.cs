@@ -636,6 +636,13 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
 
                     if (admin.IsActive) { vm.ActiveCount++; }
                 }
+
+                // Phase 24 parity: AdminUsers.aspx.cs set TempPasswordPreview from
+                // NextAdminNumber() (COUNT(*) + 1) so the Add pop-up could show the
+                // password before the account existed. SaveAdmin() uses the same
+                // formula, so the preview always matches what is actually issued.
+                vm.NextTemporaryPassword = QCUCRAM_PasswordHash.AdminTemporaryPassword(
+                    new QCUCRAM_AdminUserRepository(db).Count() + 1);
             }
 
             return vm;

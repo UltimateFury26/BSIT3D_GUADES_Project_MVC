@@ -217,6 +217,13 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_ViewModels
         public string ModalError { get; set; }
         public int ActiveCount { get; set; }
 
+        /// <summary>
+        /// The password the next added account will receive, e.g. "admin6" when five
+        /// accounts already exist. AdminUsers.aspx.cs called this TempPasswordPreview
+        /// and showed it inside the Add pop-up.
+        /// </summary>
+        public string NextTemporaryPassword { get; set; }
+
         public QCUCRAMAdminUsersViewModel()
         {
             Rows = new List<QCUCRAMAdminRow>();

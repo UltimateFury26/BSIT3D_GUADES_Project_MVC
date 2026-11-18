@@ -50,7 +50,7 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Filters
             filterContext.HttpContext.Response.Clear();
             filterContext.HttpContext.Response.TrySkipIisCustomErrors = true;
             filterContext.HttpContext.Response.StatusCode = status;
-            filterContext.HttpContext.Response.StatusDescription = status == 404 ? "Not Found" : "Internal Server Error";
+            filterContext.HttpContext.Response.StatusDescription = StatusDescriptionFor(status);
 
             bool showDetail = string.Equals(
                 ConfigurationManager.AppSettings["QCU-CRAM_ShowErrorDetail"], "true",
@@ -98,6 +98,46 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Filters
                 ViewData = viewData,
                 TempData = filterContext.Controller.TempData
             };
+        }
+
+        // Phase 32: the wording for each status lives in exactly one place so the
+        // filter and ErrorController cannot drift apart.
+        internal static string StatusDescriptionFor(int status)
+        {
+            switch (status)
+            {
+                case 401: return "Unauthorized";
+                case 403: return "Forbidden";
+                case 404: return "Not Found";
+                default: return "Internal Server Error";
+            }
+        }
+
+        internal static string TitleFor(int status)
+        {
+            switch (status)
+            {
+                case 401: return "Please sign in";
+                case 403: return "Access denied";
+                case 404: return "Page not found";
+                default: return "Something went wrong";
+            }
+        }
+
+        internal static string MessageFor(int status)
+        {
+            switch (status)
+            {
+                case 401:
+                    return "Your session has ended. Please log in again to continue.";
+                case 403:
+                    return "You do not have access to that page. Log in with the correct account type.";
+                case 404:
+                    return "That page does not exist, or it has moved. Check the address and try again.";
+                default:
+                    return "An unexpected error stopped that page from loading. Please try again, "
+                         + "and quote the reference below if you contact the library.";
+            }
         }
 
         private static bool IsAjax(HttpRequestBase request)

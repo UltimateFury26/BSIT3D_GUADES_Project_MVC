@@ -9,7 +9,17 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_ViewModels
         public int ReservationID { get; set; }
         public string Requester { get; set; }
         public string StudentNumber { get; set; }
+
+        /// <summary>Student / Faculty / Staff - shown next to the student number.</summary>
+        public string RequesterType { get; set; }
+
         public string Program { get; set; }
+
+        /// <summary>Running count of missed bookings, shown as "Strikes".</summary>
+        public int NoShowCount { get; set; }
+
+        /// <summary>Free-text reason the requester typed on the booking form.</summary>
+        public string Purpose { get; set; }
         public string RoomName { get; set; }
         public DateTime ReservationDate { get; set; }
         public string SlotLabel { get; set; }
@@ -21,6 +31,9 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_ViewModels
         public string StatusBadge { get; set; }
         public DateTime CreatedAt { get; set; }
         public bool IsToday { get; set; }
+
+        /// <summary>True once the slot's start time has passed - the row can no longer be approved or moved.</summary>
+        public bool Overdue { get; set; }
 
         public bool CanApprove { get; set; }
         public bool CanReassign { get; set; }
