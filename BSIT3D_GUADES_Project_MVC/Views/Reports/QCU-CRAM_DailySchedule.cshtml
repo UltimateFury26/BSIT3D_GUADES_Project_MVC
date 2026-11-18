@@ -1,138 +1,147 @@
 @model BSIT3D_GUADES_Project_MVC.QCUCRAM_ViewModels.QCUCRAMDailyScheduleViewModel
 @using System
 @using System.Globalization
+@using BSIT3D_GUADES_Project_MVC.QCUCRAM_Helpers
 @{
     /* =====================================================================
        QCU-CRAM  |  Views/Reports/QCU-CRAM_DailySchedule.cshtml
        ---------------------------------------------------------------------
-       Port of Guades_QCUCram_Admin/Guades_QCUCram_DailySchedule.aspx.
+       One-to-one port of Guades_QCUCram_Reports/Guades_QCUCram_DailySchedule.aspx.
 
-       The Web Forms page had five postback buttons (previous, next, today,
-       tomorrow, show). Here every one of them is a plain link carrying
-       ?date=yyyy-MM-dd, so each day is a real, bookmarkable URL and the
-       browser's Back button behaves.
+       Same markup and classes as the .aspx, in the same order:
+         page head      div.qcu-page-head.no-print  h2 + p
+         date picker    qcu-toolbar mb-3 no-print > row g-3 (Date, buttons)
+         print header   div.print-only.qcu-print-head (logo + h4 + 2 lines)
+         day title      h4.qcu-day-title
+         counts         p.text-muted  (confirmed count + no-print pending note)
+         grid           table table-bordered table-striped align-middle qcu-admin-table
+         print footer   div.print-only.qcu-sign + p.print-only.small.text-muted.mt-2
 
-       On paper this is a landscape sheet: letterhead, day title, the booking
-       table and a signature line. The toolbar, the page heading and the
-       pending note are all .qcu-no-print.
+       The Web Forms buttons were postbacks; here Show is a GET submit and
+       Previous / Next / Today / Tomorrow are links carrying ?date=yyyy-MM-dd.
+       The original error (lblMessage -> toast, pnlResults hidden) is flashed by
+       the controller, and ErrorMessage being set leaves the results out.
        ===================================================================== */
 
     ViewBag.Title = "Daily Schedule";
 
     CultureInfo inv = CultureInfo.InvariantCulture;
+    bool hasError = !string.IsNullOrEmpty(Model.ErrorMessage);
 
     Func<DateTime, string> day = d => d.ToString("yyyy-MM-dd", inv);
-    DateTime today = BSIT3D_GUADES_Project_MVC.QCUCRAM_Helpers.QCUCRAM_Clock.Today;
+    DateTime today = QCUCRAM_Clock.Today;
+
+    // Source StatusBadge(): Approved bg-success, Reassigned bg-info text-dark,
+    // CheckedIn bg-primary, Completed bg-dark, anything else bg-light text-dark.
+    Func<string, string> badgeCss = s =>
+    {
+        switch (s)
+        {
+            case QCUCRAM_Status.Approved: return "bg-success";
+            case QCUCRAM_Status.Reassigned: return "bg-info text-dark";
+            case QCUCRAM_Status.CheckedIn: return "bg-primary";
+            case QCUCRAM_Status.Completed: return "bg-dark";
+            default: return "bg-light text-dark";
+        }
+    };
 }
 
 @section head {
     <style>
         @@media print {
-            @@page { size: A4 landscape; margin: 12mm; }
+            @@page { size: landscape; margin: 12mm; }
         }
     </style>
 }
 
-<div class="qcu-page-head qcu-no-print">
-    <div>
-        <h1 class="qcu-page-title">Daily Schedule</h1>
-        <p class="qcu-page-sub">Confirmed bookings for the day, ready to print for the front desk</p>
-    </div>
+<div class="qcu-page-head no-print">
+    <h2>Daily Schedule</h2>
+    <p>Confirmed bookings for the day, ready to print for the front desk</p>
 </div>
 
-<form method="get" action="@Url.Action("DailySchedule", "Reports")" class="qcu-toolbar qcu-no-print">
-    <label>
-        Date
-        <input type="date" name="date" class="qcu-input" value="@day(Model.Date)" />
-    </label>
-    <button type="submit" class="qcu-btn qcu-btn--primary">Show</button>
-
-    <span class="qcu-btn-row">
-        <a class="qcu-btn qcu-btn--ghost"
-           href="@Url.Action("DailySchedule", "Reports", new { date = day(Model.PreviousDay) })">&laquo; Previous day</a>
-        <a class="qcu-btn qcu-btn--ghost"
-           href="@Url.Action("DailySchedule", "Reports", new { date = day(Model.NextDay) })">Next day &raquo;</a>
-        <a class="qcu-btn qcu-btn--ghost"
-           href="@Url.Action("DailySchedule", "Reports", new { date = day(today) })">Today</a>
-        <a class="qcu-btn qcu-btn--ghost"
-           href="@Url.Action("DailySchedule", "Reports", new { date = day(today.AddDays(1)) })">Tomorrow</a>
-        <button type="button" class="qcu-btn qcu-btn--primary" onclick="window.print();">Print</button>
-    </span>
+@* ================= Date picker ================= *@
+<form method="get" action="@Url.Action("DailySchedule", "Reports")" class="qcu-toolbar mb-3 no-print">
+    <div class="row g-3 align-items-end">
+        <div class="col-md-3">
+            <label for="txtDate" class="form-label">Date</label>
+            <input type="date" id="txtDate" name="date" class="form-control" data-live-btn="btnShow"
+                   value="@(hasError ? string.Empty : day(Model.Date))" />
+        </div>
+        <div class="col-md-9 d-flex flex-wrap gap-2">
+            <button type="submit" id="btnShow" class="btn btn-primary">Show</button>
+            <a class="btn btn-outline-secondary"
+               href="@Url.Action("DailySchedule", "Reports", new { date = day(Model.PreviousDay) })">&laquo; Previous day</a>
+            <a class="btn btn-outline-secondary"
+               href="@Url.Action("DailySchedule", "Reports", new { date = day(Model.NextDay) })">Next day &raquo;</a>
+            <a class="btn btn-outline-secondary"
+               href="@Url.Action("DailySchedule", "Reports", new { date = day(today) })">Today</a>
+            <a class="btn btn-outline-secondary"
+               href="@Url.Action("DailySchedule", "Reports", new { date = day(today.AddDays(1)) })">Tomorrow</a>
+            <button type="button" class="btn btn-success" onclick="window.print();">Print</button>
+        </div>
+    </div>
 </form>
 
-@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+@if (!hasError)
 {
-    <div class="qcu-alert qcu-alert--error">@Model.ErrorMessage</div>
-}
-
-@if (string.IsNullOrEmpty(Model.ErrorMessage))
-{
-<div class="qcu-print-header qcu-print-only">
-    <img src="@Url.Content("~/Content/images/QCU-CRAM_qcu-logo.png")" alt="Quezon City University" />
-    <div>
-        <div class="qcu-print-title">Quezon City University</div>
-        <div class="qcu-print-subtitle">QCU Library &mdash; Collaboration Room Reservation</div>
-        <div class="qcu-print-subtitle"><strong>Daily Room Schedule</strong></div>
+    @* Header that only appears on paper *@
+    <div class="print-only qcu-print-head">
+        <img src="@Url.Content("~/Content/images/QCU-CRAM_qcu-logo.png")" alt="" />
+        <div>
+            <h4>Quezon City University</h4>
+            <div>QCU Library &mdash; Collaboration Room Reservation</div>
+            <div><strong>Daily Room Schedule</strong></div>
+        </div>
     </div>
-</div>
 
-<h2 class="qcu-day-title">@Model.DateTitle</h2>
+    <h4 class="qcu-day-title">@Model.DateTitle</h4>
+    <p class="text-muted">
+        <span>@Model.ConfirmedCount.ToString(inv) confirmed booking(s).</span>
+        <span class="no-print">@(Model.PendingCount > 0 ? Model.PendingCount.ToString(inv) + " pending request(s) for this date are not listed." : string.Empty)</span>
+    </p>
 
-<p class="qcu-muted">
-    @Model.ConfirmedCount confirmed booking(s).
-    @if (Model.PendingCount > 0)
-    {
-        <span class="qcu-no-print">@Model.PendingCount pending request(s) for this date are not listed.</span>
-    }
-</p>
-
-<div class="qcu-table-wrap">
-    <table class="qcu-table qcu-table--print">
-        <thead>
-            <tr>
-                <th>Time</th>
-                <th>Room</th>
-                <th>Requester</th>
-                <th>Program</th>
-                <th class="qcu-num">Members</th>
-                <th>Purpose</th>
-                <th>Status</th>
-            </tr>
-        </thead>
-        <tbody>
+    <div class="table-responsive">
+        <table class="table table-bordered table-striped align-middle qcu-admin-table">
             @if (Model.Rows == null || Model.Rows.Count == 0)
             {
-                <tr>
-                    <td colspan="7" class="qcu-empty">No confirmed bookings for this date.</td>
-                </tr>
+                @* GridView EmptyDataText renders the text alone, no header row *@
+                <tbody>
+                    <tr>
+                        <td colspan="7">No confirmed bookings for this date.</td>
+                    </tr>
+                </tbody>
             }
             else
             {
-                foreach (var row in Model.Rows)
-                {
+                <thead>
                     <tr>
-                        <td class="qcu-nowrap">@row.TimeText</td>
-                        <td>@row.RoomName</td>
-                        <td>
-                            <strong>@row.RequesterName</strong><br />
-                            <small>@row.StudentNumber | @row.RequesterType</small>
-                        </td>
-                        <td>@row.Program</td>
-                        <td class="qcu-num">@row.NumberOfMembers.ToString("N0", inv)</td>
-                        <td>@row.Purpose</td>
-                        <td>@Html.Partial("_QCU-CRAM_StatusBadge", row.Status)</td>
+                        <th scope="col">Time</th>
+                        <th scope="col">Room</th>
+                        <th scope="col">Requester</th>
+                        <th scope="col">Program</th>
+                        <th scope="col">Members</th>
+                        <th scope="col">Purpose</th>
+                        <th scope="col">Status</th>
                     </tr>
-                }
+                </thead>
+                <tbody>
+                    @foreach (var row in Model.Rows)
+                    {
+                        <tr>
+                            <td>@row.TimeText</td>
+                            <td>@row.RoomName</td>
+                            <td><strong>@row.RequesterName</strong><br /><small>@row.StudentNumber | @row.RequesterType</small></td>
+                            <td>@row.Program</td>
+                            <td>@row.NumberOfMembers.ToString(inv)</td>
+                            <td>@row.Purpose</td>
+                            <td><span class="badge @badgeCss(row.Status)">@(row.Status == QCUCRAM_Status.CheckedIn ? "Checked In" : row.Status)</span></td>
+                        </tr>
+                    }
+                </tbody>
             }
-        </tbody>
-    </table>
-</div>
+        </table>
+    </div>
 
-<div class="qcu-print-signature qcu-print-only">
-    <div>Library Assistant</div>
-</div>
-
-<p class="qcu-muted qcu-small qcu-print-only">
-    Printed @Model.PrintedAt.ToString("MMM d, yyyy h:mm tt", inv) by @Model.PrintedBy
-</p>
+    <div class="print-only qcu-sign">Library Assistant: ______________________________</div>
+    <p class="print-only small text-muted mt-2">Printed @Model.PrintedAt.ToString("MMM d, yyyy h:mm tt", inv) by @Model.PrintedBy</p>
 }

@@ -30,6 +30,8 @@ namespace BSIT3D_GUADES_Project_MVC.Controllers
         private const string MaxRangeMessage = "Please choose a range of 10 years or less.";
         private const string BadOrderMessage = "The From date cannot be later than the To date.";
         private const string LoadFailedMessage = "Sorry, the analytics could not be loaded. Please try again.";
+        private const string InvalidDateMessage = "Please choose a valid date.";
+        private const string ScheduleLoadFailedMessage = "Sorry, the schedule could not be loaded. Please try again.";
 
         private readonly QCUCRAMAnalyticsService _analytics;
         private readonly QCUCRAMReportService _reports;
@@ -209,22 +211,51 @@ namespace BSIT3D_GUADES_Project_MVC.Controllers
         [Route("daily-schedule")]
         [QCUCRAM_RequireAdmin]
         [QCUCRAM_RequireLogin]
-        public ActionResult DailySchedule(DateTime? date)
+        public ActionResult DailySchedule(string date)
         {
             // Phase 17: pressing Show with the box emptied gave "Please choose a valid date."
             // and hid the results (btnShow_Click -> TryReadDate -> ShowError).
             string raw = Request.QueryString["date"];
             if (raw != null && raw.Trim().Length == 0)
             {
-                QCUCRAMDailyScheduleViewModel blank = _reports.DailySchedule(QCUCRAM_Clock.Today);
-                blank.ErrorMessage = "Please choose a valid date.";
-                return View("QCU-CRAM_DailySchedule", blank);
+                return DailyScheduleError(QCUCRAM_Clock.Today, InvalidDateMessage);
             }
 
-            DateTime day = date.HasValue ? date.Value.Date : QCUCRAM_Clock.Today;
+            // R10: DailySchedule.aspx.cs Page_Load - ?date= must be exactly yyyy-MM-dd,
+            // anything else silently falls back to today (Clock.Today, no message).
+            DateTime day;
+            if (!DateTime.TryParseExact((date ?? string.Empty).Trim(), "yyyy-MM-dd",
+                                        CultureInfo.InvariantCulture, DateTimeStyles.None, out day))
+            {
+                day = QCUCRAM_Clock.Today;
+            }
 
-            QCUCRAMDailyScheduleViewModel model = _reports.DailySchedule(day);
-            return View("QCU-CRAM_DailySchedule", model);
+            // R10: DailySchedule.aspx.cs LoadSchedule - the try/catch around the query shows
+            // "Sorry, the schedule could not be loaded..." as an error toast and hides the results.
+            try
+            {
+                QCUCRAMDailyScheduleViewModel model = _reports.DailySchedule(day.Date);
+                return View("QCU-CRAM_DailySchedule", model);
+            }
+            catch (Exception ex)
+            {
+                QCUCRAMErrorLog.Write(ex, "reports-daily-schedule", day.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
+                return DailyScheduleError(day.Date, ScheduleLoadFailedMessage);
+            }
+        }
+
+        /// <summary>
+        /// R10: DailySchedule.aspx.cs ShowError = pnlResults.Visible = false + ShowMessage(lblMessage, text, true),
+        /// and ShowMessage queues an error toast. The view is rendered in this request, so flash it here.
+        /// A non-empty ErrorMessage tells the view to leave the results out.
+        /// </summary>
+        private ActionResult DailyScheduleError(DateTime day, string message)
+        {
+            QCUCRAMDailyScheduleViewModel failed = new QCUCRAMDailyScheduleViewModel();
+            failed.Date = day;
+            failed.ErrorMessage = message;
+            FlashError(message);
+            return View("QCU-CRAM_DailySchedule", failed);
         }
 
         // =================================================================
