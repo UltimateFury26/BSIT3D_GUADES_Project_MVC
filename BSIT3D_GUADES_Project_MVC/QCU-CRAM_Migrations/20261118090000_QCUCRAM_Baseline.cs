@@ -6,8 +6,10 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Migrations
     {
         public override void Up()
         {
-            // The nine tables already exist (Guades_QCUCram_Schema.sql).
-            // This migration only records the baseline in __MigrationHistory.
+            // The nine tables already exist (QCU-CRAM_Schema.sql).
+            // NOTE: this class has no .Designer.cs (IMigrationMetadata), so EF does not
+            // discover or run it; it is inert documentation of the SQL-owned objects below.
+            // Every statement is guarded (IF NOT EXISTS) and nothing here creates tables.
             // The objects below cannot be expressed by EF 6 Fluent API, so they
             // are re-asserted here for a database rebuilt from migrations.
 

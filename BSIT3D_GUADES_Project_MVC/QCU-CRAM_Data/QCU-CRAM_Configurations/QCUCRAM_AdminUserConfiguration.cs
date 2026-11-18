@@ -1,4 +1,6 @@
 using System.Data.Entity;
+using System.ComponentModel.DataAnnotations.Schema;
+using System.Data.Entity.Infrastructure.Annotations;
 using System.Data.Entity.ModelConfiguration;
 using BSIT3D_GUADES_Project_MVC.QCUCRAM_Models;
 
@@ -17,7 +19,7 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Data.QCUCRAM_Configurations
             Property(a => a.FullName).IsRequired().HasMaxLength(120).IsUnicode(true);
             Property(a => a.IsActive).IsRequired();
 
-            HasIndex(a => a.Username).IsUnique();
+            Property(a => a.Username).HasColumnAnnotation(IndexAnnotation.AnnotationName, new IndexAnnotation(new IndexAttribute { IsUnique = true }));
         }
     }
 }

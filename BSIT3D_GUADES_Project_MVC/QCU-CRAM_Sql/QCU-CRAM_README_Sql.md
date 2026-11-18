@@ -71,8 +71,10 @@ instance is not `localhost\SQLEXPRESS`, change `Server=` too.
 ## About the baseline migration
 
 `QCU-CRAM_Migrations/20261118090000_QCUCRAM_Baseline.cs` deliberately contains **no
-`CreateTable` calls**. It exists only to record a baseline in `__MigrationHistory` and to
-re-assert the six CHECK constraints and the filtered unique index for a database rebuilt
-from migrations rather than from the script. Because the initializer is `null`, EF never
-runs it automatically. The application works fine without the history row; run
-`Update-Database` once from the Package Manager Console only if you want it.
+`CreateTable` calls**. It has no `.Designer.cs` (the `IMigrationMetadata` half EF needs), so
+EF does **not** discover or run it: it is inert and is not recorded in `__MigrationHistory`.
+The SQL scripts own the schema; `Database.SetInitializer<QCUCRAMContext>(null)` and
+`AutomaticMigrationsEnabled = false` mean EF never creates, drops or alters anything.
+Do not run `Update-Database` against `QCU-CRAM_DB`. If you later want a real baseline row,
+generate it in Visual Studio with `Add-Migration QCUCRAM_Baseline -IgnoreChanges` against a
+disposable database first, then review it.

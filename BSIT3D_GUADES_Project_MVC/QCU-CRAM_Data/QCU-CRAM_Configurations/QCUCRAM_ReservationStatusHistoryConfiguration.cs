@@ -25,8 +25,6 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Data.QCUCRAM_Configurations
                 .HasForeignKey(h => h.ReservationID)
                 .WillCascadeOnDelete(true);
 
-            HasIndex(h => h.ReservationID);
-            HasIndex(h => h.ChangedAt);
         }
     }
 }

@@ -1,4 +1,6 @@
 using System.Data.Entity;
+using System.ComponentModel.DataAnnotations.Schema;
+using System.Data.Entity.Infrastructure.Annotations;
 using System.Data.Entity.ModelConfiguration;
 using BSIT3D_GUADES_Project_MVC.QCUCRAM_Models;
 
@@ -25,9 +27,8 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Data.QCUCRAM_Configurations
             Property(s => s.RestrictionLiftDate).HasColumnType("datetime").IsOptional();
             Property(s => s.CreatedAt).IsRequired().HasColumnType("datetime");
 
-            HasIndex(s => s.StudentNumber).IsUnique();
-            HasIndex(s => s.Email).IsUnique();
-            HasIndex(s => s.IsRestricted);
+            Property(s => s.StudentNumber).HasColumnAnnotation(IndexAnnotation.AnnotationName, new IndexAnnotation(new IndexAttribute { IsUnique = true }));
+            Property(s => s.Email).HasColumnAnnotation(IndexAnnotation.AnnotationName, new IndexAnnotation(new IndexAttribute { IsUnique = true }));
         }
     }
 }

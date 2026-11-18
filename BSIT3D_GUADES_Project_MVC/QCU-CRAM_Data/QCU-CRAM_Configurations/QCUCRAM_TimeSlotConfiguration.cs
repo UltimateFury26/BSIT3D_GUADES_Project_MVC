@@ -1,4 +1,6 @@
 using System.Data.Entity;
+using System.ComponentModel.DataAnnotations.Schema;
+using System.Data.Entity.Infrastructure.Annotations;
 using System.Data.Entity.ModelConfiguration;
 using BSIT3D_GUADES_Project_MVC.QCUCRAM_Models;
 
@@ -17,8 +19,7 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Data.QCUCRAM_Configurations
             Property(t => t.EndTime).IsRequired().HasColumnType("time").HasPrecision(0);
             Property(t => t.IsActive).IsRequired();
 
-            HasIndex(t => t.StartTime).IsUnique();
-            HasIndex(t => t.IsActive);
+            Property(t => t.StartTime).HasColumnAnnotation(IndexAnnotation.AnnotationName, new IndexAnnotation(new IndexAttribute { IsUnique = true }));
         }
     }
 }

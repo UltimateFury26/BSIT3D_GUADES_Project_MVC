@@ -1,4 +1,6 @@
 using System.Data.Entity;
+using System.ComponentModel.DataAnnotations.Schema;
+using System.Data.Entity.Infrastructure.Annotations;
 using System.Data.Entity.ModelConfiguration;
 using BSIT3D_GUADES_Project_MVC.QCUCRAM_Models;
 
@@ -38,8 +40,8 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Data.QCUCRAM_Configurations
                 .WillCascadeOnDelete(false);
 
             // IX_Res_Date and IX_Res_Student.
-            HasIndex(r => r.ReservationDate);
-            HasIndex(r => r.StudentID);
+            Property(r => r.ReservationDate).HasColumnAnnotation(IndexAnnotation.AnnotationName, new IndexAnnotation(new IndexAttribute("IX_Res_Date")));
+            Property(r => r.StudentID).HasColumnAnnotation(IndexAnnotation.AnnotationName, new IndexAnnotation(new IndexAttribute("IX_Res_Student")));
 
             // UX_Res_ActiveSlot is a FILTERED unique index; EF 6 cannot express it.
             // It is created by raw SQL in the baseline migration.

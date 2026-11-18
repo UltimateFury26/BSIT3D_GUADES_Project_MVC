@@ -25,14 +25,12 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Data.QCUCRAM_Configurations
 
             // FK_Notifications_Reservation is ON DELETE SET NULL in SQL Server.
             // EF 6 cannot emit SET NULL, so the FK is mapped without cascade here
-            // and the real rule stays in Guades_QCUCram_Schema.sql.
+            // and the real rule stays in QCU-CRAM_Schema.sql.
             HasOptional(n => n.Reservation)
                 .WithMany(r => r.Notifications)
                 .HasForeignKey(n => n.ReservationID)
                 .WillCascadeOnDelete(false);
 
-            HasIndex(n => n.StudentID);
-            HasIndex(n => n.IsRead);
         }
     }
 }

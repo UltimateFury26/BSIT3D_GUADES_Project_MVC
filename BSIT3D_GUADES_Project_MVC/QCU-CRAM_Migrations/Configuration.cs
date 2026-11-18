@@ -9,13 +9,14 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Migrations
         {
             AutomaticMigrationsEnabled = false;
             AutomaticMigrationDataLossAllowed = false;
+            MigrationsDirectory = "QCU-CRAM_Migrations";
             ContextKey = "BSIT3D_GUADES_Project_MVC.QCUCRAM_Data.QCUCRAMContext";
         }
 
         protected override void Seed(QCUCRAMContext context)
         {
-            // Intentionally empty. Data is seeded by Guades_QCUCram_Seed.sql
-            // and Guades_QCUCram_DbSeeder.EnsureDefaultAdmin().
+            // Intentionally empty. Data is seeded by QCU-CRAM_Seed.sql
+            // and QCUCRAM_AdminUserRepository.EnsureDefaultAdmin().
         }
     }
 }
