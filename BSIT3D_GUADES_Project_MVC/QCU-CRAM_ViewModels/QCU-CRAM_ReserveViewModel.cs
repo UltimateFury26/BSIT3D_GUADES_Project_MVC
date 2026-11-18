@@ -93,8 +93,8 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_ViewModels
             {
                 if (slot.TimeSlotID != timeSlotId) { continue; }
                 DateTime d = DateTime.Today;
-                return d.Add(slot.StartTime).ToString("h:mm tt") + " - " +
-                       d.Add(slot.EndTime).ToString("h:mm tt");
+                return d.Add(slot.StartTime).ToString("h:mm tt", System.Globalization.CultureInfo.InvariantCulture) + " - " +
+                       d.Add(slot.EndTime).ToString("h:mm tt", System.Globalization.CultureInfo.InvariantCulture);
             }
             return string.Empty;
         }

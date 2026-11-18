@@ -320,10 +320,12 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
             {
                 Requester = requester,
                 BookingDay = bookingDay,
-                Date = bookingDay,
+                // ApplyQueryString(): ?date= (yyyy-MM-dd) wins over the booking day.
+                Date = date.HasValue ? date.Value.Date : bookingDay,
                 RoomId = roomId.HasValue ? roomId.Value : 0,
                 TimeSlotId = slotId.HasValue ? slotId.Value : 0,
-                Rooms = _content.GetRooms(true),
+                // LoadRoomsAndSlots(): ORDER BY RoomID (GetRooms sorts by name).
+                Rooms = _content.GetRooms(true).OrderBy(r => r.RoomID).ToList(),
                 TimeSlots = _content.GetTimeSlots(true),
                 RulesHtml = _content.BuildRulesHtml(),
                 NumberOfMembers = 5

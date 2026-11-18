@@ -12,7 +12,8 @@
         Members[0]..Members[n-1]. A gap in the indexes would break the default
         model binder.
 
-     2. Show a live character count under Purpose.
+     (The original page had no character counter and no double-submit guard, so
+     neither is added here.)
 
    No jQuery: the layout already loads Bootstrap 5, and this file is small
    enough to stay dependency free.
@@ -21,7 +22,7 @@
     'use strict';
 
     // ---------------------------------------------------------------
-    //  1. Member rows
+    //  Member rows
     // ---------------------------------------------------------------
 
     function memberRows() {
@@ -87,8 +88,9 @@
     }
 
     /**
-     * Grows or shrinks the table to exactly `wanted` rows, never dropping a row
-     * that already holds a name (the student would lose typing).
+     * Grows or shrinks the table to exactly `wanted` rows. Like the original
+     * ddlMembers_SelectedIndexChanged -> BindMembers(count, existing), the rows that are
+     * kept keep what was typed, new rows are blank, and rows past the new count go.
      */
     function syncRows(wanted) {
         var body = document.getElementById('qcuMemberBody');
@@ -102,17 +104,7 @@
         }
 
         while (rows.length > wanted) {
-            var last = rows[rows.length - 1];
-
-            var hasValue = Array.prototype.some.call(
-                last.querySelectorAll('input'),
-                function (input) { return input.value.trim() !== ''; });
-
-            // Stop trimming if the last row is already filled in - shrinking
-            // past typed data would silently throw it away.
-            if (hasValue) { break; }
-
-            body.removeChild(last);
+            body.removeChild(rows[rows.length - 1]);
             rows = memberRows();
         }
 
@@ -131,19 +123,4 @@
         syncRows(parseInt(memberSelect.value, 10));
     }
 
-    // ---------------------------------------------------------------
-    //  2. Guard against a double submit
-    // ---------------------------------------------------------------
-
-    var form = document.getElementById('qcuReserveForm');
-
-    if (form) {
-        form.addEventListener('submit', function () {
-            var button = form.querySelector('button[type="submit"]');
-            if (button) {
-                button.disabled = true;
-                button.innerHTML = 'Submitting...';
-            }
-        });
-    }
 })();

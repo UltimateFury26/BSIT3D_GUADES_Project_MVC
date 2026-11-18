@@ -23,7 +23,10 @@
     // btnSubmit_Click() rendered "<strong>Please fix the following:</strong>" above the list.
     ViewBag.QCUCRAM_ValidationTitle = "Please fix the following:";
 
-    var bookingDayText = Model.BookingDay.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+    // The original opened on the booking day, or on ?date= from the availability grid, and
+    // kept whatever the student had typed after a failed submit.
+    var bookingDayText = (Model.Date == default(DateTime) ? Model.BookingDay : Model.Date)
+        .ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
     var memberRows = Model.Members != null && Model.Members.Count > 0
         ? Model.Members
         : new System.Collections.Generic.List<BSIT3D_GUADES_Project_MVC.QCUCRAM_Data.QCUCRAM_MemberInput>();
@@ -47,6 +50,13 @@
     <p>Book a collaboration room for your group</p>
 </div>
 
+@if (Model.Requester == null)
+{
+    @* LoadStudent() == null: message shown and pnlForm hidden. *@
+    <div class="alert alert-danger">Your account could not be found. Please log in again.</div>
+    return;
+}
+
 @Html.Partial("_QCU-CRAM_ValidationSummary")
 
 @* ---- Restriction banner (pnlRestricted / litRestricted) ---- *@
@@ -54,7 +64,7 @@
 {
     <div class="alert alert-danger">
         <strong>You are restricted from booking until @restrictionUntil.</strong>
-        Reason: @Model.NoShowCount forfeited reservation@(Model.NoShowCount == 1 ? "" : "s").
+        Reason: @Model.NoShowCount forfeited reservation(s).
     </div>
 }
 
@@ -104,9 +114,7 @@
                     <option value="0">-- Select a room --</option>
                     @foreach (var room in Model.Rooms)
                     {
-                        <option value="@room.RoomID" selected="@(room.RoomID == Model.RoomId ? "selected" : null)">
-                            @room.RoomName (@room.MinCapacity-@room.MaxCapacity persons)
-                        </option>
+                        <option value="@room.RoomID" selected="@(room.RoomID == Model.RoomId ? "selected" : null)">@room.RoomName (@room.MinCapacity-@room.MaxCapacity persons)</option>
                     }
                 </select>
             </div>
@@ -117,9 +125,7 @@
                     <option value="0">-- Select a time slot --</option>
                     @foreach (var slot in Model.TimeSlots)
                     {
-                        <option value="@slot.TimeSlotID" selected="@(slot.TimeSlotID == Model.TimeSlotId ? "selected" : null)">
-                            @Model.SlotLabel(slot.TimeSlotID)
-                        </option>
+                        <option value="@slot.TimeSlotID" selected="@(slot.TimeSlotID == Model.TimeSlotId ? "selected" : null)">@Model.SlotLabel(slot.TimeSlotID)</option>
                     }
                 </select>
             </div>
@@ -127,7 +133,7 @@
 
         <p class="small mb-3">
             Not sure which slot is free?
-            <a href="@Url.Action("Index", "Availability", new { date = bookingDayText })">View the availability grid</a>.
+            <a href="@Url.Action("Index", "Availability")">View the availability grid</a>.
         </p>
 
         <div class="mb-3">
@@ -193,7 +199,14 @@
 
         <button type="submit" class="btn btn-cta btn-lg">Submit Request</button>
         @* btnReset_Click did Response.Redirect back to a clean Reserve page. *@
-        <a href="@Url.Action("Reserve", "Student")" class="btn btn-outline-secondary btn-lg">Reset form</a>
+        @if (Model.IsRestricted)
+        {
+            <a class="btn btn-outline-secondary btn-lg disabled" disabled="disabled" aria-disabled="true">Reset form</a>
+        }
+        else
+        {
+            <a href="@Url.Action("Reserve", "Student")" class="btn btn-outline-secondary btn-lg">Reset form</a>
+        }
     </fieldset>
 }
 
