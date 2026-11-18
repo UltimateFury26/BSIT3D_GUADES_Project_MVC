@@ -72,10 +72,10 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Helpers
         public const string FreeListSql = "('Declined','Cancelled','Forfeited')";
 
         /// <summary>SQL fragment for confirmed bookings - fixed constants, never user input.</summary>
-        public const string OccupiedListSql = "('Approved','Reassigned','CheckedIn','Completed')";
+        public const string OccupiedListSql = "'Approved','Reassigned','CheckedIn','Completed'";
 
         /// <summary>Occupied plus Forfeited - the denominator the no-show rate uses.</summary>
         public const string OccupiedOrForfeitedListSql =
-            "('Approved','Reassigned','CheckedIn','Completed','Forfeited')";
+            "'Approved','Reassigned','CheckedIn','Completed','Forfeited'";
     }
 }

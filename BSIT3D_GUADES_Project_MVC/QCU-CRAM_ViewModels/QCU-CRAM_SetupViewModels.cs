@@ -303,6 +303,8 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_ViewModels
 
         public string LastResult { get; set; }
         public string LastSweepSummary { get; set; }
+        // Diagnostic detail shown when the initial Dev Tools database reads fail.
+        public string LoadError { get; set; }
     }
 
     // =====================================================================

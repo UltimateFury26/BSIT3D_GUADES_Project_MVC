@@ -29,6 +29,11 @@
     <p>Testing tools - not for normal use</p>
 </div>
 
+@if (!string.IsNullOrWhiteSpace(Model.LoadError))
+{
+    <div class="alert alert-danger" role="alert">@Model.LoadError</div>
+}
+
 <div class="alert alert-warning">
     Testing tools only. Moving the clock changes how every page decides what is "now".
     <strong>Reset the clock when you finish testing.</strong>

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Web.Mvc;
 using BSIT3D_GUADES_Project_MVC.QCUCRAM_Security;
@@ -349,7 +350,24 @@ namespace BSIT3D_GUADES_Project_MVC.Controllers
         {
             if (!QCUCRAMDevToolsService.Enabled) { return HttpNotFound(); }
 
-            QCUCRAMDevToolsViewModel vm = QCUCRAMDevToolsService.Load();
+            QCUCRAMDevToolsViewModel vm;
+            try
+            {
+                vm = QCUCRAMDevToolsService.Load();
+            }
+            catch (Exception ex)
+            {
+                // Do not let an initial Dev Tools read crash the whole MVC page.
+                // The exception detail is rendered as encoded text; the full stack is logged.
+                System.Diagnostics.Trace.TraceError("QCUCRAM Dev Tools initial load failed: {0}", ex);
+                vm = new QCUCRAMDevToolsViewModel
+                {
+                    RealNow = DateTime.Now,
+                    SimulatedNow = DateTime.Now,
+                    OffsetMinutes = 0,
+                    LoadError = "Initial Dev Tools database load failed: " + ex.Message
+                };
+            }
 
             object last = TempData[DevResultKey];
             if (last != null) { vm.LastResult = last.ToString(); }

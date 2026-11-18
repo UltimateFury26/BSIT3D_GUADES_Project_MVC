@@ -324,16 +324,6 @@
   <ItemGroup>
     <Folder Include="App_Data\" />
     <Folder Include="Models\" />
-    <Folder Include="QCU-CRAM_Models\" />
-    <Folder Include="QCU-CRAM_Data\QCU-CRAM_Configurations\" />
-    <Folder Include="QCU-CRAM_Migrations\" />
-    <Folder Include="QCU-CRAM_Security\" />
-    <Folder Include="QCU-CRAM_Services\" />
-    <Folder Include="QCU-CRAM_ViewModels\" />
-    <Folder Include="Views\Availability\" />
-    <Folder Include="Views\Student\" />
-    <Folder Include="Views\Admin\" />
-    <Folder Include="Views\Reports\" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Content\bootstrap.rtl.min.css.map" />
