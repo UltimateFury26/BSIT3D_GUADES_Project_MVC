@@ -83,11 +83,17 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_ViewModels
         public string End { get; set; }
         public bool IsActive { get; set; }
 
+        // R03: the TimeSlots.aspx RequiredFieldValidator messages (ValidationGroup="Slot"), under each box.
+        public List<string> StartErrors { get; set; }
+        public List<string> EndErrors { get; set; }
+
         public QCUCRAMSlotEditModel()
         {
             Start = string.Empty;
             End = string.Empty;
             IsActive = true;
+            StartErrors = new List<string>();
+            EndErrors = new List<string>();
         }
     }
 

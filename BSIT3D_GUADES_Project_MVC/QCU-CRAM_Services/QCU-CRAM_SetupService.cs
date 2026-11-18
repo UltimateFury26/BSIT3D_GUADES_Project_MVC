@@ -320,6 +320,17 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
         {
             if (model == null) { return Retry("Time slot details are missing."); }
 
+            model.StartErrors.Clear();
+            model.EndErrors.Clear();
+
+            // TimeSlots.aspx validators (ValidationGroup="Slot"): shown under the boxes, pop-up stays open
+            if (string.IsNullOrWhiteSpace(model.Start)) { model.StartErrors.Add("Start time is required."); }
+            if (string.IsNullOrWhiteSpace(model.End)) { model.EndErrors.Add("End time is required."); }
+            if (model.StartErrors.Count > 0 || model.EndErrors.Count > 0)
+            {
+                return Retry(string.Empty);
+            }
+
             TimeSpan start;
             TimeSpan end;
 

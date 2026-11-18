@@ -1,5 +1,6 @@
 @model BSIT3D_GUADES_Project_MVC.QCUCRAM_ViewModels.QCUCRAMTimeSlotsViewModel
 @using System
+@using System.Collections.Generic
 @using System.Globalization
 @{
     /* =====================================================================
@@ -13,6 +14,9 @@
     string modalTitle = isNew ? "Add Time Slot" : "Edit Time Slot #" + Model.Edit.TimeSlotID;
     CultureInfo inv = CultureInfo.InvariantCulture;
     Func<TimeSpan, string> fmt = t => DateTime.Today.Add(t).ToString("h:mm tt", inv);
+
+    List<string> startErrors = Model.Edit == null ? new List<string>() : Model.Edit.StartErrors;
+    List<string> endErrors = Model.Edit == null ? new List<string>() : Model.Edit.EndErrors;
 }
 
 <div class="qcu-page-bar">
@@ -24,15 +28,20 @@
 </div>
 
 <div class="table-responsive">
+    @if (Model.Rows.Count == 0)
+    {
+        @* GridView EmptyDataText: just the message, no header row *@
+        <table class="table table-bordered table-striped qcu-admin-table">
+            <tr><td>No time slots yet. Click &quot;+ Add Time Slot&quot; to create one.</td></tr>
+        </table>
+    }
+    else
+    {
     <table class="table table-bordered table-striped qcu-admin-table">
         <thead>
             <tr><th>ID</th><th>Time Slot</th><th>Status</th><th>Reservations</th><th>Actions</th></tr>
         </thead>
         <tbody>
-            @if (Model.Rows.Count == 0)
-            {
-                <tr><td colspan="5">No time slots yet. Click &quot;+ Add Time Slot&quot; to create one.</td></tr>
-            }
             @foreach (var row in Model.Rows)
             {
                 string action = row.IsActive ? "Disable" : "Enable";
@@ -66,6 +75,7 @@
             }
         </tbody>
     </table>
+    }
 </div>
 <p class="text-muted">
     A slot that has reservations cannot be deleted or have its times changed. Disable it instead:
@@ -80,6 +90,7 @@
     Action = Url.Action("SaveSlot"),
     Error = Model.ModalError,
     SubmitText = isNew ? "Add Time Slot" : "Update Time Slot",
+    Needs = "#Start|#End",
     CancelUrl = Url.Action("TimeSlots"),
     Body = @<text>
         <input type="hidden" name="TimeSlotID" value="@(isNew ? 0 : Model.Edit.TimeSlotID)" />
@@ -88,16 +99,20 @@
             <div class="col-6 mb-3">
                 <label class="form-label" for="Start">Start Time</label>
                 <input id="Start" name="Start" type="time" class="form-control" value="@(Model.Edit == null ? string.Empty : Model.Edit.Start)" />
+                @foreach (string m in startErrors) { <span class="text-danger">@m</span> }
             </div>
             <div class="col-6 mb-3">
                 <label class="form-label" for="End">End Time</label>
                 <input id="End" name="End" type="time" class="form-control" value="@(Model.Edit == null ? string.Empty : Model.Edit.End)" />
+                @foreach (string m in endErrors) { <span class="text-danger">@m</span> }
             </div>
         </div>
 
         <div class="form-check mb-3">
             <input type="checkbox" class="form-check-input" id="IsActive" name="IsActive" value="true" @Html.Raw(Model.Edit == null || Model.Edit.IsActive ? "checked=\"checked\"" : string.Empty) />
             <label class="form-check-label" for="IsActive">Active (available for booking)</label>
+            @* R03: an unticked box posts nothing, so the model kept its constructor default (true). Hidden false AFTER the checkbox. *@
+            <input type="hidden" name="IsActive" value="false" />
         </div>
     </text>
 })

@@ -117,7 +117,9 @@ namespace BSIT3D_GUADES_Project_MVC.Controllers
         [ValidateAntiForgeryToken]
         public ActionResult ToggleSlot(int id)
         {
-            Toast(QCUCRAMSetupService.ToggleSlot(id));
+            // TimeSlots.aspx.cs gvSlots_RowCommand: any failure -> the same generic message
+            try { Toast(QCUCRAMSetupService.ToggleSlot(id)); }
+            catch (System.Exception) { FlashError("Sorry, that action could not be completed. Please try again."); }
             return RedirectToAction("TimeSlots");
         }
 
@@ -125,7 +127,8 @@ namespace BSIT3D_GUADES_Project_MVC.Controllers
         [ValidateAntiForgeryToken]
         public ActionResult DeleteSlot(int id)
         {
-            Toast(QCUCRAMSetupService.DeleteSlot(id));
+            try { Toast(QCUCRAMSetupService.DeleteSlot(id)); }
+            catch (System.Exception) { FlashError("Sorry, that action could not be completed. Please try again."); }
             return RedirectToAction("TimeSlots");
         }
 
