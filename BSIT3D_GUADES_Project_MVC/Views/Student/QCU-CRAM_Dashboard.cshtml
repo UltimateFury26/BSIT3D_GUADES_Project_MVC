@@ -26,60 +26,38 @@
     <p>Your bookings and room availability at a glance</p>
 </div>
 
-@* ---- Restriction banner ---- *@
+@* ---- Restriction banner (pnlRestricted + litRestricted) ---- *@
 @if (Model.IsRestricted)
 {
     <div class="alert alert-danger">
-        <strong>Your account is restricted.</strong>
-        You cannot file new reservations
-        @if (Model.RestrictionLiftDate.HasValue)
-        {
-            <text>until @Model.RestrictionLiftDate.Value.ToString("MMM d, yyyy h:mm tt").</text>
-        }
-        else
-        {
-            <text>until a library assistant lifts the restriction.</text>
-        }
-        You have <strong>@Model.NoShowCount</strong> no-show
-        @(Model.NoShowCount == 1 ? "strike" : "strikes").
-        Please contact the library if you believe this is a mistake.
-    </div>
-}
-else if (Model.NoShowCount > 0)
-{
-    <div class="alert alert-warning">
-        <strong>Heads up.</strong>
-        You have <strong>@Model.NoShowCount</strong> no-show
-        @(Model.NoShowCount == 1 ? "strike" : "strikes") out of @Model.NoShowThreshold.
-        At @Model.NoShowThreshold your account is restricted for a week.
-        @Model.StrikesLeft more and you are barred from booking.
+        <strong>
+            You are restricted from booking until
+            @if (Model.RestrictionLiftDate.HasValue)
+            {
+                <text>@Model.RestrictionLiftDate.Value.ToString("MMM d, yyyy h:mm tt", CultureInfo.InvariantCulture).</text>
+            }
+            else
+            {
+                <text>further notice.</text>
+            }
+        </strong>
+        Reason: @Model.NoShowCount forfeited reservation@(Model.NoShowCount == 1 ? "" : "s").
     </div>
 }
 
-@* ---- Welcome + quick actions ---- *@
+@* ---- Welcome + quick actions (lblWelcome + hlQuickReserve) ---- *@
 <div class="qcu-welcome d-flex flex-wrap justify-content-between align-items-center mb-4">
-    <p class="lead mb-2 mb-md-0">
-        Welcome back, <strong>@Model.FirstName</strong>.
-        @if (Model.UnreadCount > 0)
-        {
-            <text>
-                You have
-                <a href="@Url.Action("Notifications", "Student")" class="qcu-welcome-link">
-                    @Model.UnreadCount unread notification@(Model.UnreadCount == 1 ? "" : "s")
-                </a>.
-            </text>
-        }
-    </p>
+    <p class="lead mb-2 mb-md-0">Welcome, @Model.DisplayName.</p>
     <div>
         @if (Model.IsRestricted)
         {
-            <span class="btn btn-cta btn-lg me-2 disabled" aria-disabled="true">Quick Reserve (@Model.BookingDayLabel)</span>
+            <span class="btn btn-cta btn-lg me-2 disabled" aria-disabled="true">Quick Reserve (tomorrow)</span>
         }
         else
         {
             <a class="btn btn-cta btn-lg me-2"
                href="@Url.Action("Reserve", "Student", new { date = bookingDayText })">
-                Quick Reserve (@Model.BookingDayLabel)
+                Quick Reserve (tomorrow)
             </a>
         }
         <a href="@Url.Action("Index", "Availability")" class="btn btn-outline-light btn-lg">View Availability</a>
@@ -96,15 +74,12 @@ else if (Model.NoShowCount > 0)
             <div class="card-body">
                 @if (Model.Upcoming.Count == 0)
                 {
-                    <p class="text-muted mb-0">
-                        You have no upcoming bookings.
-                        <a href="@Url.Action("Index", "Availability")">Check what is open</a>.
-                    </p>
+                    <p class="text-muted mb-0">You have no upcoming reservations.</p>
                 }
                 else
                 {
                     <div class="table-responsive">
-                        <table class="table table-sm table-bordered align-middle mb-0">
+                        <table class="table table-sm table-bordered table-striped align-middle mb-0">
                             <thead class="table-light">
                                 <tr>
                                     <th scope="col">#</th>
@@ -120,7 +95,7 @@ else if (Model.NoShowCount > 0)
                                     <tr>
                                         <td>@item.ReservationId</td>
                                         <td class="text-nowrap">
-                                            @item.ReservationDate.ToString("MMM d, yyyy (ddd)", CultureInfo.InvariantCulture)
+                                            @item.ReservationDate.ToString("ddd, MMM d, yyyy", CultureInfo.InvariantCulture)
                                         </td>
                                         <td class="text-nowrap">@item.SlotLabel</td>
                                         <td>@item.RoomName</td>
@@ -141,12 +116,12 @@ else if (Model.NoShowCount > 0)
             <div class="card-body">
                 @if (Model.Recent.Count == 0)
                 {
-                    <p class="text-muted mb-0">You have not submitted a reservation yet.</p>
+                    <p class="text-muted mb-0">You have not made any reservations yet.</p>
                 }
                 else
                 {
                     <div class="table-responsive">
-                        <table class="table table-sm table-bordered align-middle mb-0">
+                        <table class="table table-sm table-bordered table-striped align-middle mb-0">
                             <thead class="table-light">
                                 <tr>
                                     <th scope="col">#</th>
@@ -162,7 +137,7 @@ else if (Model.NoShowCount > 0)
                                     <tr>
                                         <td>@item.ReservationId</td>
                                         <td class="text-nowrap">
-                                            @item.ReservationDate.ToString("MMM d, yyyy (ddd)", CultureInfo.InvariantCulture)
+                                            @item.ReservationDate.ToString("ddd, MMM d, yyyy", CultureInfo.InvariantCulture)
                                         </td>
                                         <td class="text-nowrap">@item.SlotLabel</td>
                                         <td>@item.RoomName</td>
@@ -176,10 +151,6 @@ else if (Model.NoShowCount > 0)
 
                 <p class="mt-3 mb-0">
                     <a href="@Url.Action("MyReservations", "Student")">View all my reservations</a>
-                    @if (Model.TotalReservations > 0)
-                    {
-                        <span class="text-muted">(@Model.TotalReservations in total)</span>
-                    }
                 </p>
             </div>
         </div>
@@ -190,19 +161,19 @@ else if (Model.NoShowCount > 0)
 
         <div class="card mb-4">
             <div class="card-header">
-                <strong>Availability on @Model.BookingDayLabel</strong>
+                <strong>@Model.GlanceTitle</strong>
             </div>
             <div class="card-body">
                 @if (Model.Glance.Count == 0)
                 {
-                    <p class="text-muted mb-0">No active rooms are set up yet.</p>
+                    <p class="text-muted mb-0">No rooms are open for booking right now.</p>
                 }
                 else
                 {
-                    <ul class="list-unstyled mb-0 qcu-glance">
+                    <ul class="list-group mb-3">
                         @foreach (var row in Model.Glance)
                         {
-                            <li class="d-flex justify-content-between align-items-center py-1">
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
                                 <span>@row.RoomName</span>
                                 <span class="badge @row.BadgeClass">@row.BadgeText</span>
                             </li>
@@ -210,7 +181,7 @@ else if (Model.NoShowCount > 0)
                     </ul>
                     <p class="mt-3 mb-0">
                         <a href="@Url.Action("Index", "Availability", new { date = bookingDayText })">
-                            Open the availability grid
+                            See the full grid
                         </a>
                     </p>
                 }

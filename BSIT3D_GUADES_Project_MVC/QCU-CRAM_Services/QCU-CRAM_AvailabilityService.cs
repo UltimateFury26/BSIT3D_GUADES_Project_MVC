@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using BSIT3D_GUADES_Project_MVC.QCUCRAM_Data;
 using BSIT3D_GUADES_Project_MVC.QCUCRAM_Helpers;
 using BSIT3D_GUADES_Project_MVC.QCUCRAM_Models;
@@ -190,30 +189,45 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
                     cell.State = "mine";
                     cell.CssClass = "table-primary";
                     cell.StateClass = "qcu-cell--mine";
-                    cell.Text = pending ? "Your request" : "Your booking";
-                    cell.Detail = "#" + taken.ReservationId;
+                    // Original: "Your request #12" with the status underneath.
+                    cell.Text = (pending ? "Your request" : "Your booking") + " #" + taken.ReservationId;
+                    cell.Detail = taken.Status;
                 }
                 else if (pending)
                 {
                     cell.State = "pending";
                     cell.CssClass = "table-warning";
                     cell.StateClass = "qcu-cell--pending";
-                    cell.Text = "Pending";
-                    cell.Detail = isAdmin ? AdminDetail(taken.ReservationId, detail) : string.Empty;
+                    cell.Text = isAdmin
+                        ? "Pending #" + taken.ReservationId
+                        : "Pending";
+                    cell.Detail = isAdmin ? AdminDetail(detail) : string.Empty;
                 }
                 else
                 {
                     cell.State = "taken";
                     cell.CssClass = "table-danger";
                     cell.StateClass = "qcu-cell--taken";
-                    cell.Text = "Taken";
-                    cell.Detail = isAdmin ? AdminDetail(taken.ReservationId, detail) : string.Empty;
+                    cell.Text = isAdmin
+                        ? "Taken #" + taken.ReservationId
+                        : "Taken";
+                    cell.Detail = isAdmin ? AdminDetail(detail) : string.Empty;
                 }
 
                 return cell;
             }
 
-            // ---- 2. nothing booked: a closed date beats a disabled room ----
+            // ---- 2. a disabled room or slot (the original tested this BEFORE closed) ----
+            if (!room.IsActive || !slot.IsActive)
+            {
+                cell.State = "off";
+                cell.CssClass = "table-secondary text-muted";
+                cell.StateClass = "qcu-cell--unavailable";
+                cell.Text = "Unavailable";
+                return cell;
+            }
+
+            // ---- 3. closed: an empty slot on today or an earlier day ----
             if (vm.IsClosed)
             {
                 cell.State = "closed";
@@ -223,35 +237,25 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
                 return cell;
             }
 
-            // ---- 3. a disabled room or slot ----
-            if (!room.IsActive || !slot.IsActive)
-            {
-                cell.State = "off";
-                cell.CssClass = "table-secondary";
-                cell.StateClass = "qcu-cell--unavailable";
-                cell.Text = "\u2014";
-                return cell;
-            }
-
             // ---- 4. open ----
             cell.State = "open";
             cell.CssClass = "table-success";
             cell.StateClass = "qcu-cell--open";
-            cell.Text = "Open";
             cell.IsBookable = vm.CanBook;
+            cell.Text = vm.CanBook ? "Open - Book" : "Open";
 
             return cell;
         }
 
-        private static string AdminDetail(int? reservationId, QCUCRAM_ReservationListItem detail)
+        /// <summary>
+        /// The admin tooltip under a held cell: "Last, First (23-0001)", exactly the
+        /// string the original built from LastName + ", " + FirstName + " (" + StudentNumber + ")".
+        /// </summary>
+        private static string AdminDetail(QCUCRAM_ReservationListItem detail)
         {
-            string head = "#" + (reservationId.HasValue
-                ? reservationId.Value.ToString(CultureInfo.InvariantCulture)
-                : "?");
+            if (detail == null) { return string.Empty; }
 
-            if (detail == null) { return head; }
-
-            return head + " " + detail.StudentName + " (" + detail.StudentNumber + ")";
+            return detail.StudentName + " (" + detail.StudentNumber + ")";
         }
     }
 }

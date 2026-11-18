@@ -49,10 +49,13 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_ViewModels
     /// <summary>One day cell of the dashboard calendar.</summary>
     public class QCUCRAMCalendarDay
     {
-        /// <summary>Midnight of the day; DateTime.MinValue for a leading/trailing blank.</summary>
+        /// <summary>Midnight of the day this cell represents.</summary>
         public DateTime Date { get; set; }
 
-        /// <summary>False for the blanks that pad the first and last week.</summary>
+        /// <summary>
+        /// False for a day that belongs to the previous or next month but still shows in
+        /// the grid (the original OtherMonthDayStyle painted those grey).
+        /// </summary>
         public bool InMonth { get; set; }
 
         public bool IsToday { get; set; }
@@ -90,7 +93,7 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_ViewModels
 
         public string DayNumber
         {
-            get { return InMonth ? Date.Day.ToString(CultureInfo.InvariantCulture) : string.Empty; }
+            get { return Date.Day.ToString(CultureInfo.InvariantCulture); }
         }
     }
 }

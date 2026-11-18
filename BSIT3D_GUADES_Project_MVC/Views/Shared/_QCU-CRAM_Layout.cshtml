@@ -44,10 +44,9 @@
                       && string.Equals(routeAction, "Login", StringComparison.OrdinalIgnoreCase));
 
     /* ---------------------------------------------------------------------
-       Nav links whose controllers do not exist yet.
-       Availability arrives in Phase 06, the Admin pages in Phase 07/08 and
-       Reports in Phase 09. Until then those links would 404, so they stay
-       hidden. Flip this to true once the last of them is in place.
+       Every controller the master linked to now exists (Availability,
+       Admin, Reports), so the footer can render the full link set that
+       Guades_QCUCram_Site.Master.cs BuildFooterLinks() produced.
        --------------------------------------------------------------------- */
     var showUnbuiltNav = true;
 
@@ -160,7 +159,7 @@
                         }
                         else if (isAdmin)
                         {
-                            <a href="@Url.Action("Index", "AdminDashboard")">Dashboard</a>
+                            <a href="@Url.Action("Dashboard", "Admin")">Dashboard</a>
                             if (showUnbuiltNav)
                             {
                                 <a href="@Url.Action("Index", "Availability")">Room Availability</a>

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using BSIT3D_GUADES_Project_MVC.QCUCRAM_Data;
 using BSIT3D_GUADES_Project_MVC.QCUCRAM_Models;
 
@@ -46,6 +47,41 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_ViewModels
 
         /// <summary>Today + AdvanceBookingDays - what Quick Reserve points at.</summary>
         public DateTime BookingDay { get; set; }
+
+        /// <summary>
+        /// The AdvanceBookingDays setting the booking day was derived from (1 = tomorrow).
+        /// Kept so the glance header can say "tomorrow" / "today" / "in 3 days" the way
+        /// the original ShowGlance(bookingDay, ahead) did.
+        /// </summary>
+        public int AdvanceBookingDays { get; set; }
+
+        /// <summary>
+        /// lblGlanceTitle in the original: "Availability tomorrow (Sat, Mar 14)".
+        /// </summary>
+        public string GlanceTitle
+        {
+            get
+            {
+                string when = AdvanceBookingDays == 1 ? "tomorrow"
+                            : AdvanceBookingDays == 0 ? "today"
+                            : "in " + AdvanceBookingDays + " days";
+
+                return "Availability " + when + " (" +
+                       BookingDay.ToString("ddd, MMM d", CultureInfo.InvariantCulture) + ")";
+            }
+        }
+
+        /// <summary>
+        /// lblWelcome in the original: "Welcome, " + FirstName + " " + LastName + "."
+        /// </summary>
+        public string DisplayName
+        {
+            get
+            {
+                if (Student == null) { return string.Empty; }
+                return (Student.FirstName + " " + Student.LastName).Trim();
+            }
+        }
 
         public string BookingDayLabel
         {
@@ -95,11 +131,15 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_ViewModels
             }
         }
 
-        public bool IsFull { get { return TotalSlots > 0 && Open == 0; } }
+        /// <summary>
+        /// The original ShowGlance badge: open == 0 is "Full" (red), open &lt;= 2 is
+        /// amber, otherwise green. The text is "3/8 open", not "3 of 8 open".
+        /// </summary>
+        public bool IsFull { get { return Open == 0; } }
 
         public string BadgeText
         {
-            get { return IsFull ? "Full" : Open + " of " + TotalSlots + " open"; }
+            get { return IsFull ? "Full" : Open + "/" + TotalSlots + " open"; }
         }
 
         public string BadgeClass

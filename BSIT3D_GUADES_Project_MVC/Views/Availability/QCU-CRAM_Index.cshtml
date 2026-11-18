@@ -14,8 +14,8 @@
 
        Cell states, tested in the original order:
          held cell        -> mine / pending / taken
-         date closed      -> closed
          room or slot off -> unavailable
+         date closed      -> closed
          otherwise        -> open (a link only on the booking day, for a student)
        ===================================================================== */
 
@@ -82,10 +82,6 @@
     Pending: <strong>@Model.PendingCount</strong> &middot;
     Taken: <strong>@Model.TakenCount</strong> &middot;
     Closed: <strong>@Model.ClosedCount</strong>
-    @if (isStudent && Model.MineCount > 0)
-    {
-        <text>&middot; Yours: <strong>@Model.MineCount</strong></text>
-    }
 </p>
 
 @if (isStudent)
@@ -93,7 +89,7 @@
     if (Model.CanBook)
     {
         <p class="text-success">
-            You can book open slots on this date. Click an <em>Open &ndash; Book</em> cell.
+            You can book open slots on this date. Click an <em>Open - Book</em> cell.
         </p>
     }
     else
@@ -103,12 +99,6 @@
             Click <em>Booking day</em> to go there.
         </p>
     }
-}
-else if (!Model.IsAdmin)
-{
-    <p class="text-muted">
-        Sign in as a student to reserve a room. Open slots are shown in green.
-    </p>
 }
 
 @* ---- The grid ---- *@

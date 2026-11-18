@@ -100,7 +100,7 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_ViewModels
         public string MI { get; set; }
 
         [Required(ErrorMessage = "Please enter your e-mail address.")]
-        [EmailAddress(ErrorMessage = "That does not look like an e-mail address.")]
+        [EmailAddress(ErrorMessage = "Enter a valid email address.")]
         public string Email { get; set; }
 
         [Required(ErrorMessage = "Please choose your program.")]
@@ -111,7 +111,8 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_ViewModels
         public string RequesterType { get; set; }
 
         [Required(ErrorMessage = "Please choose a password.")]
-        [StringLength(64, MinimumLength = 8, ErrorMessage = "The password must be at least 8 characters.")]
+        // 100, not 64 - see the note on QCUCRAM_ChangePasswordViewModel.NewPassword.
+        [StringLength(100, MinimumLength = 8, ErrorMessage = "The password must be at least 8 characters.")]
         [DataType(DataType.Password)]
         public string Password { get; set; }
 

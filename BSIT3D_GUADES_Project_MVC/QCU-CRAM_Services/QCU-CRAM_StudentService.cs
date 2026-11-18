@@ -68,19 +68,26 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
             QCUCRAM_Student student = _students.GetById(studentId);
             DateTime now = QCUCRAM_Clock.Now;
             DateTime calendarMonth = (month ?? QCUCRAM_Clock.Today);
-            DateTime bookingDay = QCUCRAM_Clock.Today.AddDays(_content.GetSettingInt("AdvanceBookingDays", 1));
+            int ahead = _content.GetSettingInt("AdvanceBookingDays", 1);
+            DateTime bookingDay = QCUCRAM_Clock.Today.AddDays(ahead);
 
             QCUCRAMStudentDashboardViewModel vm = new QCUCRAMStudentDashboardViewModel
             {
                 Student = student,
                 BookingDay = bookingDay,
+                AdvanceBookingDays = ahead,
                 NoShowThreshold = Math.Max(1, _content.GetSettingInt("NoShowThreshold", 3)),
                 UnreadCount = _notifications.CountUnread(studentId)
             };
 
             if (student != null)
             {
-                vm.IsRestricted = student.IsRestricted;
+                // ShowRestrictionBanner() hid the banner when the cooldown had already
+                // passed (the sweep was about to lift it), so do the same here.
+                bool expired = student.RestrictionLiftDate.HasValue &&
+                               student.RestrictionLiftDate.Value <= now;
+
+                vm.IsRestricted = student.IsRestricted && !expired;
                 vm.NoShowCount = student.NoShowCount;
                 vm.RestrictionLiftDate = student.RestrictionLiftDate;
             }
@@ -88,9 +95,12 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
             List<QCUCRAM_ReservationListItem> all = _reservations.GetForStudent(studentId);
             vm.TotalReservations = all.Count;
 
-            // Upcoming: still holds the slot and the slot has not ended yet.
+            // Upcoming: the original ShowUpcoming() accepted only the four "live" statuses
+            // (Pending / Approved / Reassigned / CheckedIn) and required the slot not to
+            // have ended yet. Note this is narrower than QCUCRAM_Status.IsActive, which
+            // also lets Completed through - a completed booking is not "upcoming".
             vm.Upcoming = all
-                .Where(x => QCUCRAM_Status.IsActive(x.Status) && SlotEnd(x) > now)
+                .Where(x => IsLive(x.Status) && SlotEnd(x) > now)
                 .OrderBy(SlotStart)
                 .ToList();
 
@@ -102,11 +112,19 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
                 .ToList();
 
             // Availability glance for the booking day.
+            // The original SQL counted only reservations whose TimeSlot is active
+            // (JOIN TimeSlots t ... AND t.IsActive = 1), so a booking sitting on a
+            // disabled slot must not inflate the "held" number here either.
             List<QCUCRAM_TimeSlot> slots = _content.GetTimeSlots(true);
+            HashSet<int> activeSlotIds = new HashSet<int>();
+            foreach (QCUCRAM_TimeSlot slot in slots) { activeSlotIds.Add(slot.TimeSlotID); }
+
             Dictionary<int, int> heldPerRoom = new Dictionary<int, int>();
 
             foreach (QCUCRAM_AvailabilityCell cell in _content.GetAvailability(bookingDay))
             {
+                if (!activeSlotIds.Contains(cell.TimeSlotId)) { continue; }
+
                 int count;
                 heldPerRoom.TryGetValue(cell.RoomId, out count);
                 heldPerRoom[cell.RoomId] = count + 1;
@@ -159,22 +177,21 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
                 }
             }
 
-            // Leading blanks: the original calendar started on Sunday.
-            int lead = (int)first.DayOfWeek;
-            for (int i = 0; i < lead; i++)
-            {
-                vm.Days.Add(new QCUCRAMCalendarDay { InMonth = false });
-            }
-
+            // <asp:Calendar> started the week on Sunday and painted the whole weeks that
+            // the month touches, including the greyed days that belong to the neighbouring
+            // months. DayRender fired for those days too, so they get a rank as well.
+            DateTime gridStart = first.AddDays(-(int)first.DayOfWeek);
             int daysInMonth = DateTime.DaysInMonth(first.Year, first.Month);
+            int cells = (((int)first.DayOfWeek + daysInMonth + 6) / 7) * 7;
 
-            for (int day = 1; day <= daysInMonth; day++)
+            for (int i = 0; i < cells; i++)
             {
-                DateTime date = new DateTime(first.Year, first.Month, day);
+                DateTime date = gridStart.AddDays(i);
+
                 QCUCRAMCalendarDay cell = new QCUCRAMCalendarDay
                 {
                     Date = date,
-                    InMonth = true,
+                    InMonth = date.Month == first.Month && date.Year == first.Year,
                     IsToday = date == now.Date
                 };
 
@@ -183,29 +200,31 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
                 {
                     cell.BookingCount = bucket.Count;
                     cell.Rank = Rank(bucket, now);
-                    cell.Tip = Tip(cell.Rank, bucket.Count);
+                    cell.Tip = Tip(cell.Rank, bucket);
                 }
 
                 vm.Days.Add(cell);
             }
 
-            // Trailing blanks so the last week is a full row.
-            while (vm.Days.Count % 7 != 0)
-            {
-                vm.Days.Add(new QCUCRAMCalendarDay { InMonth = false });
-            }
-
             return vm;
         }
 
+        /// <summary>
+        /// The original BuildCalendarData rank, exactly:
+        ///   CheckedIn                                        -> 3 (ongoing)
+        ///   Pending / Approved / Reassigned                  -> 2 (reserved)
+        ///   Completed                                        -> 1 (done)
+        ///   Declined / Cancelled / Forfeited                 -> no colour
+        /// The highest rank on a day wins. The Web Forms page did NOT look at the
+        /// clock here, so neither does this.
+        /// </summary>
         private static int Rank(List<QCUCRAM_ReservationListItem> bucket, DateTime now)
         {
             int rank = 0;
 
             foreach (QCUCRAM_ReservationListItem item in bucket)
             {
-                if (item.Status == QCUCRAM_Status.CheckedIn &&
-                    SlotStart(item) <= now && SlotEnd(item) > now)
+                if (item.Status == QCUCRAM_Status.CheckedIn)
                 {
                     return 3;   // ongoing wins outright
                 }
@@ -225,17 +244,57 @@ namespace BSIT3D_GUADES_Project_MVC.QCUCRAM_Services
             return rank;
         }
 
-        private static string Tip(int rank, int count)
+        /// <summary>
+        /// The original cell tooltip: the rank label, then one line per booking -
+        ///   "Reserved: #12 Room A, 8:00 AM - 9:00 AM (Approved); #13 ...".
+        /// </summary>
+        private static string Tip(int rank, List<QCUCRAM_ReservationListItem> bucket)
         {
-            string many = count + " booking" + (count == 1 ? "" : "s");
-
+            string label;
             switch (rank)
             {
-                case 3: return "Ongoing booking - " + many;
-                case 2: return many + " reserved";
-                case 1: return many + " completed";
-                default: return many;
+                case 3: label = "Ongoing"; break;
+                case 2: label = "Reserved"; break;
+                case 1: label = "Done"; break;
+                default: return null;
             }
+
+            List<string> lines = new List<string>();
+
+            foreach (QCUCRAM_ReservationListItem item in bucket)
+            {
+                // The original only appended a tip while it was assigning a rank, so a
+                // declined / cancelled / forfeited booking never appears in the tooltip.
+                if (!IsRanked(item.Status)) { continue; }
+
+                string status = item.Status == QCUCRAM_Status.CheckedIn ? "Checked In" : item.Status;
+
+                lines.Add("#" + item.ReservationId + " " + item.RoomName + ", " +
+                          item.SlotLabel + " (" + status + ")");
+            }
+
+            if (lines.Count == 0) { return null; }
+
+            return label + ": " + string.Join("; ", lines.ToArray());
+        }
+
+        /// <summary>True for the statuses ShowUpcoming() treated as still upcoming.</summary>
+        private static bool IsLive(string status)
+        {
+            return status == QCUCRAM_Status.Pending
+                || status == QCUCRAM_Status.Approved
+                || status == QCUCRAM_Status.Reassigned
+                || status == QCUCRAM_Status.CheckedIn;
+        }
+
+        /// <summary>True for the statuses BuildCalendarData gave a colour to.</summary>
+        private static bool IsRanked(string status)
+        {
+            return status == QCUCRAM_Status.CheckedIn
+                || status == QCUCRAM_Status.Pending
+                || status == QCUCRAM_Status.Approved
+                || status == QCUCRAM_Status.Reassigned
+                || status == QCUCRAM_Status.Completed;
         }
 
         private static DateTime SlotStart(QCUCRAM_ReservationListItem item)

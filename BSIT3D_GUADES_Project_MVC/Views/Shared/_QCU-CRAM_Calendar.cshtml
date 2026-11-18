@@ -19,7 +19,7 @@
        Rank colours, identical to the original legend. The class names are the
        ones the original code-behind used; Content/QCU-CRAM_Site.css repaints
        them so the rendered colours match the legend below:
-           3  bg-primary    ongoing  (checked in, slot running now)  -> orange
+           3  bg-primary    ongoing  (checked in)                     -> orange
            2  bg-success    reserved (pending / approved / reassigned) -> blue
            1  bg-secondary  done     (completed)                      -> grey
            0  -             nothing
@@ -79,7 +79,17 @@
 
                         if (!day.InMonth)
                         {
-                            <td class="qcu-cal-blank"></td>
+                            @* OtherMonthDayStyle: greyed and still numbered. DayRender fired for
+                               these days too, so a booking that falls on one keeps its colour. *@
+                            var otherCss = day.CssClass;
+                            var otherClasses = "qcu-cal-blank"
+                                             + (string.IsNullOrEmpty(otherCss) ? string.Empty : " " + otherCss);
+
+                            <td class="@otherClasses"
+                                title="@(string.IsNullOrWhiteSpace(day.Tip) ? null : day.Tip)"
+                                data-qcu-day="@day.Date.ToString("yyyy-MM-dd")">
+                                <span class="qcu-cal-num">@day.DayNumber</span>
+                            </td>
                             continue;
                         }
 
@@ -89,13 +99,8 @@
 
                         <td class="@classes"
                             title="@(string.IsNullOrWhiteSpace(day.Tip) ? null : day.Tip)"
-                            data-qcu-day="@day.Date.ToString("yyyy-MM-dd")"
-                            data-qcu-bookings="@day.BookingCount">
+                            data-qcu-day="@day.Date.ToString("yyyy-MM-dd")">
                             <span class="qcu-cal-num">@day.DayNumber</span>
-                            @if (day.BookingCount > 1)
-                            {
-                                <span class="qcu-cal-count">@day.BookingCount</span>
-                            }
                         </td>
                     }
                 </tr>
@@ -108,5 +113,5 @@
         <span class="badge bg-primary">Ongoing</span> checked in &nbsp;
         <span class="badge bg-secondary">Done</span> completed
     </div>
-    <div class="small text-muted mt-1">Today is outlined in orange. Hover a coloured day for details.</div>
+    <div class="small text-muted mt-1">Today is outlined in orange. Hover a colored day for details.</div>
 </div>

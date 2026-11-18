@@ -2903,6 +2903,7 @@ main > .qcu-toast {
 
 .qcu-cal td.qcu-cal-blank {
     background: transparent;
+    color: #ADB5BD;   /* OtherMonthDayStyle ForeColor */
 }
 
 /* Today is outlined in orange, exactly like TodayDayStyle on the Web Forms control. */

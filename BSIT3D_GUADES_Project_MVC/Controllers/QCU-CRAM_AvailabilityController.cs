@@ -9,13 +9,15 @@ using BSIT3D_GUADES_Project_MVC.QCUCRAM_ViewModels;
 namespace BSIT3D_GUADES_Project_MVC.Controllers
 {
     /// <summary>
-    /// Phase 06 - the MVC replacement for Guades_QCUCram_Availability.aspx.
+    /// The MVC replacement for Guades_QCUCram_Availability.aspx.
     ///
-    /// The original page was a SecurePage, so it demanded a signed-in user. The grid
-    /// itself, though, is harmless to show to a guest: it is the same rooms and slots
-    /// that the public landing page advertises. This controller therefore derives from
-    /// QCUCRAM_BaseController (not QCUCRAM_StudentController) and marks Index
-    /// [AllowAnonymous]. Signed-in users still get the extras:
+    /// The original page inherited Guades_QCUCram_SecurePage, so it demanded a
+    /// signed-in user of ANY role (student or library assistant) and bounced a
+    /// guest to the login page with ?msg=login. Phase 09 restores that: both
+    /// actions carry [QCUCRAM_RequireLogin], which is the MVC equivalent of the
+    /// SecurePage OnInit gate. The grid is not a public page.
+    ///
+    /// Signed-in users still get the extras:
     ///
     ///   * a student sees which held cells are their own ("mine");
     ///   * an admin sees the requester name in the tooltip;
@@ -42,7 +44,7 @@ namespace BSIT3D_GUADES_Project_MVC.Controllers
         // ------------------------------------------------------------------
         //  GET /availability
         // ------------------------------------------------------------------
-        [AllowAnonymous]
+        [QCUCRAM_RequireLogin]
         [HttpGet]
         public ActionResult Index(string date, int? room, int? slot)
         {
@@ -63,7 +65,7 @@ namespace BSIT3D_GUADES_Project_MVC.Controllers
         // ------------------------------------------------------------------
         //  GET /availability/day/2026-03-14  (optional friendly URL)
         // ------------------------------------------------------------------
-        [AllowAnonymous]
+        [QCUCRAM_RequireLogin]
         [HttpGet]
         public ActionResult Day(string id, int? room, int? slot)
         {
