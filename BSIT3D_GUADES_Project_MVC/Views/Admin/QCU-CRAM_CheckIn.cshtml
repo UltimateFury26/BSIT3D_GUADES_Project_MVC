@@ -125,6 +125,12 @@
 </div>
 
 <h5 class="qcu-subhead mt-5">Checked in today</h5>
+@if (Model.CheckedIn.Count == 0)
+{
+    <div class="alert alert-secondary py-2 mb-0">Nobody has checked in yet today.</div>
+}
+else
+{
 <div class="table-responsive">
     <table class="table table-bordered table-striped align-middle qcu-admin-table">
         <thead>
@@ -136,16 +142,8 @@
             </tr>
         </thead>
         <tbody>
-            @if (Model.CheckedIn.Count == 0)
+            @foreach (var row in Model.CheckedIn)
             {
-                <tr>
-                    <td colspan="4" class="text-muted">Nobody has checked in yet today.</td>
-                </tr>
-            }
-            else
-            {
-                foreach (var row in Model.CheckedIn)
-                {
                     <tr>
                         <td>@row.ReservationID</td>
                         <td>
@@ -158,8 +156,8 @@
                         </td>
                         <td>@row.CheckedText</td>
                     </tr>
-                }
             }
         </tbody>
     </table>
 </div>
+}

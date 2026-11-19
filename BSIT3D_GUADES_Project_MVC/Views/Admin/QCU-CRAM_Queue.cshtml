@@ -41,6 +41,12 @@
     }
 </p>
 
+@if (Model.Pending.Count == 0)
+{
+    <div class="alert alert-secondary py-2 mb-3">No pending requests. All caught up.</div>
+}
+else
+{
 <div class="table-responsive">
     <table class="table table-bordered table-striped align-middle qcu-admin-table">
         <thead>
@@ -56,14 +62,8 @@
             </tr>
         </thead>
         <tbody>
-            @if (Model.Pending.Count == 0)
+            @foreach (var row in Model.Pending)
             {
-                <tr><td colspan="8">No pending requests. All caught up.</td></tr>
-            }
-            else
-            {
-                foreach (var row in Model.Pending)
-                {
                     <tr>
                         <td>@row.ReservationID</td>
                         <td>@row.CreatedAt.ToString("MMM d, h:mm tt", inv)</td>
@@ -107,11 +107,11 @@
                             </div>
                         </td>
                     </tr>
-                }
             }
         </tbody>
     </table>
 </div>
+}
 
 @* ===== Review / decline (pop-up modal) ===== *@
 @if (Model.Detail != null)

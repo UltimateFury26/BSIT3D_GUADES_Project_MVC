@@ -74,7 +74,7 @@
                     Your ID number and requester type can only be changed by a library assistant.
                 </p>
 
-                @using (Html.BeginForm("Profile", "Student", FormMethod.Post, new { @class = "qcu-formcard" }))
+                @using (Html.BeginForm("Profile", "Student", FormMethod.Post, new { @class = "qcu-profile-edit-form" }))
                 {
                     @Html.AntiForgeryToken()
                     @Html.HiddenFor(m => m.StudentID)

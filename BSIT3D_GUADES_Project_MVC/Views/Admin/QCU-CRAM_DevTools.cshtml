@@ -1,4 +1,4 @@
-﻿@model BSIT3D_GUADES_Project_MVC.QCUCRAM_ViewModels.QCUCRAMDevToolsViewModel
+@model BSIT3D_GUADES_Project_MVC.QCUCRAM_ViewModels.QCUCRAMDevToolsViewModel
 @using System
 @using System.Globalization
 @{
@@ -63,7 +63,7 @@
     </p>
     <button type="submit" formaction="@Url.Action("RunSweep", "AdminSetup")" class="btn btn-primary">Run sweep now</button>
     <div class="mt-3 mb-4">
-        if (!string.IsNullOrWhiteSpace(Model.LastSweepSummary))
+        @if (!string.IsNullOrWhiteSpace(Model.LastSweepSummary))
         {
             @Html.Raw(Model.LastSweepSummary)
         }

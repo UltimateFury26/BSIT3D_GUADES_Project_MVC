@@ -1,6 +1,7 @@
-@model BSIT3D_GUADES_Project_MVC.QCUCRAM_ViewModels.QCUCRAMAnalyticsViewModel
+﻿@model BSIT3D_GUADES_Project_MVC.QCUCRAM_ViewModels.QCUCRAMAnalyticsViewModel
 @using System
 @using System.Globalization
+@using System.Linq
 @{
     /* =====================================================================
        QCU-CRAM  |  Views/Reports/QCU-CRAM_Analytics.cshtml
@@ -108,57 +109,50 @@
         </div>
     </div>
 
-    @* ================= Tables with bars ================= *@
-    <div class="row">
-        <div class="col-lg-6">@Html.Partial("_QCU-CRAM_BarTable", Model.StatusBreakdown)</div>
-        <div class="col-lg-6">@Html.Partial("_QCU-CRAM_BarTable", Model.BookingsPerMonth)</div>
-        <div class="col-lg-6">@Html.Partial("_QCU-CRAM_BarTable", Model.BookingsPerWeekday)</div>
-        <div class="col-lg-6">@Html.Partial("_QCU-CRAM_BarTable", Model.PeakTimeSlots)</div>
-
-        <div class="col-12">
-            <div class="card mb-3">
-                <div class="card-header">Room utilization (confirmed bookings vs. available slots)</div>
-                <div class="card-body p-2">
-                    <div class="table-responsive">
-                        <table class="table table-sm table-bordered align-middle mb-0">
-                            @if (Model.RoomRows == null || Model.RoomRows.Count == 0)
-                            {
-                                <tbody><tr><td>No rooms found.</td></tr></tbody>
-                            }
-                            else
-                            {
-                                <thead>
-                                    <tr>
-                                        <th scope="col">Room</th>
-                                        <th scope="col" style="width:80px;">Booked</th>
-                                        <th scope="col" style="width:90px;">Available</th>
-                                        <th scope="col" style="width:110px;">Utilization %</th>
-                                        <th scope="col"></th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach (var room in Model.RoomRows)
-                                    {
-                                        double util = room.UtilizationPct.HasValue ? (double)room.UtilizationPct.Value : 0.0;
-                                        double pct = Math.Min(100.0, util);
-                                        <tr>
-                                            <td>@room.RoomName</td>
-                                            <td style="width:80px;">@room.Booked.ToString(inv)</td>
-                                            <td style="width:90px;">@room.Available.ToString(inv)</td>
-                                            <td style="width:110px;">@(room.UtilizationPct.HasValue ? room.UtilizationPct.Value.ToString("0.0", inv) + "%" : dash)</td>
-                                            <td><div class="bar-track"><div class="bar-fill" style="width:@(pct.ToString("0.#", inv))%"></div></div></td>
-                                        </tr>
-                                    }
-                                </tbody>
-                            }
-                        </table>
-                    </div>
-                </div>
+    @* ================= Visual analytics ================= *@
+    <div class="row g-3 qcu-report-charts">
+        <div class="col-lg-6">
+            <div class="card h-100">
+                <div class="card-header">Status breakdown</div>
+                <div class="card-body chart-card-body"><div class="chart-wrap chart-wrap-doughnut"><canvas id="statusChart" role="img" aria-label="Doughnut chart showing booking totals by status"></canvas></div></div>
             </div>
         </div>
-
-        <div class="col-lg-6">@Html.Partial("_QCU-CRAM_BarTable", Model.BookingsPerProgram)</div>
-        <div class="col-lg-6">@Html.Partial("_QCU-CRAM_BarTable", Model.AdminDecisions)</div>
+        <div class="col-lg-6">
+            <div class="card h-100">
+                <div class="card-header">Bookings per month</div>
+                <div class="card-body chart-card-body"><div class="chart-wrap"><canvas id="monthChart" role="img" aria-label="Line chart showing bookings per month"></canvas></div></div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card h-100">
+                <div class="card-header">Bookings per weekday</div>
+                <div class="card-body chart-card-body"><div class="chart-wrap"><canvas id="weekdayChart" role="img" aria-label="Column chart showing bookings per weekday"></canvas></div></div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card h-100">
+                <div class="card-header">Peak time slots (booked or forfeited)</div>
+                <div class="card-body chart-card-body"><div class="chart-wrap"><canvas id="timeChart" role="img" aria-label="Column chart showing demand by time slot"></canvas></div></div>
+            </div>
+        </div>
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">Room utilization (confirmed bookings vs. available slots)</div>
+                <div class="card-body"><div class="chart-wrap chart-wrap-room"><canvas id="roomChart" role="img" aria-label="Horizontal bar chart showing room utilization percentages"></canvas></div></div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card h-100">
+                <div class="card-header">Bookings per program</div>
+                <div class="card-body chart-card-body"><div class="chart-wrap chart-wrap-doughnut"><canvas id="programChart" role="img" aria-label="Doughnut chart showing bookings by program"></canvas></div></div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card h-100">
+                <div class="card-header">Library assistant decisions</div>
+                <div class="card-body chart-card-body"><div class="chart-wrap chart-wrap-doughnut"><canvas id="decisionChart" role="img" aria-label="Pie chart showing library assistant decisions"></canvas></div></div>
+            </div>
+        </div>
 
         @* ================= Plain tables ================= *@
         <div class="col-lg-6">
@@ -233,4 +227,124 @@
             </div>
         </div>
     </div>
+}
+
+@section scripts {
+    <style>
+        .qcu-report-charts .card { min-width: 0; }
+        .qcu-report-charts .card-header { font-weight: 600; }
+        .chart-card-body { padding: 1rem; }
+        .chart-wrap { position: relative; width: 100%; height: 290px; }
+        .chart-wrap-doughnut { height: 310px; }
+        .chart-wrap-room { height: 330px; }
+        .chart-wrap canvas { max-width: 100%; }
+        @@media (max-width: 575.98px) {
+            .chart-wrap, .chart-wrap-doughnut { height: 260px; }
+            .chart-wrap-room { height: 300px; }
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+    <script>
+        (function () {
+            if (typeof Chart === "undefined") return;
+
+            var palette = ["#155da8", "#397fbd", "#69a3d4", "#f0a34a", "#e16b5a", "#6c8c78", "#8b79b5", "#9aa7b5", "#d0a34b", "#4c9b9b"];
+            var gridColor = "rgba(25, 55, 85, .10)";
+            var axisFont = { family: "inherit", size: 12 };
+            var numberFormat = function (value) { return Number(value).toLocaleString(); };
+
+            function source(table) {
+                var rows = table && table.Rows ? table.Rows : [];
+                return {
+                    labels: rows.map(function (r) { return r.Label || "Not specified"; }),
+                    values: rows.map(function (r) { return Number(r.Total) || 0; })
+                };
+            }
+            function makeChart(id, type, data, options) {
+                var canvas = document.getElementById(id);
+                if (!canvas || !data.labels.length) {
+                    if (canvas) {
+                        var message = document.createElement("p");
+                        message.className = "text-muted text-center mb-0";
+                        message.textContent = "No data available for this period.";
+                        canvas.parentNode.replaceChild(message, canvas);
+                    }
+                    return;
+                }
+                var defaults = {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: type === "doughnut" || type === "pie", position: "bottom", labels: { usePointStyle: true, padding: 16, font: axisFont } },
+                        tooltip: { callbacks: { label: function (ctx) { return " " + ctx.label + ": " + numberFormat(ctx.parsed.y !== undefined ? ctx.parsed.y : ctx.parsed) + " bookings"; } } }
+                    },
+                    scales: type === "doughnut" || type === "pie" ? {} : {
+                        x: { grid: { display: false }, ticks: { font: axisFont } },
+                        y: { beginAtZero: true, grid: { color: gridColor }, ticks: { precision: 0, font: axisFont } }
+                    }
+                };
+                new Chart(canvas, { type: type, data: data, options: Object.assign(defaults, options || {}) });
+            }
+            function pieData(table) {
+                var d = source(table);
+                return { labels: d.labels, datasets: [{ data: d.values, backgroundColor: palette, borderColor: "#fff", borderWidth: 2, hoverOffset: 7 }] };
+            }
+            function barData(table, horizontal) {
+                var d = source(table);
+                return {
+                    labels: d.labels,
+                    datasets: [{ label: "Bookings", data: d.values, backgroundColor: horizontal ? "#286eaf" : "#397fbd", borderRadius: 6, maxBarThickness: 34 }]
+                };
+            }
+
+            var status = @Html.Raw(Json.Encode(Model.StatusBreakdown));
+            var months = @Html.Raw(Json.Encode(Model.BookingsPerMonth));
+            var weekdays = @Html.Raw(Json.Encode(Model.BookingsPerWeekday));
+            var times = @Html.Raw(Json.Encode(Model.PeakTimeSlots));
+            var programs = @Html.Raw(Json.Encode(Model.BookingsPerProgram));
+            var decisions = @Html.Raw(Json.Encode(Model.AdminDecisions));
+
+            makeChart("statusChart", "doughnut", pieData(status), { cutout: "58%" });
+            var monthSource = source(months);
+            makeChart("monthChart", "line", {
+                labels: monthSource.labels,
+                datasets: [{ label: "Bookings", data: monthSource.values, borderColor: "#155da8", backgroundColor: "rgba(21,93,168,.14)", fill: true, tension: .32, pointRadius: 4, pointHoverRadius: 6 }]
+            });
+            makeChart("weekdayChart", "bar", barData(weekdays, false));
+            makeChart("timeChart", "bar", barData(times, false));
+            makeChart("programChart", "doughnut", pieData(programs), { cutout: "54%" });
+            makeChart("decisionChart", "pie", pieData(decisions));
+
+            var roomRows = @Html.Raw(Json.Encode((Model.RoomRows ?? new System.Collections.Generic.List<BSIT3D_GUADES_Project_MVC.QCUCRAM_Data.QCUCRAM_RoomUtilizationRow>()).Select(r => new { label = r.RoomName, booked = r.Booked, available = r.Available, utilization = r.UtilizationPct })));
+            var roomCanvas = document.getElementById("roomChart");
+            if (roomCanvas && roomRows.length) {
+                new Chart(roomCanvas, {
+                    type: "bar",
+                    data: {
+                        labels: roomRows.map(function (r) { return r.label; }),
+                        datasets: [{ label: "Utilization", data: roomRows.map(function (r) { return Number(r.utilization) || 0; }), backgroundColor: "#286eaf", borderRadius: 6, maxBarThickness: 30 }]
+                    },
+                    options: {
+                        indexAxis: "y", responsive: true, maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: { callbacks: { label: function (ctx) {
+                                var r = roomRows[ctx.dataIndex];
+                                return " " + (Number(r.utilization) || 0).toFixed(1) + "% (" + numberFormat(r.booked) + " booked / " + numberFormat(r.available) + " available)";
+                            } } }
+                        },
+                        scales: {
+                            x: { beginAtZero: true, max: 100, grid: { color: gridColor }, ticks: { callback: function (v) { return v + "%"; }, font: axisFont } },
+                            y: { grid: { display: false }, ticks: { font: axisFont } }
+                        }
+                    }
+                });
+            } else if (roomCanvas) {
+                var empty = document.createElement("p");
+                empty.className = "text-muted text-center mb-0";
+                empty.textContent = "No room utilization data available for this period.";
+                roomCanvas.parentNode.replaceChild(empty, roomCanvas);
+            }
+        })();
+    </script>
 }
