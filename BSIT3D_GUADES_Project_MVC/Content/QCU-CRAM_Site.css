@@ -3639,3 +3639,157 @@ input[type="date"][readonly] {
     transform: translateY(-2px);
     box-shadow: 0 8px 20px rgba(0, 40, 90, .14);
 }
+
+
+/* =====================================================================
+   Calendar readability repair
+   Match the original Web Forms calendar: readable current-month dates,
+   blue month navigation, and soft-blue weekday headings.
+   ===================================================================== */
+
+.qcu-cal-wrap {
+    width: 100%;
+}
+
+.qcu-cal-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .75rem;
+    min-height: 58px;
+    margin: 0 0 .35rem;
+    padding: .65rem 1rem;
+    border-radius: 6px;
+    background: #00509e;
+}
+
+.qcu-cal-nav .qcu-cal-title {
+    flex: 1 1 auto;
+    color: #fff !important;
+    text-align: center;
+    font-weight: 700;
+    line-height: 1.25;
+}
+
+.qcu-cal-nav a,
+.qcu-cal-nav a.btn,
+.qcu-cal-nav .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 32px;
+    min-height: 32px;
+    padding: .2rem .45rem;
+    border: 0 !important;
+    border-radius: 4px;
+    background: transparent !important;
+    color: #fff !important;
+    font-size: 1rem;
+    font-weight: 700;
+    line-height: 1;
+    text-decoration: none;
+    box-shadow: none !important;
+}
+
+.qcu-cal-nav a:hover,
+.qcu-cal-nav a:focus {
+    background: rgba(255,255,255,.16) !important;
+    color: #fff !important;
+    outline: 2px solid rgba(255,255,255,.7);
+    outline-offset: 1px;
+}
+
+.qcu-cal.table {
+    width: 100%;
+    table-layout: fixed;
+    border-collapse: separate !important;
+    border-spacing: 3px !important;
+    margin: 0 0 .5rem !important;
+}
+
+.qcu-cal.table > thead > tr > th {
+    height: 38px;
+    padding: .4rem .15rem !important;
+    border: 0 !important;
+    border-radius: 6px;
+    background: #e7eef7 !important;
+    color: #00509e !important;
+    font-size: .875rem;
+    font-weight: 700;
+    text-align: center;
+    vertical-align: middle;
+}
+
+.qcu-cal.table > tbody > tr > td {
+    height: 39px;
+    padding: .35rem .15rem !important;
+    border: 0 !important;
+    border-radius: 6px;
+    font-size: .875rem;
+    line-height: 1.2;
+    text-align: center;
+    vertical-align: middle;
+}
+
+/* Unbooked dates must never inherit the old white-on-transparent text. */
+.qcu-cal.table > tbody > tr > td.qcu-cal-day {
+    background: #fff !important;
+    color: #17212f !important;
+}
+
+/* Keep the status colours and their readable foregrounds. */
+.qcu-cal.table > tbody > tr > td.qcu-cal-day.bg-success {
+    background: #3d6fa5 !important;
+    color: #fff !important;
+}
+
+.qcu-cal.table > tbody > tr > td.qcu-cal-day.bg-primary {
+    background: #f47721 !important;
+    color: #fff !important;
+}
+
+.qcu-cal.table > tbody > tr > td.qcu-cal-day.bg-secondary {
+    background: #8a97a5 !important;
+    color: #fff !important;
+}
+
+/* Other-month dates remain visible but subdued, like the Web Forms version. */
+.qcu-cal.table > tbody > tr > td.qcu-cal-blank {
+    background: transparent !important;
+    color: #a5afbd !important;
+}
+
+.qcu-cal-num {
+    color: inherit !important;
+    font-weight: 500;
+}
+
+.qcu-cal.table > tbody > tr > td.qcu-cal-day:not(.bg-success):not(.bg-primary):not(.bg-secondary):hover {
+    background: #f2f6fb !important;
+}
+
+.qcu-cal-day.bg-success:hover,
+.qcu-cal-day.bg-primary:hover,
+.qcu-cal-day.bg-secondary:hover {
+    filter: brightness(.96);
+}
+
+/* Preserve the orange today outline without hiding the date. */
+.qcu-cal.table > tbody > tr > td.qcu-cal-today {
+    outline: 2px solid #f47721;
+    outline-offset: -2px;
+}
+
+@media (max-width: 575.98px) {
+    .qcu-cal-nav {
+        min-height: 52px;
+        padding: .55rem .7rem;
+    }
+
+    .qcu-cal.table > thead > tr > th,
+    .qcu-cal.table > tbody > tr > td {
+        padding-left: .05rem !important;
+        padding-right: .05rem !important;
+        font-size: .8rem;
+    }
+}
